@@ -7,17 +7,9 @@ library(infer)
 
 ##Indlæsning af data
 
-leafs = read_ods('Data/leafs.ods')
-roots = read_ods('Data/roots.ods')
-wood = read_ods('Data/wood.ods')
-
-colnames(roots)[1] = c("Sc")
-
-##Log-log transformation
-
-leafs_log = leafs %>% mutate(Sc = log(Sc), Bfkg = log(Bfkg))
-roots_log = roots %>% mutate(Sc = log(Sc), mract = log(mract))
-wood_log = wood %>% mutate(Sc = log(Sc), mbt = log(mbt))
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log <- read.csv('Data/wood_log.csv')
 
 ##Bootstrap
 
