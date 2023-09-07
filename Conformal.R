@@ -6,8 +6,6 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
-nrow(leafs_log)
-
 # Split Data 1 
 sample_size1 = floor(0.7*nrow(leafs_log))
 set.seed(777)
