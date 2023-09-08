@@ -3,7 +3,7 @@ library(tidyverse)
 library(ggplot2)
 
 leafs = read_ods('Data/leafs.ods')
-roots = read_ods('Data/roots.ods') #dcsdjsdkvnkxn
+roots = read_ods('Data/roots.ods')
 wood = read_ods('Data/wood.ods')
 
 colnames(roots)[1] = c("Sc")
