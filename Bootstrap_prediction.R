@@ -1,6 +1,5 @@
 #Bootstrap
 
-library(readODS)
 library(tidyverse)
 library(readr)
 library(infer)

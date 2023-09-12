@@ -2,6 +2,10 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
+library(tidyverse)
+library(readr)
+library(infer)
+
 # Split Data 
 sample_size = floor(0.8*nrow(leafs_log))
 set.seed(777)
