@@ -49,7 +49,7 @@ ggplot(leafs_log, aes(x = Sc, y = Bfkg)) +
 
 s <- sort(abs(f_hat(cali_leafs_log$Sc) - cali_leafs_log$Bfkg))/(sigma_hat^(1/2))
 
-quantile <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
+quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
 
 q_hat <- s[quantile]
 
