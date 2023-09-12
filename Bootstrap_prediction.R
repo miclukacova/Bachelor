@@ -4,6 +4,7 @@ library(readODS)
 library(tidyverse)
 library(readr)
 library(infer)
+library(ggplot2)
 
 ##Indlæsning af data
 
