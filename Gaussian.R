@@ -20,7 +20,7 @@ nrow(test_leafs_log)
 
 # The linear model
 
-lm <- lm(Bfkg ~ Sc, train_leafs_log)
+lm <- lm(Kgp ~ Sc, train_leafs_log)
 
 sd_hat <- sqrt(sum(lm$residuals^2)/(nrow(train_leafs_log)-1))
 
@@ -38,13 +38,13 @@ lower <- function(x) {
 
 #Plot with prediction intervals
 
-ggplot(test_leafs_log, aes(x = Sc, y = Bfkg)) + 
+ggplot(test_leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(Bfkg)')+
+  ylab('log(Kgp)')+
   geom_function(fun = f_hat, colour = "red") +
   geom_function(fun = upper, colour = "blue") +
   geom_function(fun = lower, colour = "blue") +
-  labs(title = "Bfkg as function of Sc with Standard Gaussian prediction intervals")
+  labs(title = "Kgp as function of Sc with Standard Gaussian prediction intervals")
 

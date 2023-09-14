@@ -13,77 +13,77 @@ wood_log <- read.csv('Data/wood_log.csv')
 
 #Uden log-log transformationer
 
-leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Bfkg)) + 
+leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen3') + 
   theme_bw() +
   xlab('Sc') + 
-  ylab('Bfkg')+
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Bfkg as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
-roots_sc_plot <- ggplot(roots, aes(x = Sc, y = mract)) + 
+roots_sc_plot <- ggplot(roots, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
-  ylab('mract')+
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "mract as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
-wood_sc_plot <- ggplot(wood, aes(x = Sc, y = mbt)) + 
+wood_sc_plot <- ggplot(wood, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
-  ylab('mbt')+
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "mbt as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
 ggarrange(leafs_sc_plot, roots_sc_plot, wood_sc_plot, ncol = 3, nrow = 1)
 
 #Med log-log transformation
 
 
-ggplot(leafs_log, aes(x = Sc, y = Bfkg)) + 
+ggplot(leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(Bfkg)')+
+  ylab('log(Kgp)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "Bfkg as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
-ggplot(roots_log, aes(x = Sc, y = mract)) + 
+ggplot(roots_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(mract)')+
+  ylab('log(Kgp)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "mract as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
-ggplot(wood_log, aes(x = Sc, y = mbt)) + 
+ggplot(wood_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(mbt)')+
+  ylab('log(Kgp)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "mbt as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
 #Lineære modeller 
 
-lm_leafs <- lm(Bfkg ~ Sc, data = leafs)
-lm_roots <- lm(mract ~ Sc, data = roots)
-lm_wood <- lm(mbt ~ Sc, data = wood)
+lm_leafs <- lm(Kgp ~ Sc, data = leafs)
+lm_roots <- lm(Kgp ~ Sc, data = roots)
+lm_wood <- lm(Kgp ~ Sc, data = wood)
 
 
 #Lineære modeller af log-log
 
-lm_leafs_log <- lm(Bfkg ~ Sc, data = leafs_log)
-lm_roots_log <- lm(mract ~ Sc, data = roots_log)
-lm_wood_log <- lm(mbt ~ Sc, data = wood_log)
+lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log)
+lm_roots_log <- lm(Kgp ~ Sc, data = roots_log)
+lm_wood_log <- lm(Kgp ~ Sc, data = wood_log)
 
 #Lineære modeller af log-log uden intercept
 
-lm_leafs_log <- lm(Bfkg ~ Sc - 1, data = leafs_log)
-lm_roots_log <- lm(mract ~ Sc - 1, data = roots_log)
-lm_wood_log <- lm(mbt ~ Sc - 1, data = wood_log)
+lm_leafs_log <- lm(Kgp ~ Sc - 1, data = leafs_log)
+lm_roots_log <- lm(Kgp ~ Sc - 1, data = roots_log)
+lm_wood_log <- lm(Kgp ~ Sc - 1, data = wood_log)
 
 #Residual plots
 

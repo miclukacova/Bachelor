@@ -31,27 +31,27 @@ nrow(test_leafs_log)
 
 # The linear model
 
-lm <- lm(Bfkg ~ Sc, train_leafs_log)
+lm <- lm(Kgp ~ Sc, train_leafs_log)
 
 sigma_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
 
 f_hat <- function(x) lm$coefficients[[2]]*x + lm$coefficients[[1]] 
 
-ggplot(leafs_log, aes(x = Sc, y = Bfkg)) + 
+ggplot(leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(Bfkg)')+
+  ylab('log(Kgp)')+
   geom_function(fun = f_hat, colour = "red") +
-  labs(title = "Bfkg as function of Sc")
+  labs(title = "Kgp as function of Sc")
 
 # Heuristic notion of uncertainty
 
-s <- sort(abs(f_hat(cali_leafs_log$Sc) - cali_leafs_log$Bfkg))/(sigma_hat^(1/2))
+s <- sort(abs(f_hat(cali_leafs_log$Sc) - cali_leafs_log$Kgp))/(sigma_hat^(1/2))
 
 quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
 
-q_hat <- s[quantile]
+q_hat <- s[quanti]
 
 # Conformal prediction interval
 
@@ -59,20 +59,20 @@ upper <- function(x) f_hat(x) + q_hat*sigma_hat^(1/2)
 lower <- function(x) f_hat(x) - q_hat*sigma_hat^(1/2)
 
 
-ggplot(test_leafs_log, aes(x = Sc, y = Bfkg)) + 
+ggplot(test_leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
-  ylab('log(Bfkg)')+
+  ylab('log(Kgp)')+
   geom_function(fun = f_hat, colour = "red") +
   geom_function(fun = upper, colour = "blue") +
   geom_function(fun = lower, colour = "blue") +
-  labs(title = "Bfkg as function of Sc with conformal prediction intervals")
+  labs(title = "Kgp as function of Sc with conformal prediction intervals")
 
 up <- f_hat(cali_leafs_log$Sc) + q_hat*sigma_hat^(1/2)
 low <- f_hat(cali_leafs_log$Sc) - q_hat*sigma_hat^(1/2)
 
-low <= cali_leafs_log$Bfkg
+low <= cali_leafs_log$Kgp
 
 
 

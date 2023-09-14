@@ -7,10 +7,13 @@ roots = read_ods('Data/roots.ods')
 wood = read_ods('Data/wood.ods')
 
 colnames(roots)[1] = c("Sc")
+colnames(leafs)[2] = c("Kgp")
+colnames(roots)[2] = c("Kgp")
+colnames(wood)[2] = c("Kgp")
 
-leafs_log = leafs %>% mutate(Sc = log(Sc), Bfkg = log(Bfkg))
-roots_log = roots %>% mutate(Sc = log(Sc), mract = log(mract))
-wood_log = wood %>% mutate(Sc = log(Sc), mbt = log(mbt))
+leafs_log = leafs %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
+roots_log = roots %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
+wood_log = wood %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
 
 write.csv(leafs, "/Users/michaelalukacova/Bachelor1/Data/leafs.csv", row.names=FALSE)
 write.csv(roots, "/Users/michaelalukacova/Bachelor1/Data/roots.csv", row.names=FALSE)
