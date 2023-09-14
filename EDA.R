@@ -10,6 +10,56 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
+library(readODS)
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log <- read.csv('Data/wood_log.csv')
+
+#Histogrammer over fordelingen af biomasse
+
+a <- ggplot(data = leafs)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of leafs biomass")
+
+b <- ggplot(data = roots)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of root biomass")
+
+c <- ggplot(data = wood)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of wood biomass")
+
+ggarrange(a,b,c, ncol = 3, nrow = 1)
+
+#Histogrammer over fordelingen af biomasse efter log transformationen
+
+a1 <- ggplot(data = leafs_log)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of log leafs biomass")
+
+b1 <- ggplot(data = roots_log)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of log root biomass")
+
+c1 <- ggplot(data = wood_log)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  theme_bw()+
+  labs(title = "Distribution of log wood biomass")
+
+ggarrange(a1,b1,c1, ncol = 3, nrow = 1)
+
 
 #Uden log-log transformationer
 
