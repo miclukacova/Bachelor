@@ -14,11 +14,11 @@ wood_log <- read.csv('Data/wood_log.csv')
 #Uden log-log transformationer
 
 leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Bfkg)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen3') + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Bfkg')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Bfkg as function of Sc")
 
 roots_sc_plot <- ggplot(roots, aes(x = Sc, y = mract)) + 
