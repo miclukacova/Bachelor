@@ -71,6 +71,13 @@ ggplot(wood_log, aes(x = Sc, y = mbt)) +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "mbt as function of Sc")
 
+#Lineære modeller 
+
+lm_leafs <- lm(Bfkg ~ Sc, data = leafs)
+lm_roots <- lm(mract ~ Sc, data = roots)
+lm_wood <- lm(mbt ~ Sc, data = wood)
+
+
 #Lineære modeller af log-log
 
 lm_leafs_log <- lm(Bfkg ~ Sc, data = leafs_log)
@@ -82,6 +89,30 @@ lm_wood_log <- lm(mbt ~ Sc, data = wood_log)
 lm_leafs_log <- lm(Bfkg ~ Sc - 1, data = leafs_log)
 lm_roots_log <- lm(mract ~ Sc - 1, data = roots_log)
 lm_wood_log <- lm(mbt ~ Sc - 1, data = wood_log)
+
+#Residual plots
+
+ggplot(lm_leafs, aes(x = lm_leafs$fitted.values, y = lm_leafs$residuals)) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Residual plot")
+
+ggplot(lm_roots, aes(x = lm_roots$fitted.values, y = lm_roots$residuals)) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Resdiual plot")
+
+ggplot(lm_wood, aes(x = lm_wood$fitted.values, y = lm_wood$residuals)) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Resdiual plot")
+
 
 #Residual plots
 
@@ -98,7 +129,6 @@ ggplot(lm_roots_log, aes(x = lm_roots_log$fitted.values, y = lm_roots_log$residu
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "Resdiual plot")
 
 ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = lm_wood_log$residuals)) + 
@@ -106,7 +136,6 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = lm_wood_log$residuals
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "Resdiual plot")
        
 #Standardized residual plots       
@@ -144,6 +173,7 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = rstandard(lm_wood_log
 #  geom_histogram(aes(x=x, y=..density..), color = "white", bins = 8)+
 #  labs(title = "Histogram over fordelingen af residualerne")+
 #  geom_function(fun = dnorm, color = "red")
+
 
 
 

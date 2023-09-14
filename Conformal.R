@@ -69,7 +69,10 @@ ggplot(test_leafs_log, aes(x = Sc, y = Bfkg)) +
   geom_function(fun = lower, colour = "blue") +
   labs(title = "Bfkg as function of Sc with conformal prediction intervals")
 
+up <- f_hat(cali_leafs_log$Sc) + q_hat*sigma_hat^(1/2)
+low <- f_hat(cali_leafs_log$Sc) - q_hat*sigma_hat^(1/2)
 
+low <= cali_leafs_log$Bfkg
 
 
 
