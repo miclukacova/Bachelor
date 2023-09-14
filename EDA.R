@@ -1,6 +1,7 @@
 library(readODS)
 library(tidyverse)
 library(ggplot2)
+library(ggpubr)
 
 leafs <- read.csv('Data/leafs.csv')
 roots <- read.csv('Data/roots.csv')
@@ -9,18 +10,10 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
-#De første par rækker
-
-head(leafs)
-head(roots)
-head(wood)
-head(leafs)
-head(roots)
-head(wood)
 
 #Uden log-log transformationer
 
-ggplot(leafs, aes(x = Sc, y = Bfkg)) + 
+leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Bfkg)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
@@ -28,7 +21,7 @@ ggplot(leafs, aes(x = Sc, y = Bfkg)) +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "Bfkg as function of Sc")
 
-ggplot(roots, aes(x = Sc, y = mract)) + 
+roots_sc_plot <- ggplot(roots, aes(x = Sc, y = mract)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
@@ -36,13 +29,15 @@ ggplot(roots, aes(x = Sc, y = mract)) +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "mract as function of Sc")
 
-ggplot(wood, aes(x = Sc, y = mbt)) + 
+wood_sc_plot <- ggplot(wood, aes(x = Sc, y = mbt)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
   ylab('mbt')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "mbt as function of Sc")
+
+ggarrange(leafs_sc_plot, roots_sc_plot, wood_sc_plot, ncol = 3, nrow = 1)
 
 #Med log-log transformation
 
