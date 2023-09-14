@@ -10,18 +10,6 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
-library(readODS)
-library(tidyverse)
-library(ggplot2)
-library(ggpubr)
-
-leafs <- read.csv('Data/leafs.csv')
-roots <- read.csv('Data/roots.csv')
-wood <- read.csv('Data/wood.csv')
-leafs_log <- read.csv('Data/leafs_log.csv')
-roots_log <- read.csv('Data/roots_log.csv')
-wood_log <- read.csv('Data/wood_log.csv')
-
 #Histogrammer over fordelingen af biomasse
 
 a <- ggplot(data = leafs)+
