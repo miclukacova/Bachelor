@@ -28,7 +28,7 @@ cali_leafs_log = cali_leafs_log[-picked,]
 # The linear model
 
 lm <- lm(Kgp ~ Sc, train_leafs_log)
-sd_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
+sigma_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
 f_hat <- function(x) lm$coefficients[[2]]*x + lm$coefficients[[1]]
 
 # Heuristic notion of uncertainty
@@ -137,5 +137,115 @@ cv_cov <- function(data, k, alpha) {
 cv_cov(leafs_log,10,0.1)
 
 
+# Conformal prediction på den tilbagetransformerede model
 
+lm_leafs_log <- lm(Kgp ~ Sc, data = train_leafs_log)
+var_hat <- var(lm_leafs_log$residuals)
+f_hat_leafs <- function(x) exp(lm_leafs_log$coefficients[[1]] + lm_leafs_log$coefficients[[2]]*x)
+
+mse <- sort((f_hat_leafs(cali_leafs_log$Sc) - exp(cali_leafs_log$Kgp))^2)
+quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
+q_hat <- mse[quanti]
+
+upper <- function(x) f_hat_leafs(x) + sqrt(q_hat)
+lower <- function(x) f_hat_leafs(x) - sqrt(q_hat)
+
+ggplot(test_leafs_log, aes(x = Sc, y = exp(Kgp))) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('log(Sc)') + 
+  ylab('log(Kgp)')+
+  geom_function(fun = f_hat_leafs, colour = "red") +
+  geom_function(fun = upper_1, colour = "blue") +
+  geom_function(fun = lower_1, colour = "blue") +
+  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+
+up <- f_hat_leafs(test_leafs_log$Sc) + sqrt(q_hat)
+low <- f_hat_leafs(test_leafs_log$Sc) - sqrt(q_hat)
+mean(low <= exp(test_leafs_log$Kgp) & exp(test_leafs_log$Kgp)  <= up)
+
+#Adjusted
+
+f_hat_leafs_adj <- function(x) f_hat_leafs(x)*exp(var_hat[1]/2)
+
+mse <- sort((f_hat_leafs_adj(cali_leafs_log$Sc) - exp(cali_leafs_log$Kgp))^2)
+quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
+q_hat <- mse[quanti]
+
+# Conformal prediction interval
+
+upper_1 <- function(x) f_hat_leafs_adj(x) + sqrt(q_hat)
+lower_1 <- function(x) f_hat_leafs_adj(x) - sqrt(q_hat)
+
+ggplot(test_leafs_log, aes(x = Sc, y = exp(Kgp))) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('log(Sc)') + 
+  ylab('log(Kgp)')+
+  geom_function(fun = f_hat_leafs_adj, colour = "red") +
+  geom_function(fun = upper_1, colour = "blue") +
+  geom_function(fun = lower_1, colour = "blue") +
+  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+
+#Coverage
+
+up <- f_hat_leafs_adj(test_leafs_log$Sc) + sqrt(q_hat)
+low <- f_hat_leafs_adj(test_leafs_log$Sc) - sqrt(q_hat)
+mean(low <= exp(test_leafs_log$Kgp) & exp(test_leafs_log$Kgp)  <= up)
+
+
+#cv
+
+cv_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  group <- sample(rep(1:k, length.out = n))
+  for (i in (1:k)){
+    #Fit model
+    if (i != k){
+      data_cv <- data[group != i & group != (i+1), ]
+      n_cv <- nrow(data_cv)
+      n_cali <- nrow(data[group == i, ])
+      
+      lm_cv <- lm(Kgp ~ Sc, data = data_cv)
+      f_hat <- function(x) lm_cv$coefficients[[2]]*x + lm_cv$coefficients[[1]]
+      
+      # Heuristic notion of uncertainty
+      mse <- sort((f_hat(data[group == i, ]$Sc) - data[group == i, ]$Kgp)^2)
+      quanti <- ceiling((n_cali+1)*(1-alpha))
+      q_hat <- mse[quanti]
+      print(q_hat)
+      
+      # Coverage
+      up_cv <- f_hat(data[group == (i+1), ]$Sc) + sqrt(q_hat)
+      low_cv <- f_hat(data[group == (i+1), ]$Sc) - sqrt(q_hat)
+      
+      cov[i] <- mean(low_cv <= data[group == (i+1), ]$Kgp & data[group == (i+1), ]$Kgp  <= up_cv)
+    }
+    else {
+      data_cv <- data[group != k & group != 1, ]
+      n_cv <- nrow(data_cv)
+      n_cali <- nrow(data[group == k, ])
+      
+      lm_cv <- lm(Kgp ~ Sc, data = data_cv)
+      f_hat <- function(x) lm_cv$coefficients[[2]]*x + lm_cv$coefficients[[1]]
+      
+      # Heuristic notion of uncertainty
+      
+      mse <- sort((f_hat(data[group == k, ]$Sc) - data[group == k, ]$Kgp)^2)
+      quanti <- ceiling((n_cali+1)*(1-alpha))
+      q_hat <- mse[quanti]
+      
+      # Conformal prediction interval
+      up_cv <- f_hat(data[group == 1, ]$Sc) + sqrt(q_hat)
+      low_cv <- f_hat(data[group == 1, ]$Sc) - sqrt(q_hat)
+      
+      # Coverage
+      cov[i] <- mean(low_cv <= data[group == 1, ]$Kgp & data[group == 1, ]$Kgp  <= up_cv)
+    }
+  }
+  return(tibble("Coverage" = cov))
+}
+
+cv_cov(leafs_log,10,0.1)
 

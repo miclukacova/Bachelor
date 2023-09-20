@@ -19,3 +19,4 @@ for (i in 1:6){
 }
 
 legend(1, 95, legend=names, col=c("red", "blue"))
+
