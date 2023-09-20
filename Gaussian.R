@@ -11,7 +11,7 @@ sample_size = floor(0.8*nrow(leafs_log))
 set.seed(777)
 
 # Randomly split data
-picked = sample(seq_len(nrow(leafs_log)),size = sample_size1)
+picked = sample(seq_len(nrow(leafs_log)),size = sample_size)
 train_leafs_log = leafs_log[picked,]
 test_leafs_log = leafs_log[-picked,]
 

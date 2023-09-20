@@ -104,24 +104,6 @@ ggplot(wood_log, aes(x = Sc, y = Kgp)) +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Wood")
 
-#Lineære modeller 
-
-lm_leafs <- lm(Kgp ~ Sc, data = leafs)
-lm_roots <- lm(Kgp ~ Sc, data = roots)
-lm_wood <- lm(Kgp ~ Sc, data = wood)
-
-
-#Lineære modeller af log-log
-
-lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log)
-lm_roots_log <- lm(Kgp ~ Sc, data = roots_log)
-lm_wood_log <- lm(Kgp ~ Sc, data = wood_log)
-
-#Lineære modeller af log-log uden intercept
-
-lm_leafs_log <- lm(Kgp ~ Sc - 1, data = leafs_log)
-lm_roots_log <- lm(Kgp ~ Sc - 1, data = roots_log)
-lm_wood_log <- lm(Kgp ~ Sc - 1, data = wood_log)
 
 #Residual plots
 
@@ -173,7 +155,7 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = lm_wood_log$residuals
        
 #Standardized residual plots       
 
-ggplot(lm_leafs_log, aes(x = lm_leafs_log$fitted.values, y = rstandard(lm_leafs_log)) + 
+ggplot(lm_leafs_log, aes(x = lm_leafs_log$fitted.values, y = rstandard(lm_leafs_log))) + 
   geom_point() + 
   theme_bw() +
   xlab('Fitted values') + 
