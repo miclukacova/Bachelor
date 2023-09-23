@@ -12,6 +12,11 @@ picked_leafs = sample(seq_len(nrow(leafs)),size = sample_size_leafs)
 train_leafs = leafs[picked_leafs,]
 test_leafs = leafs[-picked_leafs,]
 
+train_leafs_x = leafs[picked_leafs,1]
+train_leafs_y = leafs[picked_leafs,2]
+test_leafs_x = leafs[-picked_leafs,1]
+test_leafs_y = leafs[-picked_leafs,2]
+
 #Tree
 
 tree <- rpart(Kgp~., data=train_leafs)
@@ -19,13 +24,19 @@ rpart.plot(tree)
 printcp(tree)
 plotcp(tree)
 
+?rpart
 
 ?printcp
 
-#Random Forrest
+#Random Forest
 
-rf <- randomForest(Kgp~., data=train_leafs_log)
+rf <- randomForest(Kgp~., data=train_leafs)
 print(rf)
 plot(rf)
 
-predict(rf, test_leafs_log)
+predict(rf, test_leafs)
+
+
+#Quantile regression forest
+
+qrf <- quantregForest(x = train_leafs_x, y = )
