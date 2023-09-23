@@ -12,9 +12,9 @@ picked_leafs = sample(seq_len(nrow(leafs)),size = sample_size_leafs)
 train_leafs = leafs[picked_leafs,]
 test_leafs = leafs[-picked_leafs,]
 
-train_leafs_x = leafs[picked_leafs,1]
+train_leafs_x = data.frame(Sc = leafs[picked_leafs,1])
 train_leafs_y = leafs[picked_leafs,2]
-test_leafs_x = leafs[-picked_leafs,1]
+test_leafs_x = data.frame(Sc=leafs[-picked_leafs,1])
 test_leafs_y = leafs[-picked_leafs,2]
 
 #Tree
@@ -39,4 +39,12 @@ predict(rf, test_leafs)
 
 #Quantile regression forest
 
-qrf <- quantregForest(x = train_leafs_x, y = )
+qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y)
+plot(qrf)
+
+conditionalQuantiles <- predict(qrf, test_leafs_x)
+print(conditionalQuantiles[1:4,])
+
+
+
+
