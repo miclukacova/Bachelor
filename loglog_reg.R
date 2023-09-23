@@ -76,6 +76,14 @@ cv <- function(data, k) {
   return(tibble("MSE" = MSE, "MSE Bias Corrected" = MSE_adj))
 }
 
+
+### Til tabeller
+
+#library(foreign)
+#library(xtable)
+#library(stargazer)
+#print(xtable(cv(wood_log, 10), type = "latex"), file = "filename2.tex")
+
 a <- cv(wood_log, 10)
 mean(a[[1]])
 mean(a[[2]])
