@@ -102,3 +102,40 @@ ggplot(plot_data, aes(x = Sc)) +
        x = "Crown size")+
   theme_bw()+
   scale_color_manual(values = colors)
+
+
+#Med roots i stedet:
+roots <- read.csv('Data/roots.csv')
+sample_size_roots = floor(0.8*nrow(roots))
+set.seed(777)
+picked_roots = sample(seq_len(nrow(roots)),size = sample_size_roots)
+
+train_roots_x = data.frame(Sc = roots[picked_roots,1])
+train_roots_y = roots[picked_roots,2]
+test_roots_x = data.frame(Sc=roots[-picked_roots,1])
+test_roots_y = roots[-picked_roots,2]
+
+qrf <- quantregForest(x = train_roots_x, y =train_roots_y)
+plot(qrf)
+
+conditionalQuantiles <- predict(qrf, test_roots_x)
+print(conditionalQuantiles[1:4,])
+
+plot_data <- data.frame(test_roots_x, conditionalQuantiles)
+head(plot_data)
+
+plot_data <- arrange(plot_data, Sc)
+colors <- c("0.1" = "hotpink", "0.5" = "darkolivegreen", "0.9" = "darkolivegreen2")
+
+ggplot(plot_data, aes(x = Sc)) +
+  geom_point(aes(y=quantile..0.1, color = "0.1")) +
+  geom_point(aes(y=quantile..0.5, color = "0.5")) +
+  geom_point(aes(y=quantile..0.9, color = "0.9" )) +
+  geom_smooth(aes(y=quantile..0.1, color = "0.1"), se = F)+
+  geom_smooth(aes(y=quantile..0.5, color = "0.5"), se = F)+
+  geom_smooth(aes(y=quantile..0.9, color = "0.9"), se = F)+
+  labs(color = "quantile",
+       y = "Quantiles",
+       x = "Crown size")+
+  theme_bw()+
+  scale_color_manual(values = colors)
