@@ -78,6 +78,8 @@ tibble(colnames = c("a", "b"))
 
 name <- paste("MSE_", i, sep = "")
 
+
+#Virker ikke endnu
 for (i in (seq(10,100,10))){
   if (i == 10){
     name <- paste("MSE_", i, sep = "")
