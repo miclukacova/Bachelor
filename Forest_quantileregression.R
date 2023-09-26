@@ -59,19 +59,37 @@ cv <- function(data, k, min_node_size) {
   return(tibble("MSE" = MSE_cv))
 }
 
+cv(leafs, 2, 20)
+
 for (i in (seq(10,100,10))){
-  print("done")
   if (i == 10){
-    result <- tibble(a = cv(leafs, 3, i)$MSE)
+    result <- tibble(MSi)
+    print(result)
   }
   else{
-    result %>% mutate(b = cv(leafs, 3, i)$MSE)
+    name <- paste("MSE_", i, sep = "")
+    result <- result %>% add_column(name = i)
+  } 
+}
+
+tibble(colnames = c("a", "b"))
+
+?tibble
+
+name <- paste("MSE_", i, sep = "")
+
+for (i in (seq(10,100,10))){
+  if (i == 10){
+    name <- paste("MSE_", i, sep = "")
+    result <- tibble(cv(leafs, 3, i)$MSE)
+  }
+  else{
+    result <- result %>% add_column(name[i] = cv(leafs, 3, i)$MSE)
   }
 }
 
-cv(leafs, 3, i)$MSE
-
-?mutate
+name <- paste("MSE_", i, sep = "")
+print(result)
 
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
