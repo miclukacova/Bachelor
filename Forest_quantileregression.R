@@ -21,52 +21,76 @@ test_leafs_y = leafs[-picked_leafs,2]
 
 tree <- rpart(Kgp~., data=train_leafs)
 rpart.plot(tree)
+?rpart
+summary(tree)
 printcp(tree)
 plotcp(tree)
 
-?rpart
-
-?printcp
-
 #Random Forest
-
 rf <- randomForest(Kgp~., data=train_leafs)
-print(rf)
 plot(rf)
-
 predict(rf, test_leafs)
 
 
 #Quantile regression forest
 
-qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y)
+qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 20)
+treesize(qrf)
 
 conditionalMean <- predict(qrf, test_leafs_x, what = mean)
-trueMean <- test_leafs_y
+MSE <- mean((conditionalMean - test_leafs_y)^2)
 
-?quantregForest
-?randomForest
+#k-cv MSE
+
+cv <- function(data, k, min_node_size) {
+  MSE_cv <- c()
+  n <- nrow(data)
+  group <- sample(rep(1:k, length.out = n))
+  for (i in (1:k)){
+    #Fit model
+    train_x <- data.frame(Sc = data[group != i,1])
+    train_y<- data[group != i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = min_node_size)
+    
+    #MSE
+    conditionalMean_cv <- predict(qrf_cv, data.frame(Sc = data[group == i,1]), what = mean)
+    MSE_cv[i] <- mean((conditionalMean_cv - data[group == i,2])^2)
+  }
+  return(tibble("MSE" = MSE_cv))
+}
+
+for (i in (seq(10,100,10))){
+  print("done")
+  if (i == 10){
+    result <- tibble(a = cv(leafs, 3, i)$MSE)
+  }
+  else{
+    result %>% mutate(b = cv(leafs, 3, i)$MSE)
+  }
+}
+
+cv(leafs, 3, i)$MSE
+
+?mutate
+
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
-conditionalMean <- predict(qrf, test_leafs_x, what = mean)
 
-print(conditionalMean[1:4])
 print(conditionalQuantiles[1:4,])
 
 plot_data <- data.frame(test_leafs_x, conditionalQuantiles, mean = conditionalMean)
 head(plot_data)
 
 plot_data <- arrange(plot_data, Sc)
-?order
 
-colors <- c("0.1" = "hotpink", "mean" = "darkolivegreen", "0.9" = "darkolivegreen2")
+colors <- c("0.1" = "hotpink", "0.5" = "darkolivegreen", "0.9" = "darkolivegreen2")
 
 ggplot(plot_data, aes(x = Sc)) +
   geom_point(aes(y=quantile..0.1, color = "0.1")) +
-  geom_point(aes(y=mean, color = "mean")) +
+  geom_point(aes(y=quantile..0.5, color = "0.5")) +
   geom_point(aes(y=quantile..0.9, color = "0.9" )) +
   geom_smooth(aes(y=quantile..0.1, color = "0.1"), se = F)+
-  geom_smooth(aes(y=mean, color = "mean"), se = F)+
+  geom_smooth(aes(y=quantile..0.5, color = "0.5"), se = F)+
   geom_smooth(aes(y=quantile..0.9, color = "0.9"), se = F)+
   labs(color = "quantile",
        y = "Quantiles",
