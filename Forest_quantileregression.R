@@ -40,25 +40,33 @@ predict(rf, test_leafs)
 #Quantile regression forest
 
 qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y)
-plot(qrf)
+
+conditionalMean <- predict(qrf, test_leafs_x, what = mean)
+trueMean <- test_leafs_y
+
+?quantregForest
+?randomForest
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
+conditionalMean <- predict(qrf, test_leafs_x, what = mean)
+
+print(conditionalMean[1:4])
 print(conditionalQuantiles[1:4,])
 
-plot_data <- data.frame(test_leafs_x, conditionalQuantiles)
+plot_data <- data.frame(test_leafs_x, conditionalQuantiles, mean = conditionalMean)
 head(plot_data)
 
 plot_data <- arrange(plot_data, Sc)
 ?order
 
-colors <- c("0.1" = "hotpink", "0.5" = "darkolivegreen", "0.9" = "darkolivegreen2")
+colors <- c("0.1" = "hotpink", "mean" = "darkolivegreen", "0.9" = "darkolivegreen2")
 
 ggplot(plot_data, aes(x = Sc)) +
   geom_point(aes(y=quantile..0.1, color = "0.1")) +
-  geom_point(aes(y=quantile..0.5, color = "0.5")) +
+  geom_point(aes(y=mean, color = "mean")) +
   geom_point(aes(y=quantile..0.9, color = "0.9" )) +
   geom_smooth(aes(y=quantile..0.1, color = "0.1"), se = F)+
-  geom_smooth(aes(y=quantile..0.5, color = "0.5"), se = F)+
+  geom_smooth(aes(y=mean, color = "mean"), se = F)+
   geom_smooth(aes(y=quantile..0.9, color = "0.9"), se = F)+
   labs(color = "quantile",
        y = "Quantiles",
