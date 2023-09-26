@@ -61,37 +61,49 @@ cv <- function(data, k, min_node_size) {
 
 cv(leafs, 2, 20)
 
+
+#10 fold cv to find optimal node size: 
+
 for (i in (seq(10,100,10))){
   if (i == 10){
-    result <- tibble(MSi)
-    print(result)
+    result <- data.frame(cv(leafs, 10, i)$MSE)
+    colnames(result) <- paste("MSE_", i, sep = "")
+    k = 2
   }
   else{
-    name <- paste("MSE_", i, sep = "")
-    result <- result %>% add_column(name = i)
-  } 
-}
-
-tibble(colnames = c("a", "b"))
-
-?tibble
-
-name <- paste("MSE_", i, sep = "")
-
-
-#Virker ikke endnu
-for (i in (seq(10,100,10))){
-  if (i == 10){
-    name <- paste("MSE_", i, sep = "")
-    result <- tibble(cv(leafs, 3, i)$MSE)
-  }
-  else{
-    result <- result %>% add_column(name[i] = cv(leafs, 3, i)$MSE)
+    result <- result %>% add_column(cv(leafs, 10, i)$MSE)
+    colnames(result)[k] <- paste("MSE_", i, sep = "")
+    k = k + 1
   }
 }
 
-name <- paste("MSE_", i, sep = "")
-print(result)
+mean_cv <- c()
+var_cv <- c()
+
+for (i in 1:10){
+  mean_cv[i] <- mean(result[,i])
+  var_cv[i] <- var(result[,i])
+}
+
+#Mean and variance of MSE for different number of nodes:
+
+results2 <- tibble(names = colnames(result), mean_cv = mean_cv, var_cv = var_cv)
+
+which.min(mean_cv)
+which.min(var_cv)
+
+results3 <- results2 %>% add_column(index = seq(1:10))
+
+ggplot(results3, aes(x = index)) +
+  geom_point(aes(y = mean_cv, color = "Mean"))  +
+  geom_point(aes(y = var_cv, color = "Variance" ))+
+  labs(color = "Statistic",
+       y = "Mean/variance",
+       x = "Crown size")+
+  theme_bw()+
+  scale_color_manual(values = c("hotpink", "darkolivegreen"))
+
+#QRF
 
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
