@@ -4,10 +4,9 @@ library(tidyverse)
 library(ggplot2)
 library(rpart)
 library(rpart.plot)
-
+set.seed(777)
 leafs <- read.csv('Data/leafs.csv')
 sample_size_leafs = floor(0.8*nrow(leafs))
-set.seed(777)
 picked_leafs = sample(seq_len(nrow(leafs)),size = sample_size_leafs)
 
 train_leafs_x = data.frame(Sc = leafs[picked_leafs,1])
@@ -64,10 +63,29 @@ count <- obs_intervals_cent %>%
 coverage <- count[1,2]/sum(count[,2])
 coverage
 
+plot_data <- data.frame(obs_intervals, pred = test_leafs_x)
+head(plot_data)
 
+plot_data <- plot_data %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+head(obs_intervals)
+colors <- c("Quantiles" = "darkolivegreen", "Observed" = "hotpink")
+
+ggplot(plot_data, aes(x = Sc)) +
+  geom_point(aes(y=quantile..0.9, color = "Quantiles"), fill = "darkolivegreen", shape = 25, alpha = 0.7) +
+  geom_point(aes(y=quantile..0.1, color = "Quantiles"), fill = "darkolivegreen", shape = 24, alpha = 0.7) +
+  geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
+               color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
+  geom_point(aes(y=observed, color = "Observed"), alpha=0.5, fill = "hotpink3") +
+  labs(title = "Foliage")+
+  xlab(bquote('Crown area'~(m^2/plant)))+
+  ylab('Foliage dry mass (kg/plant)')+
+  theme_bw()+
+  scale_color_manual(values = colors)
 
  #in relation to predictor-variables
-plot_data <- data.frame(test_leafs_x, conditionalQuantiles)
+plot_data <- data.frame(test_leafs_x, conditionalQuantiles, pred = test_leafs_x)
 head(plot_data)
 
 plot_data <- arrange(plot_data, Sc)
@@ -90,28 +108,138 @@ ggplot(plot_data, aes(x = Sc)) +
 
 
 #Cross-validation to get a plot for all observed values:
-
-matrix(ncol = 3, nrow = nrow(test_leafs_x))
-
 cv <- function(data, k) {
+  set.seed(777)
   n <- nrow(data)
-  group <- sample(rep(1:k, length.out = n))
+  group <- sample(rep(1: k, length.out = n))
+  pred <- c()
+  obs <- c()
+  q0.1 <- c()
+  q0.9 <- c()
   for (i in (1:k)){
     #Fit model
     train_x <- data.frame(Sc = data[group != i,1])
     train_y <- data[group != i,2]
-    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = 20)
+    test_x <- data.frame(Sc=data[group == i,1])
+    test_y <- data[group == i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = 76)
     
-    #Create matrix
-    obs_int[i] <- matrix(ncol = 3, nrow = )
+    #Getting quantiles
+    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.05,0.95))
     
-    #MSE
-    conditionalQuantiles_cv <- predict(qrf_cv, data.frame(Sc = data[group == i,1]), what = c(0.1,0.9))
-    obs_int[1,i] <- data[group == i,2]
-    obs_int[2,i] <- conditionalQuantiles_cv[,1]
-    onb_int[3,i] <- conditionalQuantiles_cv[,2]
-  }
-  return(tibble("obs_int" = obs_int))
+    #Creating vectors with observations and quantiles
+    if (i == 1) {
+      pred <- c(data[group == i,1])
+      obs <- c(test_y)
+      q0.1 <- c(conditionalQuantiles_cv[,1])
+      q0.9 <- c(conditionalQuantiles_cv[,2])
+    }
+    else {
+    pred <- c(pred, data[group == i,1])
+    obs <- c(obs, test_y)
+    q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
+    q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
+    }
+    }
+  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred))
 }
 
-cv(leafs,5)
+cv_intervals <- cv(leafs,900)
+head(cv_intervals)
+
+cv_intervals <- data.frame(cv_intervals, 
+                            interval = cv_intervals$quantile..0.9-cv_intervals$quantile..0.1)
+cv_intervals <- arrange(cv_intervals, interval)
+
+
+q_mean <- apply(cv_intervals[2:3], MARGIN = 1, FUN = mean)
+cv_intervals_cent <- cv_intervals-q_mean
+head(cv_intervals_cent)
+
+cv_intervals_cent$indx <- as.numeric(row.names(cv_intervals_cent))
+
+cv_intervals_cent <- cv_intervals_cent %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+colors <- c("in" = "hotpink", "out" = "hotpink4")
+ggplot(data = cv_intervals_cent, aes(x = indx)) +
+  geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+               color = "darkolivegreen3", alpha = 0.2, lwd = 0.4) +
+  geom_point(aes(y=quantile..0.1), color = 'darkolivegreen3',
+             fill = 'darkolivegreen3', size = 0.8, shape = 24, alpha = 0.4) +
+  geom_point(aes(y=quantile..0.9), color = 'darkolivegreen3', 
+             fill = 'darkolivegreen3', size = 0.8, shape = 25, alpha = 0.4)+
+  geom_point(aes(y=observed, color = indicator), size = 0.7)+
+  scale_color_manual(values = colors)+
+  ylab('Wood dry mass (kg/plant)')+ ggtitle('Wood')+
+  xlab('Ordered Samples')+
+  theme_bw()
+
+count <- cv_intervals_cent %>%
+  count(indicator)
+
+coverage <- count[1,2]/sum(count[,2])
+coverage
+
+
+#For wood
+wood <- read.csv("Data/wood.csv")
+roots <- read.csv("Data/roots.csv")
+cv_intervals <- cv(leafs,5)
+head(cv_intervals)
+
+cv_intervals <- data.frame(cv_intervals, 
+                           interval = cv_intervals$quantile..0.9-cv_intervals$quantile..0.1)
+cv_intervals <- arrange(cv_intervals, interval)
+
+
+q_mean <- apply(cv_intervals[2:3], MARGIN = 1, FUN = mean)
+cv_intervals_cent <- cv_intervals-q_mean
+head(cv_intervals_cent)
+
+cv_intervals_cent$indx <- as.numeric(row.names(cv_intervals_cent))
+
+cv_intervals_cent <- cv_intervals_cent %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+colors <- c("in" = "hotpink", "out" = "hotpink4")
+ggplot(data = cv_intervals_cent, aes(x = indx)) +
+  geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+               color = "darkolivegreen3", alpha = 0.5, lwd = 0.9) +
+  geom_point(aes(y=quantile..0.1), color = 'darkolivegreen3',
+             fill = 'darkolivegreen3', size = 0.9, shape = 24, alpha = 0.9) +
+  geom_point(aes(y=quantile..0.9), color = 'darkolivegreen3', 
+             fill = 'darkolivegreen3', size = 0.9, shape = 25, alpha = 0.9)+
+  geom_point(aes(y=observed, color = indicator))+
+  scale_color_manual(values = colors)+
+  ylab('Root dry mass (kg/plant)')+ ggtitle('Roots')+
+  xlab('Ordered Samples')+
+  theme_bw()
+
+
+count <- cv_intervals_cent %>%
+  count(indicator)
+
+coverage <- count[1,2]/sum(count[,2])
+coverage
+
+#In relation to predictor variables
+plot_data <- data.frame(cv_intervals)
+head(plot_data)
+
+plot_data <- plot_data %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+colors <- c("Quantiles" = "darkolivegreen", "Observed" = "hotpink")
+
+ggplot(plot_data, aes(x = pred)) +
+  geom_point(aes(y=quantile..0.9, color = "Quantiles"), fill = "darkolivegreen", shape = 25, alpha = 0.7) +
+  geom_point(aes(y=quantile..0.1, color = "Quantiles"), fill = "darkolivegreen", shape = 24, alpha = 0.7) +
+  geom_segment(aes(x = pred, y = quantile..0.1, xend = pred, yend = quantile..0.9),
+               color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
+  geom_point(aes(y=observed, color = "Observed"), alpha=0.5, fill = "hotpink3") +
+  labs(title = "Foliage")+
+  xlab(bquote('Crown area'~(m^2/plant)))+
+  ylab('Foliage dry mass (kg/plant)')+
+  theme_bw()+
+  scale_color_manual(values = colors)
