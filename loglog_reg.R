@@ -11,7 +11,10 @@ wood_log_test<- read.csv('Data/test_wood_log.csv')
 library(tidyverse)
 library(readr)
 library(infer)
-################################################################################################
+library(foreign)
+library(xtable)
+library(stargazer)
+###################################################################################################
 
 #Lineære modeller af log-log
 
@@ -46,16 +49,39 @@ f_hat_leafs_adj <- function(x) exp(hat_beta[1] + hat_alpha[1]*x)*exp(var_hat[1]/
 f_hat_roots_adj <- function(x) exp(hat_beta[2] + hat_alpha[2]*x)*exp(var_hat[2]/2)
 f_hat_wood_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[3]/2)
 
-#Den bias corrected model gør det ikke så godt på test sættet
+#Evaluering af de to modeller
 
-mean((f_hat_leafs(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
-mean((f_hat_leafs_adj(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
+l1 <- mean((f_hat_leafs(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
+l2 <- mean((f_hat_leafs_adj(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
+ 
+r1 <- mean((f_hat_wood(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
+r2 <- mean((f_hat_wood_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
 
-mean((f_hat_wood(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
-mean((f_hat_wood_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
+w1 <- mean((f_hat_roots(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
+w2 <- mean((f_hat_roots_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
 
-mean((f_hat_roots(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
-mean((f_hat_roots_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
+mse_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", 
+                            "Wood bias adj.", "Roots", "Roots bias adj."),
+                "MSE" = c(l1, l2, w1, w2, r1, r2))
+
+xtable(mse_f, type = "latex")
+
+
+l1 <- mean((f_hat_leafs(leafs_log_test$Sc)-exp(leafs_log_test$Kgp)))
+l2 <- mean((f_hat_leafs_adj(leafs_log_test$Sc)-exp(leafs_log_test$Kgp)))
+
+r1 <- mean((f_hat_wood(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
+r2 <- mean((f_hat_wood_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
+
+w1 <- mean((f_hat_roots(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
+w2 <- mean((f_hat_roots_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
+
+bias_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", 
+                            "Wood bias adj.", "Roots", "Roots bias adj."),
+                "Bias" = c(l1, l2, w1, w2, r1, r2))
+
+xtable(bias_f, type = "latex")
+
 
 # k-fold cv vurdering af de to modeller
 
@@ -71,18 +97,24 @@ cv <- function(data, k) {
     #MSE
     MSE[i] <- mean((exp(predict(lm_cv, newdata = data[group == i, ]))-exp(data[group == i, ]$Kgp))^2)
     MSE_adj[i] <- mean((exp(predict(lm_cv, newdata = data[group == i, ]))*
-                         exp(var(lm_cv$residuals)/4)-exp(data[group == i, ]$Kgp))^2)
+                         exp(var(lm_cv$residuals)/2)-exp(data[group == i, ]$Kgp))^2)
   }
   return(tibble("MSE" = MSE, "MSE Bias Corrected" = MSE_adj))
 }
 
 
-### Til tabeller
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log<- read.csv('Data/wood_log.csv')
 
-#library(foreign)
-#library(xtable)
-#library(stargazer)
-#print(xtable(cv(wood_log, 10), type = "latex"), file = "filename2.tex")
+a <- cv(leafs_log, 10)
+b <- cv(wood_log, 10)
+c <- cv(roots_log, 10)
+
+tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
+       "Mean of CV-MSE" = c(mean(a$MSE), mean(a$`MSE Bias Corrected`), mean(b$MSE), mean(b$`MSE Bias Corrected`),
+                            mean(c$MSE), mean(c$`MSE Bias Corrected`)))
+
 
 a <- cv(wood_log, 10)
 mean(a[[1]])
@@ -111,7 +143,6 @@ cv_bias <- function(data, k) {
   return(tibble("Bias" = bias, "Bias Bias Corrected" = bias_adj))
 }
 
-#
 
 cv_bias(leafs_log, 10)
 cv(leafs_log, 10)
