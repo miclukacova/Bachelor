@@ -8,6 +8,18 @@ leafs_log_test <- read.csv('Data/test_leafs_log.csv')
 roots_log_test <- read.csv('Data/test_roots_log.csv')
 wood_log_test<- read.csv('Data/test_wood_log.csv')
 
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log<- read.csv('Data/wood_log.csv')
+
+leafs_train <- read.csv('Data/train_leafs_log.csv')
+roots_train <- read.csv('Data/train_roots_log.csv')
+wood_train<- read.csv('Data/train_wood_log.csv')
+
+leafs_test <- read.csv('Data/test_leafs.csv')
+roots_test <- read.csv('Data/test_roots.csv')
+wood_test <- read.csv('Data/test_wood.csv')
+
 library(tidyverse)
 library(readr)
 library(infer)
@@ -49,16 +61,18 @@ f_hat_leafs_adj <- function(x) exp(hat_beta[1] + hat_alpha[1]*x)*exp(var_hat[1]/
 f_hat_roots_adj <- function(x) exp(hat_beta[2] + hat_alpha[2]*x)*exp(var_hat[2]/2)
 f_hat_wood_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[3]/2)
 
-#Evaluering af de to modeller
+#Evaluering af de to modeller---------------------------------------------------
+
+#MSE
 
 l1 <- mean((f_hat_leafs(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
 l2 <- mean((f_hat_leafs_adj(leafs_log_test$Sc)-exp(leafs_log_test$Kgp))^2)
  
-r1 <- mean((f_hat_wood(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
-r2 <- mean((f_hat_wood_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
+r1 <- mean((f_hat_roots(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
+r2 <- mean((f_hat_roots_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp))^2)
 
-w1 <- mean((f_hat_roots(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
-w2 <- mean((f_hat_roots_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
+w1 <- mean((f_hat_wood(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
+w2 <- mean((f_hat_wood_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp))^2)
 
 mse_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", 
                             "Wood bias adj.", "Roots", "Roots bias adj."),
@@ -66,15 +80,17 @@ mse_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood",
 
 xtable(mse_f, type = "latex")
 
+#Bias
+
 
 l1 <- mean((f_hat_leafs(leafs_log_test$Sc)-exp(leafs_log_test$Kgp)))
 l2 <- mean((f_hat_leafs_adj(leafs_log_test$Sc)-exp(leafs_log_test$Kgp)))
 
-r1 <- mean((f_hat_wood(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
-r2 <- mean((f_hat_wood_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
+r1 <- mean((f_hat_roots(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
+r2 <- mean((f_hat_roots_adj(roots_log_test$Sc)-exp(roots_log_test$Kgp)))
 
-w1 <- mean((f_hat_roots(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
-w2 <- mean((f_hat_roots_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
+w1 <- mean((f_hat_wood(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
+w2 <- mean((f_hat_wood_adj(wood_log_test$Sc)-exp(wood_log_test$Kgp)))
 
 bias_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", 
                             "Wood bias adj.", "Roots", "Roots bias adj."),
@@ -82,6 +98,104 @@ bias_f <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood",
 
 xtable(bias_f, type = "latex")
 
+#Plot
+
+f_hat_leafs_log <- function(x) hat_beta[1] + hat_alpha[1]*x
+f_hat_roots_log <- function(x) hat_beta[2] + hat_alpha[2]*x
+f_hat_wood_log <- function(x) hat_beta[3] + hat_alpha[3]*x
+
+#På test sæt i log skala
+
+ggplot(leafs_log_test, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_leafs_log, color = 'hotpink')+
+  labs(title = "Foliage")
+
+ggplot(wood_log_test, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_wood_log, color = 'hotpink')+
+  labs(title = "Wood")
+
+ggplot(roots_log_test, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_roots_log, color = 'hotpink')+
+  labs(title = "Roots")
+
+#På test sæt i ægte skala
+
+leafs_rr <- tibble(Sc = leafs_log_test$Sc, Kgp = leafs_test$Kgp)
+wood_rr <- tibble(Sc = wood_log_test$Sc, Kgp = wood_test$Kgp)
+roots_rr <- tibble(Sc = roots_log_test$Sc, Kgp = roots_test$Kgp)
+
+ggplot(leafs_rr, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('Dry mass (kg/plant)')+
+  geom_function(fun = f_hat_leafs, color = 'hotpink')+
+  geom_function(fun = f_hat_leafs_adj, color = 'pink')+
+  labs(title = "Foliage")
+
+ggplot(wood_rr, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote('Crown area'~m^2/plant)) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_wood, color = 'hotpink')+
+  geom_function(fun = f_hat_wood_adj, color = 'pink')+
+  labs(title = "Wood")
+
+ggplot(roots_rr, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('Dry mass (kg/plant)')+
+  geom_function(fun = f_hat_roots, color = 'hotpink')+
+  geom_function(fun = f_hat_roots_adj, color = 'pink')+
+  labs(title = "Roots")
+
+#På alt data
+
+leafs_r <- tibble(Sc = leafs_log$Sc, Kgp = leafs$Kgp)
+wood_r <- tibble(Sc = wood_log$Sc, Kgp = wood$Kgp)
+roots_r <- tibble(Sc = roots_log$Sc, Kgp = roots$Kgp)
+
+ggplot(leafs_r, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote('Crown area'~m^2/plant)) + 
+  geom_function(fun = f_hat_leafs, color = 'darkolivegreen3')+
+  geom_function(fun = f_hat_leafs_adj, color = 'darkolivegreen')+
+  ylab('log(Dry mass (kg/plant))')+
+  labs(title = "Foliage")
+
+
+ggplot(roots_r, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_roots, color = 'darkolivegreen3')+
+  geom_function(fun = f_hat_roots_adj, color = 'darkolivegreen')+
+  labs(title = "Roots")
+
+ggplot(wood_r, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab(bquote(log('Crown area'~m^2/plant))) + 
+  ylab('log(Dry mass (kg/plant))')+
+  geom_function(fun = f_hat_wood, color = 'darkolivegreen3')+
+  geom_function(fun = f_hat_wood_adj, color = 'darkolivegreen')+
+  labs(title = "Wood")
 
 # k-fold cv vurdering af de to modeller
 
@@ -102,27 +216,16 @@ cv <- function(data, k) {
   return(tibble("MSE" = MSE, "MSE Bias Corrected" = MSE_adj))
 }
 
-
-leafs_log <- read.csv('Data/leafs_log.csv')
-roots_log <- read.csv('Data/roots_log.csv')
-wood_log<- read.csv('Data/wood_log.csv')
-
+set.seed(1)
 a <- cv(leafs_log, 10)
 b <- cv(wood_log, 10)
 c <- cv(roots_log, 10)
 
-tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
+cv_mse <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
        "Mean of CV-MSE" = c(mean(a$MSE), mean(a$`MSE Bias Corrected`), mean(b$MSE), mean(b$`MSE Bias Corrected`),
                             mean(c$MSE), mean(c$`MSE Bias Corrected`)))
 
-
-a <- cv(wood_log, 10)
-mean(a[[1]])
-mean(a[[2]])
-
-cv(wood_log, 10)
-
-cv(roots_log, 26)  
+xtable(cv_mse, type = latex)
 
 #Bias
 
@@ -143,11 +246,21 @@ cv_bias <- function(data, k) {
   return(tibble("Bias" = bias, "Bias Bias Corrected" = bias_adj))
 }
 
+set.seed(1)
+a <- cv_bias(leafs_log, 10)
+b <- cv_bias(wood_log, 10)
+c <- cv_bias(roots_log, 10)
 
-cv_bias(leafs_log, 10)
-cv(leafs_log, 10)
+cv_bias <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
+                 "Mean of CV-Bias" = c(mean(a$Bias), mean(a$`Bias Bias Corrected`), mean(b$Bias), mean(b$`Bias Bias Corrected`),
+                                      mean(c$Bias), mean(c$`Bias Bias Corrected`)))
+
+xtable(cv_bias, type = latex)
+
+a <- cv(wood_log, 10)
+mean(a[[1]])
+mean(a[[2]])
 
 cv(wood_log, 10)
 
-cv(roots_log, 2)
-  
+cv(roots_log, 26)  

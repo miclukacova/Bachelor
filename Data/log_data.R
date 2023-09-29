@@ -33,15 +33,30 @@ test_roots_log = roots_log[-picked_roots,]
 train_wood_log = wood_log[picked_wood,]
 test_wood_log = wood_log[-picked_wood,]
 
+train_leafs = leafs[picked_leafs,]
+test_leafs = leafs[-picked_leafs,]
+train_roots = roots[picked_roots,]
+test_roots = roots[-picked_roots,]
+train_wood = wood[picked_wood,]
+test_wood = wood[-picked_wood,]
+
 write.csv(leafs, "/Users/michaelalukacova/Bachelor1/Data/leafs.csv", row.names=FALSE)
 write.csv(roots, "/Users/michaelalukacova/Bachelor1/Data/roots.csv", row.names=FALSE)
 write.csv(wood, "/Users/michaelalukacova/Bachelor1/Data/wood.csv", row.names=FALSE)
 write.csv(leafs_log, "/Users/michaelalukacova/Bachelor1/Data/leafs_log.csv", row.names=FALSE)
 write.csv(roots_log, "/Users/michaelalukacova/Bachelor1/Data/roots_log.csv", row.names=FALSE)
 write.csv(wood_log, "/Users/michaelalukacova/Bachelor1/Data/wood_log.csv", row.names=FALSE)
+
 write.csv(train_leafs_log, "/Users/michaelalukacova/Bachelor1/Data/train_leafs_log.csv", row.names=FALSE)
-write.csv(train_roots_log, "/Users/michaelalukacova/Bachelor1/Data/train_roots_log.csv", row.names=FALSE)
-write.csv(train_wood_log, "/Users/michaelalukacova/Bachelor1/Data/train_wood_log.csv", row.names=FALSE)
 write.csv(test_leafs_log, "/Users/michaelalukacova/Bachelor1/Data/test_leafs_log.csv", row.names=FALSE)
-write.csv(test_roots_log, "/Users/michaelalukacova/Bachelor1/Data/test_roots_log.csv", row.names=FALSE)
+write.csv(train_wood_log, "/Users/michaelalukacova/Bachelor1/Data/train_wood_log.csv", row.names=FALSE)
 write.csv(test_wood_log, "/Users/michaelalukacova/Bachelor1/Data/test_wood_log.csv", row.names=FALSE)
+write.csv(test_roots_log, "/Users/michaelalukacova/Bachelor1/Data/test_roots_log.csv", row.names=FALSE)
+write.csv(train_roots_log, "/Users/michaelalukacova/Bachelor1/Data/train_roots_log.csv", row.names=FALSE)
+
+write.csv(train_leafs, "/Users/michaelalukacova/Bachelor1/Data/train_leafs.csv", row.names=FALSE)
+write.csv(test_leafs, "/Users/michaelalukacova/Bachelor1/Data/test_leafs.csv", row.names=FALSE)
+write.csv(train_wood, "/Users/michaelalukacova/Bachelor1/Data/train_wood.csv", row.names=FALSE)
+write.csv(test_wood,"/Users/michaelalukacova/Bachelor1/Data/test_wood.csv", row.names=FALSE)
+write.csv(test_roots, "/Users/michaelalukacova/Bachelor1/Data/test_roots.csv", row.names=FALSE)
+write.csv(train_roots, "/Users/michaelalukacova/Bachelor1/Data/train_roots.csv", row.names=FALSE)
