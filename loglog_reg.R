@@ -48,6 +48,9 @@ var_hat <- c(var(lm_leafs_log$residuals),
              var(lm_roots_log$residuals),
              var(lm_wood_log$residuals))
 
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, 
+              "beta" = hat_beta, "var" = var_hat), type = "latex")
+
 
 #Y_hat estimater uden bias correction:
 
@@ -135,33 +138,37 @@ ggplot(roots_log_test, aes(x = Sc, y = Kgp)) +
 leafs_rr <- tibble(Sc = leafs_log_test$Sc, Kgp = leafs_test$Kgp)
 wood_rr <- tibble(Sc = wood_log_test$Sc, Kgp = wood_test$Kgp)
 roots_rr <- tibble(Sc = roots_log_test$Sc, Kgp = roots_test$Kgp)
+cols <- c("hotpink","pink")
 
 ggplot(leafs_rr, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('Dry mass (kg/plant)')+
-  geom_function(fun = f_hat_leafs, color = 'hotpink')+
-  geom_function(fun = f_hat_leafs_adj, color = 'pink')+
-  labs(title = "Foliage")
+  geom_function(fun = f_hat_leafs, aes(col = "f"))+
+  geom_function(fun = f_hat_leafs_adj, aes(col = "f_adj"))+
+  labs(title = "Foliage")+
+  scale_colour_manual(values = cols)
 
 ggplot(wood_rr, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote('Crown area'~m^2/plant)) + 
   ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = f_hat_wood, color = 'hotpink')+
-  geom_function(fun = f_hat_wood_adj, color = 'pink')+
-  labs(title = "Wood")
+  geom_function(fun = f_hat_wood, aes(col = "f"))+
+  geom_function(fun = f_hat_wood_adj, aes(col = "f_adj"))+
+  labs(title = "Wood")+
+  scale_colour_manual(values = cols)
 
 ggplot(roots_rr, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('Dry mass (kg/plant)')+
-  geom_function(fun = f_hat_roots, color = 'hotpink')+
-  geom_function(fun = f_hat_roots_adj, color = 'pink')+
-  labs(title = "Roots")
+  geom_function(fun = f_hat_roots, aes(col = "f"))+
+  geom_function(fun = f_hat_roots_adj, aes(col = "f_adj"))+
+  labs(title = "Roots")+
+  scale_colour_manual(values = cols)
 
 #På alt data
 
@@ -173,8 +180,8 @@ ggplot(leafs_r, aes(x = Sc, y = Kgp)) +
   geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote('Crown area'~m^2/plant)) + 
-  geom_function(fun = f_hat_leafs, color = 'darkolivegreen3')+
-  geom_function(fun = f_hat_leafs_adj, color = 'darkolivegreen')+
+  geom_function(fun = f_hat_leafs, color = 'darkolivegreen3', aes(col = "f"))+
+  geom_function(fun = f_hat_leafs_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
   ylab('log(Dry mass (kg/plant))')+
   labs(title = "Foliage")
 
@@ -184,8 +191,8 @@ ggplot(roots_r, aes(x = Sc, y = Kgp)) +
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = f_hat_roots, color = 'darkolivegreen3')+
-  geom_function(fun = f_hat_roots_adj, color = 'darkolivegreen')+
+  geom_function(fun = f_hat_roots, color = 'darkolivegreen3', aes(col = "f"))+
+  geom_function(fun = f_hat_roots_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
   labs(title = "Roots")
 
 ggplot(wood_r, aes(x = Sc, y = Kgp)) + 
@@ -193,8 +200,8 @@ ggplot(wood_r, aes(x = Sc, y = Kgp)) +
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = f_hat_wood, color = 'darkolivegreen3')+
-  geom_function(fun = f_hat_wood_adj, color = 'darkolivegreen')+
+  geom_function(fun = f_hat_wood, color = 'darkolivegreen3', aes(col = "f"))+
+  geom_function(fun = f_hat_wood_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
   labs(title = "Wood")
 
 # k-fold cv vurdering af de to modeller
