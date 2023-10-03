@@ -226,19 +226,17 @@ Sc_plot <- function(data,title, y){
   plot_data <- data.frame(data)
   plot_data <- plot_data %>%
     mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
-  colors <- c("Quantiles" = "darkolivegreen", "Observed" = "hotpink")
   #Plot
   ggplot(plot_data, aes(x = pred)) +
-    geom_point(aes(y=quantile..0.9, color = "Quantiles"), fill = "darkolivegreen", shape = 25, alpha = 0.7) +
-    geom_point(aes(y=quantile..0.1, color = "Quantiles"), fill = "darkolivegreen", shape = 24, alpha = 0.7) +
+    geom_point(aes(y=quantile..0.9), color = 'darkolivegreen', fill = "darkolivegreen", shape = 25, alpha = 0.7) +
+    geom_point(aes(y=quantile..0.1), color = 'darkolivegreen', fill = "darkolivegreen", shape = 24, alpha = 0.7) +
     geom_segment(aes(x = pred, y = quantile..0.1, xend = pred, yend = quantile..0.9),
                  color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
-    geom_point(aes(y=observed, color = "Observed"), alpha=0.5, fill = "hotpink3") +
+    geom_point(aes(y=observed), color = "hotpink", alpha=0.5, fill = "hotpink3") +
     labs(title = title)+
     xlab(bquote('Crown area'~(m^2/plant)))+
     ylab(y)+
-    theme_bw()+
-    scale_color_manual(values = colors)
+    theme_bw()
 }
 
 Sc_plot(cv_intervals_leafs,"Foliage",'Foliage dry mass (kg/plant)')
