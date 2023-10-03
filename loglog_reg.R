@@ -176,14 +176,17 @@ leafs_r <- tibble(Sc = leafs_log$Sc, Kgp = leafs$Kgp)
 wood_r <- tibble(Sc = wood_log$Sc, Kgp = wood$Kgp)
 roots_r <- tibble(Sc = roots_log$Sc, Kgp = roots$Kgp)
 
+cols <- c("darkolivegreen2","darkolivegreen")
+
 ggplot(leafs_r, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote('Crown area'~m^2/plant)) + 
-  geom_function(fun = f_hat_leafs, color = 'darkolivegreen3', aes(col = "f"))+
-  geom_function(fun = f_hat_leafs_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
+  geom_function(fun = f_hat_leafs, aes(col = "f"))+
+  geom_function(fun = f_hat_leafs_adj, aes(col = "f_adj"))+
   ylab('log(Dry mass (kg/plant))')+
-  labs(title = "Foliage")
+  labs(title = "Foliage")+
+  scale_colour_manual(values = cols)
 
 
 ggplot(roots_r, aes(x = Sc, y = Kgp)) + 
@@ -191,18 +194,20 @@ ggplot(roots_r, aes(x = Sc, y = Kgp)) +
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = f_hat_roots, color = 'darkolivegreen3', aes(col = "f"))+
-  geom_function(fun = f_hat_roots_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
-  labs(title = "Roots")
+  geom_function(fun = f_hat_roots, aes(col = "f"))+
+  geom_function(fun = f_hat_roots_adj, aes(col = "f_adj"))+
+  labs(title = "Roots")+
+  scale_colour_manual(values = cols)
 
 ggplot(wood_r, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote(log('Crown area'~m^2/plant))) + 
   ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = f_hat_wood, color = 'darkolivegreen3', aes(col = "f"))+
-  geom_function(fun = f_hat_wood_adj, color = 'darkolivegreen', aes(col = "f_adj"))+
-  labs(title = "Wood")
+  geom_function(fun = f_hat_wood, aes(col = "f"))+
+  geom_function(fun = f_hat_wood_adj, aes(col = "f_adj"))+
+  labs(title = "Wood")+
+  scale_colour_manual(values = cols)
 
 # k-fold cv vurdering af de to modeller
 
@@ -224,9 +229,9 @@ cv <- function(data, k) {
 }
 
 set.seed(1)
-a <- cv(leafs_log, 10)
-b <- cv(wood_log, 10)
-c <- cv(roots_log, 10)
+a <- cv(leafs_log, nrow(leafs_log))
+b <- cv(wood_log, nrow(wood_log))
+c <- cv(roots_log, nrow(roots_log))
 
 cv_mse <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
        "Mean of CV-MSE" = c(mean(a$MSE), mean(a$`MSE Bias Corrected`), mean(b$MSE), mean(b$`MSE Bias Corrected`),
@@ -254,9 +259,9 @@ cv_bias <- function(data, k) {
 }
 
 set.seed(1)
-a <- cv_bias(leafs_log, 10)
-b <- cv_bias(wood_log, 10)
-c <- cv_bias(roots_log, 10)
+a <- cv_bias(leafs_log, nrow(leafs_log))
+b <- cv_bias(wood_log, nrow(wood_log))
+c <- cv_bias(roots_log, nrow(roots_log))
 
 cv_bias <- tibble("Model" = c("Leafs", "Leafs bias adj.", "Wood", "Wood bias adj.", "Roots", "Roots bias adj."),
                  "Mean of CV-Bias" = c(mean(a$Bias), mean(a$`Bias Bias Corrected`), mean(b$Bias), mean(b$`Bias Bias Corrected`),
