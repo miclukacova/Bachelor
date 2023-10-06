@@ -45,12 +45,14 @@ residuals_leafs %>%
   geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
   geom_vline(xintercept = 0, color = "hotpink") +
   stat_function(fun = dnorm, color = "darkolivegreen")+
+  theme_bw()+
   labs(title = "Foliage")
 
 residuals_wood %>%
   ggplot() +
   geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
   geom_vline(xintercept = 0, color = "hotpink") +
+  theme_bw()+
   stat_function(fun = dnorm, color = "darkolivegreen")+
   labs(title = "Wood")
 
@@ -59,21 +61,25 @@ residuals_roots %>%
   geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
   geom_vline(xintercept = 0, color = "hotpink") +
   stat_function(fun = dnorm, color = "darkolivegreen")+
+  theme_bw()+
   labs(title = "Roots")
 
 ggplot(data = residuals_leafs, aes(sample = residual)) +
            stat_qq() + stat_qq_line(color = "hotpink") + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  theme_bw()+
   labs(title = "Foliage")
 
 ggplot(data = residuals_wood, aes(sample = residual)) +
   stat_qq() + stat_qq_line(color = "hotpink") + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  theme_bw()+
   labs(title = "Wood")
 
 ggplot(data = residuals_roots, aes(sample = residual)) +
   stat_qq() + stat_qq_line(color = "hotpink") + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  theme_bw()+
   labs(title = "Roots")
 
 #Estimater
@@ -200,7 +206,7 @@ f_hat_wood_exp <- function(x) exp(hat_beta[3])*x^hat_alpha[3]
 upper_leafs_exp <- function(x) exp(upper_leafs(log(x)))
 lower_leafs_exp <- function(x) exp(lower_leafs(log(x)))
 upper_wood_exp <- function(x) exp(upper_wood(log(x)))
-lower_wood_exp <- function(x) exp(lower_wood(log(x))))
+lower_wood_exp <- function(x) exp(lower_wood(log(x)))
 upper_roots_exp <- function(x) exp(upper_roots(log(x)))
 lower_roots_exp <- function(x) exp(lower_roots(log(x)))
 
@@ -238,18 +244,18 @@ ggplot(test_roots_plot, aes(x = Sc, y = Kgp)) +
   geom_function(fun = f_hat_roots_exp, colour = "hotpink1") +
   geom_function(fun = upper_roots_exp, colour = "hotpink4") +
   geom_function(fun = lower_roots_exp, colour = "hotpink4") +
-  labs(title = "roots")+
+  labs(title = "Roots")+
   scale_color_manual(values = color)
 
 ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
   geom_point(aes(color = Indicator)) + 
   theme_bw() +
-  xlab('log(Sc)') + 
+  xlab('Sc') + 
   ylab('Kgp')+
   geom_function(fun = f_hat_wood_exp, colour = "hotpink1") +
   geom_function(fun = upper_wood_exp, colour = "hotpink4") +
   geom_function(fun = lower_wood_exp, colour = "hotpink4") +
-  labs(title = "wood")+
+  labs(title = "Wood")+
   scale_color_manual(values = color)
 
 coverage <- function(data, upper, lower){
@@ -261,31 +267,6 @@ b <- coverage(test_wood_log, upper_wood_exp, lower_wood_exp)
 c <- coverage(test_roots_log, upper_roots_exp, lower_roots_exp)
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type = latex)
-
-
-
-upper_exp <- function(x) {
-  exp(f_hat(x) - qt(alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sd_hat)
-}
-
-lower_exp <- function(x) {
-  exp(f_hat(x) - qt(1-alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sd_hat)
-}
-
-ggplot(test_leafs_log, aes(x = Sc, y = exp(Kgp))) + 
-  geom_point() + 
-  theme_bw() +
-  xlab('log(Sc)') + 
-  ylab('Kgp')+
-  geom_function(fun = f_hat_leafs, colour = "red") +
-  geom_function(fun = upper_exp, colour = "blue") +
-  geom_function(fun = lower_exp, colour = "blue") +
-  labs(title = "Kgp as function of Sc with Standard Gaussian prediction intervals")
-
-
-# Coverage
-
-mean(lower(test_leafs_log$Sc) <= test_leafs_log$Kgp &upper(test_leafs_log$Sc) >= test_leafs_log$Kgp)
 
 #Cv on coverage: 
 
@@ -310,12 +291,85 @@ cv_cov <- function(data, k, alpha) {
     }
     
     #Definere
-    cov[i] <- mean(lower(data[group = i, ]$Sc) <= data[group = i, ]$Kgp 
-                   &upper(data[group = i, ]$Sc) >= data[group = i, ]$Kgp)
+    cov[i] <- mean(lower(data[group == i, ]$Sc) <= data[group == i, ]$Kgp 
+                   &upper(data[group == i, ]$Sc) >= data[group == i, ]$Kgp)
   }
   return(tibble("Coverage" = cov))
 }
 
-cv_cov(leafs_log, 10, 0.1)
+#Checking for correct coverage
 
-#transformeres???
+set.seed(4)
+
+a <- rbind(cv_cov(leafs_log, 10, 0.1), cv_cov(leafs_log, 10, 0.1), cv_cov(leafs_log, 10, 0.1))
+b <- rbind(cv_cov(wood_log, 10, 0.1), cv_cov(wood_log, 10, 0.1), cv_cov(wood_log, 10, 0.1))
+c <- rbind(cv_cov(roots_log, 10, 0.1), cv_cov(roots_log, 10, 0.1), cv_cov(roots_log, 10, 0.1))
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", binwidth = 0.012)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", binwidth = 0.013)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", binwidth = 0.03)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Roots")
+
+#Mean coverage:
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+       "Mean coverage" =c(mean(a$Coverage), mean(b$Coverage), mean(c$Coverage))), type = latex)
+
+
+#Checking for conditional coverage
+
+bins <- sort(leafs_log_test$Sc)[seq(1,10)*floor(nrow(leafs_log_test)/10)]
+
+indi <- c()
+
+for (i in (1:nrow(leafs_log_test))){
+  x <- test_leafs_log$Sc[i]
+  print(x)
+  if (x < bins[1]){
+    indi[i] <- 1
+  } else if (x < bins[2]){
+    indi[i] <- 2
+  } else if (x < bins[3]){
+    indi[i] <- 3
+  } else if (x < bins[4]){
+    indi[i] <- 4
+  } else if (x < bins[5]){
+    indi[i] <- 5
+  } else if (x < bins[6]){
+    indi[i] <- 6
+  } else if (x < bins[7]){
+    indi[i] <- 7
+  } else if (x < bins[8]){
+    indi[i] <- 8
+  } else if (x < bins[9]){
+    indi[i] <- 9
+  } else 
+    indi[i] <- 10
+}
+}
+
+
+test_leafs_log_cond <- test_leafs_log %>%
+  mutate(Indicator = if_else((lower_leafs(test_leafs_log$Sc) <= test_leafs_log$Kgp)&
+                               (test_leafs_log$Kgp <= upper_leafs(test_leafs_log$Sc)),"in", "out"))
+
+       
