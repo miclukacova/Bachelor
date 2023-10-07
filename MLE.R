@@ -4,7 +4,10 @@ library(infer)
 library(foreign)
 library(xtable)
 library(stargazer)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 477c6ebf6a11d3f343897618f55f7d83eb432d4d
 leafs_train <- read.csv('Data/train_leafs.csv')
 wood_train <- read.csv('Data/train_wood.csv')
 roots_train <- read.csv('Data/train_roots.csv')
@@ -44,6 +47,7 @@ ggplot(leafs_train, aes(x = Sc, y = Kgp)) +
   geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote('Crown area'~m^2/plant)) + 
+<<<<<<< HEAD
   ylab('log(Dry mass (kg/plant))')+
   geom_function(fun = f_hat_l, colour = "darkolivegreen")+
   labs(title = "Foliage")
@@ -130,3 +134,9 @@ parameters <- data.frame("alpha" = c(param_l[1],param_w[1],param_r[1])
 xtable(data.frame("Data" = c("Leafs", "Wood", "Roots"), "alpha" = c(param_l[1],param_w[1],param_r[1])
                   , "beta"=c(param_l[2],param_w[2],param_r[2])), type = "latex") 
  
+=======
+  ylab('Dry mass (kg/plant)')+
+  geom_function(fun = f_hat, colour = "darkolivegreen")+
+  labs(title = "Wood")
+
+>>>>>>> 477c6ebf6a11d3f343897618f55f7d83eb432d4d
