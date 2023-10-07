@@ -1,3 +1,9 @@
+library(tidyverse)
+library(readr)
+library(infer)
+library(foreign)
+library(xtable)
+library(stargazer)
 leafs_train <- read.csv('Data/train_leafs.csv')
 
 logxi <- log(leafs_train$Sc)
@@ -14,6 +20,7 @@ ggplot(leafs_train, aes(x = Sc, y = Kgp)) +
   geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab(bquote('Crown area'~m^2/plant)) + 
-  ylab('log(Dry mass (kg/plant))')+
+  ylab('Dry mass (kg/plant)')+
   geom_function(fun = f_hat, colour = "darkolivegreen")+
   labs(title = "Wood")
+
