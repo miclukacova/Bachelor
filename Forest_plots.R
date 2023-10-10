@@ -4,6 +4,7 @@ library(tidyverse)
 library(ggplot2)
 library(rpart)
 library(rpart.plot)
+library(xtable)
 set.seed(777)
 leafs <- read.csv('Data/leafs.csv')
 wood <- read.csv("Data/wood.csv")
@@ -146,16 +147,15 @@ cv <- function(data, k) {
   return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred))
 }
 
-cv_intervals_leafs <- cv(leafs,900)
-cv_intervals_wood <- cv(wood, nrow(wood))
-cv_intervals_roots <- cv(roots, nrow(roots))
+cv_intervals_leafs <- cv(leafs,10)
+cv_intervals_wood <- cv(wood, 10)
+cv_intervals_roots <- cv(roots, 10)
 head(cv_intervals)
 
 cv_int <- function(x){
   cv_intervals <- data.frame(x, 
                              interval = x$quantile..0.9-x$quantile..0.1)
   cv_intervals <- arrange(cv_intervals, interval)
-  q_mean <- apply(x[2:3], MARGIN = 1, FUN = mean)
   return(cv_intervals)
 }
 
@@ -228,7 +228,7 @@ Sc_plot <- function(data,title, y){
     mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
   #Plot
   ggplot(plot_data, aes(x = pred)) +
-    geom_point(aes(y=quantile..0.9), color = 'darkolivegreen', fill = "darkolivegreen", shape = 25, alpha = 0.7) +
+    geom_smooth(aes(y=quantile..0.9), color = 'darkolivegreen') +
     geom_point(aes(y=quantile..0.1), color = 'darkolivegreen', fill = "darkolivegreen", shape = 24, alpha = 0.7) +
     geom_segment(aes(x = pred, y = quantile..0.1, xend = pred, yend = quantile..0.9),
                  color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
@@ -244,6 +244,7 @@ Sc_plot(cv_intervals_wood,"Wood",'Wood dry mass (kg/plant)')
 Sc_plot(cv_intervals_roots,"Roots",'Root dry mass (kg/plant)')
 
 
+
 #Tjek af, hvilke prediktionsintervaller der fucker med mine plots:
 
 nul_int <- cv_intervals_leafs
@@ -256,10 +257,100 @@ head(nul_int)
 
 #Så der er små forskelle altid. 
 
-#Plots på små akser 
-plot <- Sc_plot(cv_intervals_leafs,"Foliage",'Foliage dry mass (kg/plant)')
+#PLots og check af coverage
+ #Cross validation til coverage:
+cv_cov <- function(data, k) {
+  set.seed(777)
+  n <- nrow(data)
+  group <- sample(rep(1: k, length.out = n))
+  pred <- c()
+  obs <- c()
+  q0.1 <- c()
+  q0.9 <- c()
+  cov <- c()
+  indi <- c()
+  for (i in (1:k)){
+    #Fit model
+    train_x <- data.frame(Sc = data[group != i,1])
+    train_y <- data[group != i,2]
+    test_x <- data.frame(Sc=data[group == i,1])
+    test_y <- data[group == i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = 76)
+    
+    #Getting quantiles
+    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.05,0.95))
+    
+    #Creating vectors with observations and quantiles
+    if (i == 1) {
+      pred <- c(data[group == i,1])
+      obs <- c(test_y)
+      q0.05 <- c(conditionalQuantiles_cv[,1])
+      q0.95 <- c(conditionalQuantiles_cv[,2])
+      cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
+    }
+    else {
+      pred <- c(pred, data[group == i,1])
+      obs <- c(obs, test_y)
+      q0.05 <- c(q0.05, conditionalQuantiles_cv[,1])
+      q0.95 <- c(q0.95, conditionalQuantiles_cv[,2])
+      cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
+    }
+  }
+  return("cov" = data.frame(coverage = cov))
+}
 
-plot +
-  xlim(0,5)
- 
+cov_leafs <- cv_cov(leafs, 10)
 
+#Plots and table:
+a <- rbind(cv_cov(leafs, 10), cv_cov(leafs, 10), cv_cov(leafs, 10))
+b <- rbind(cv_cov(wood, 10), cv_cov(wood, 10), cv_cov(wood, 10))
+c <- rbind(cv_cov(roots, 10), cv_cov(roots, 10),cv_cov(roots, 10))
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins=10)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins=20)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", binwidth = 0.01)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Roots")
+
+#Mean coverage:
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean(a$coverage), mean(b$coverage), mean(c$coverage))), type = latex)
+
+
+#Plots with smoothed intervals. Probably not really relevant or what?:
+Sc_plot_smoothed <- function(data,title, y){
+  plot_data <- data.frame(data)
+  plot_data <- plot_data %>%
+    mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+  #Plot
+  ggplot(plot_data, aes(x = pred)) +
+    geom_point(aes(y=observed), color = "hotpink", alpha=0.5, fill = "hotpink3") +
+    geom_smooth(aes(y=quantile..0.9), color = 'darkolivegreen', se=F) +
+    geom_smooth(aes(y=quantile..0.1), color = 'darkolivegreen', se=F) +
+    labs(title = title)+
+    xlab(bquote('Crown area'~(m^2/plant)))+
+    ylab(y)+
+    theme_bw()
+}
+Sc_plot_smoothed(cv_intervals_leafs,"Foliage",'Foliage dry mass (kg/plant)')
+Sc_plot_smoothed(cv_intervals_wood,"Wood",'Wood dry mass (kg/plant)')
+Sc_plot_smoothed(cv_intervals_roots,"Roots",'Root dry mass (kg/plant)')

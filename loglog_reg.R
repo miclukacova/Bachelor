@@ -48,8 +48,8 @@ var_hat <- c(var(lm_leafs_log$residuals),
              var(lm_roots_log$residuals),
              var(lm_wood_log$residuals))
 
-xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, 
-              "beta" = hat_beta, "var" = var_hat), type = "latex")
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, "beta_biascorrected" =exp(hat_beta)*exp(var_hat/2),
+              "log(beta)" = hat_beta, "var" = var_hat), type = "latex")
 
 
 #Y_hat estimater uden bias correction:
