@@ -115,23 +115,18 @@ alpha <- 0.1
 upper_leafs <- function(x) {
   f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
 }
-
 lower_leafs <- function(x) {
   f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
 }
-
 upper_wood <- function(x) {
   f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-1)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
 }
-
 lower_wood <- function(x) {
   f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-1)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
 }
-
 upper_roots <- function(x) {
   f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-1)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
 }
-
 lower_roots <- function(x) {
   f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-1)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
 }
@@ -335,41 +330,90 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
        "Mean coverage" =c(mean(a$Coverage), mean(b$Coverage), mean(c$Coverage))), type = latex)
 
 
-#Checking for conditional coverage
+#Checking for conditional coverage----------------------------------------------
 
-bins <- sort(leafs_log_test$Sc)[seq(1,10)*floor(nrow(leafs_log_test)/10)]
-
-indi <- c()
-
-for (i in (1:nrow(leafs_log_test))){
-  x <- test_leafs_log$Sc[i]
-  print(x)
-  if (x < bins[1]){
-    indi[i] <- 1
-  } else if (x < bins[2]){
-    indi[i] <- 2
-  } else if (x < bins[3]){
-    indi[i] <- 3
-  } else if (x < bins[4]){
-    indi[i] <- 4
-  } else if (x < bins[5]){
-    indi[i] <- 5
-  } else if (x < bins[6]){
-    indi[i] <- 6
-  } else if (x < bins[7]){
-    indi[i] <- 7
-  } else if (x < bins[8]){
-    indi[i] <- 8
-  } else if (x < bins[9]){
-    indi[i] <- 9
-  } else 
-    indi[i] <- 10
-}
+coverage <- function(data, upper, lower){
+  mean(lower(data$Sc) <= data$Kgp & upper(data$Sc) >= data$Kgp)
 }
 
+cond_cov <- function(data, upper, lower, num_bins){
+  #Bins
+  bins <- sort(data$Sc)[seq(1,num_bins)*floor(nrow(data)/num_bins)]
+  indi <- c()
+  
+  for (i in (1:nrow(data))){
+    x <- data$Sc[i]
+    j_0 <- - Inf
+    for (j in (1:num_bins)){
+      if (j_0 < x & x <= bins[j]){
+        indi[i] <- j
+        j_0 <- bins[j]
+      }
+    }
+  }
+  cond_cov_data <- cbind(data, indi = indi)
+  
+  #Conditional Coverage
+  
+  cond_cov_vec <- c()
+  
+  for (i in cond_cov_data$indi){
+    zz <- cond_cov_data %>%
+      filter(indi == i)
+      
+    cond_cov_vec[i] <- coverage(zz, upper, lower)
+  }
+  
+  j_0 <- - Inf
+  bins2 <- c()
+  for (i in (1:num_bins)){
+    bins2[i] <- paste("[", j_0, ",", round(bins[i],2), "]")
+    j_0 <- round(bins[i],2)
+  }
+  
+  return(tibble(Bin = bins2, "Conditional coverage" = cond_cov_vec))
+}
 
-test_leafs_log_cond <- test_leafs_log %>%
-  mutate(Indicator = if_else((lower_leafs(test_leafs_log$Sc) <= test_leafs_log$Kgp)&
-                               (test_leafs_log$Kgp <= upper_leafs(test_leafs_log$Sc)),"in", "out"))
+a <- cond_cov(test_leafs_log, upper_leafs, lower_leafs, 5)
+b <- cond_cov(test_wood_log, upper_wood, lower_wood, 5)
 
-       
+nrow(test_wood_log)
+
+xtable(cbind(a,b), type = latex)
+xtable(b, type = latex)
+
+bins <- sort(test_leafs_log$Sc)[seq(1,5)*floor(nrow(test_leafs_log)/5)]
+
+ggplot(test_leafs_log_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('log(Sc)') + 
+  ylab('log(Kgp)')+
+  geom_function(fun = f_hat_leafs, colour = "hotpink1") +
+  geom_function(fun = upper_leafs, colour = "hotpink4") +
+  geom_function(fun = lower_leafs, colour = "hotpink4") +
+  geom_vline(xintercept = bins[1], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[2], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[3], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[4], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[5], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
+
+bins <- sort(test_wood_log$Sc)[seq(1,5)*floor(nrow(test_wood_log)/5)]
+
+ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('log(Sc)') + 
+  ylab('log(Kgp)')+
+  geom_function(fun = f_hat_wood, colour = "hotpink1") +
+  geom_function(fun = upper_wood, colour = "hotpink4") +
+  geom_function(fun = lower_wood, colour = "hotpink4") +
+  geom_vline(xintercept = bins[1], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[2], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[3], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[4], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  geom_vline(xintercept = bins[5], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
+  labs(title = "Wood")+
+  scale_color_manual(values = color)

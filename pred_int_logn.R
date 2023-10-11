@@ -10,6 +10,10 @@ leafs_log_test <- read.csv('Data/test_leafs_log.csv')
 roots_log_test <- read.csv('Data/test_roots_log.csv')
 wood_log_test<- read.csv('Data/test_wood_log.csv')
 
+leafs_test <- read.csv('Data/test_leafs.csv')
+roots_test <- read.csv('Data/test_roots.csv')
+wood_test <- read.csv('Data/test_wood.csv')
+
 library(tidyverse)
 library(readr)
 library(infer)
@@ -21,52 +25,81 @@ lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log_train)
 lm_roots_log <- lm(Kgp ~ Sc, data = roots_log_train)
 lm_wood_log <- lm(Kgp ~ Sc, data = wood_log_train)
 
-#Estimater
+#Estimater fra lm
 
-hat_beta_log <- c(lm_leafs_log$coefficients[[1]],
+hat_beta <- c(lm_leafs_log$coefficients[[1]],
               lm_roots_log$coefficients[[1]],
               lm_wood_log$coefficients[[1]])
 
-hat_alpha_log <- c(lm_leafs_log$coefficients[[2]],
+hat_alpha <- c(lm_leafs_log$coefficients[[2]],
                lm_roots_log$coefficients[[2]],
                lm_wood_log$coefficients[[2]])
 
-var_hat_log <- c(var(lm_leafs_log$residuals),
+var_hat <- c(var(lm_leafs_log$residuals),
              var(lm_roots_log$residuals),
              var(lm_wood_log$residuals))
 
-# Estimater for hat Y fordeling
+# hat log Y som funktion af log x
 
-mean_hat_y_leafs <- function(x) exp(hat_beta[1] + hat_alpha[1]*x)*exp(var_hat[1]/2)
-mean_hat_y_roots <- function(x) exp(hat_beta[2] + hat_alpha[2]*x)*exp(var_hat[2]/2)
-mean_hat_y_wood <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[3]/2)
+hat_log_y_leafs <- function(x) hat_beta[1] + hat_alpha[1]*x
+hat_log_y_roots <- function(x) hat_beta[2] + hat_alpha[2]*x
+hat_log_y_wood <- function(x) hat_beta[3] + hat_alpha[3]*x
 
-var_hat_y_leafs <- function(x) exp(mean_y_leafs*2 + var_hat_log[1])*(exp(var_hat_log[1]-1))
-var_hat_y_roots <- function(x) exp(mean_y_roots*2 + var_hat_log[2])*(exp(var_hat_log[2]-1))
-var_hat_y_wood <- function(x) exp(mean_y_wood*2 + var_hat_log[3])*(exp(var_hat_log[3]-1))
+# hat Y som funktion af x
 
-alt_mean_hat_y_leafs <- function(x) exp(hat_beta[1] + hat_alpha[1]*x)
+hat_y_leafs <- function(x) exp(hat_beta[1])* x^hat_alpha[1]*exp(var_hat[1]/2)
+hat_y_roots <- function(x) exp(hat_beta[2])* x^hat_alpha[2]*exp(var_hat[2]/2)
+hat_y_wood <- function(x) exp(hat_beta[3])* x^hat_alpha[3]*exp(var_hat[3]/2)
 
+# hat varians af log Y - hat log Y som funktion af log x
 
-# Y*Hat{Y} fordelings estimater
+var_y_y_hat_leafs <- function(x) x*var_hat[1]/(sum(leafs_log_train^2))+var_hat[1] 
+var_y_y_hat_wood <- function(x) x*var_hat[2]/(sum(wood_log_train^2))+var_hat[2] 
+var_y_y_hat_roots <- function(x) x*var_hat[3]/(sum(roots_log_train^2))+var_hat[3] 
 
-sigma_hat_leafs <- var(lm_leafs_log$residuals)
+# Middelværdi og varians af exp(logY - hat log Y) som funktion af log x
 
-# Y - hat{Y} varians
+mean_exp_y_y_hat_leafs <- function(x) exp(var_y_y_hat_leafs(x)/2) 
+mean_exp_y_y_hat_wood <- function(x) exp(var_y_y_hat_wood(x)/2) 
+mean_exp_y_y_hat_roots <- function(x) exp(var_y_y_hat_roots(x)/2) 
 
-var_yy <- ((leafs_log_test$Sc)^2*sigma_hat_leafs)/(sum(leafs_log_train$Sc^2)) + sigma_hat_leafs
+var_exp_y_y_hat_leafs <- function(x) exp(var_y_y_hat_leafs(x))*(exp(var_y_y_hat_leafs(x))-1) 
+var_exp_y_y_hat_wood <- function(x) exp(var_y_y_hat_wood(x))*(exp(var_y_y_hat_wood(x))-1) 
+var_exp_y_y_hat_roots <- function(x) exp(var_y_y_hat_roots(x))*(exp(var_y_y_hat_roots(x))-1) 
 
-# exp(Y - hat{Y}) middelværdi og varians
+#Kvantil som funktion af log x
 
-mean_yy_leafs <- exp(var_yy/2)
-var_yy_leafs <- exp(2*0+var_yy)*(exp(var_yy)-1)
+kvant_low <- function(x) qlnorm(0.2, meanlog = mean_exp_y_y_hat_leafs(x), sdlog = sqrt(var_exp_y_y_hat_leafs(x)))
+kvant_up <- function(x) qlnorm(0.7, meanlog = mean_exp_y_y_hat_leafs(x), sdlog = sqrt(var_exp_y_y_hat_leafs(x)))
 
-kvantil_op <- qlnorm(0.95, meanlog = mean_yy_leafs, sdlog = sqrt(var_yy_leafs))
+#Prediktionsinterval som funktion af log x
 
-kvantil_ned <- qlnorm(0.05, meanlog = mean_yy_leafs, sdlog = sqrt(var_yy_leafs))
+pred_int_low <- function(x) kvant_low(x) * mean_hat_y_leafs(x)
+pred_int_up <- function(x) kvant_up(x) * mean_hat_y_leafs(x)
 
-pred_int <- tibble("Low" = kvantil_ned*(alt_mean_hat_y_leafs(leafs_log_test$Sc)),
-                  "Up" = kvantil_op*(alt_mean_hat_y_leafs(leafs_log_test$Sc)))
+#Prediktionsinterval som funktion af x
 
-mean(pred_int$Low < exp(leafs_log_test$Kgp) & exp(leafs_log_test$Kgp) < pred_int$Up)
+pred_int_low_log <- function(x) pred_int_low(log(x))
+pred_int_up_log <- function(x) pred_int_up(log(x))
+
+mean(pred_int_low_log(leafs_test$Sc)<= leafs_test$Sc & pred_int_up_log(leafs_test$Sc) >= leafs_test$Sc)
+
+l <- pred_int_low_log(leafs_test$Sc)
+u <- pred_int_up_log(leafs_test$Sc)
+
+color <- c("darkolivegreen1", "darkolivegreen4")
+#aes(color = Indicator)
+
+ggplot(data.frame(leafs_test, l=l, u=u), aes(x = Sc, y = Kgp)) + 
+  geom_point() + 
+  geom_point(aes(y=l)+
+  geom_point(aes(y=u)+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  #geom_function(fun = hat_y_leafs, colour = "hotpink1") +
+  #geom_function(fun = pred_int_low_log, colour = "hotpink4") +
+  geom_function(fun = pred_int_up_log, colour = "hotpink4") +
+  labs(title = "Leafs")
+#+scale_color_manual(values = color)
 
