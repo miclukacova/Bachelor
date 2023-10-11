@@ -26,7 +26,6 @@ MSE_NLR <- function(par, data){
 }
 
 
-
 #Testing function:
 MSE_NLR(c(1,1),leafs)
 sum((leafs$Kgp-1*leafs$Sc^1)^2)
@@ -37,6 +36,8 @@ sum((leafs$Kgp-1*leafs$Sc^1)^2)
 NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs)
 NLE_wood <- optim(par = c(1,1), fn = MSE_NLR, data = wood)
 NLE_roots <- optim(par = c(1,1), fn = MSE_NLR, data = roots)
+
+?optim
 
 #Trying out different methods
 optim(par = c(1,1), fn = MSE_NLR, data = leafs, method = "BFGS")$par
@@ -61,9 +62,9 @@ optim(par = par_art_l, fn = MSE_NLR, data = roots, method = "BFGS")$par
 #Using test and training to get MSE:
 #Estimater
 
-NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs_train)
-NLE_wood <- optim(par = c(1,1), fn = MSE_NLR, data = wood_train)
-NLE_roots <- optim(par = c(1,1), fn = MSE_NLR, data = roots_train)
+NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs)
+NLE_wood <- optim(par = c(1,1), fn = MSE_NLR, data = wood)
+NLE_roots <- optim(par = c(1,1), fn = MSE_NLR, data = roots)
 
 hat_beta <- c(NLE_leafs$par[[1]],
               NLE_wood$par[[1]],
@@ -91,56 +92,7 @@ f_hat_leafs <- function(x) hat_beta[1]*x^hat_alpha[1]
 f_hat_wood <- function(x) hat_beta[2]*x^hat_alpha[2]
 f_hat_roots <- function(x) hat_beta[3]*x^hat_alpha[3]
 
-#MSE
-
-l1 <- mean((f_hat_leafs(leafs_test$Sc)-leafs_test$Kgp)^2)
-w1 <- mean((f_hat_wood(wood_test$Sc)-wood_test$Kgp)^2)
-r1 <- mean((f_hat_roots(roots_test$Sc)-roots_test$Kgp)^2)
-
-mse_f <- tibble("Model" = c("Leafs", "Wood" 
-                            ,"Roots"),
-                "MSE" = c(l1, w1, r1))
-
-xtable(mse_f, type = "latex")
-
-#Bias
-
-l1 <- mean((f_hat_leafs(leafs_test$Sc)-leafs_test$Kgp))
-r1 <- mean((f_hat_roots(roots_test$Sc)-roots_test$Kgp))
-w1 <- mean((f_hat_wood(wood_test$Sc)-wood_log_test$Kgp))
-
-bias_f <- tibble("Model" = c("Leafs", "Wood",  "Roots"),
-                 "Bias" = c(l1, w1, r1))
-
-xtable(bias_f, type = "latex")
-
 #Plot
-
-ggplot(leafs_test, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab(bquote('Crown area'~m^2/plant)) + 
-  ylab('Dry mass (kg/plant)')+
-  geom_function(fun = f_hat_leafs, colour = "hotpink")+
-  labs(title = "Foliage")
-
-ggplot(wood_test, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab(bquote('Crown area'~m^2/plant)) + 
-  ylab('Dry mass (kg/plant)')+
-  geom_function(fun = f_hat_wood, colour = "hotpink")+
-  labs(title = "Wood")
-
-ggplot(roots_test, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab(bquote('Crown area'~m^2/plant)) + 
-  ylab('Dry mass (kg/plant)')+
-  geom_function(fun = f_hat_roots, colour = "hotpink")+
-  labs(title = "Roots")
-
-#På alt data
 
 ggplot(leafs, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
@@ -171,22 +123,6 @@ ggplot(roots, aes(x = Sc, y = Kgp)) +
 MSE_NLR <- function(par, data){
   with(data, sum((Kgp-par[1]*Sc^par[2])^2))
 }
-
-
-#Using test and training to get MSE:
-#Estimater
-
-
-
-hat_beta <- c(NLE_leafs$par[[1]],
-              NLE_wood$par[[1]],
-              NLE_roots$par[[1]])
-
-hat_alpha <- c(NLE_leafs$par[[2]],
-               NLE_wood$par[[2]],
-               NLE_roots$par[[2]])
-
-
 cv <- function(data, k) {
   MSE <- c()
   Bias <- c()

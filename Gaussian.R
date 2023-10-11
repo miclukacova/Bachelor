@@ -263,31 +263,37 @@ c <- coverage(test_roots_log, upper_roots_exp, lower_roots_exp)
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type = latex)
 
-#Cv on coverage: 
 
-cv_cov <- function(data, k, alpha) {
+#Random split to assess coverage: 
+
+rs_cov <- function(data, k, alpha) {
   cov <- c()
   n <- nrow(data)
-  group <- sample(rep(1:k, length.out = n))
+  sample_size <- floor(0.8*n)
+  
   for (i in (1:k)){
-    #Fit model
-    n_cv <- nrow(data[group != i, ])
-    lm_cv <- lm(Kgp ~ Sc, data = data[group != i, ])
-    sd_hat <- sqrt(sum(lm_cv$residuals^2)/(n_cv-1))
-    f_hat <- function(x) lm_cv$coefficients[[2]]*x + lm_cv$coefficients[[1]] 
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
     
-    #Quantiles
+    # Fit model
+    lm_rs <- lm(Kgp ~ Sc, data = train_rs)
+    sd_hat <- sqrt(sum(lm_rs$residuals^2)/(sample_size-1))
+    f_hat <- function(x) lm_rs$coefficients[[2]]*x + lm_rs$coefficients[[1]] 
+    
+    # Quantiles
     upper <- function(x) {
-      f_hat(x) - qt(alpha/2, n_cv-1)*sqrt(x^2/sum(data[group != i, ]$Sc^2)+1)*sd_hat
+      f_hat(x) - qt(alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
     }
     
     lower <- function(x) {
-      f_hat(x) - qt(1-alpha/2, n_cv-1)*sqrt(x^2/sum(data[group != i, ]$Sc^2)+1)*sd_hat
+      f_hat(x) - qt(1-alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
     }
     
     #Definere
-    cov[i] <- mean(lower(data[group == i, ]$Sc) <= data[group == i, ]$Kgp 
-                   &upper(data[group == i, ]$Sc) >= data[group == i, ]$Kgp)
+    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                   &upper(test_rs$Sc) >= test_rs$Kgp)
   }
   return(tibble("Coverage" = cov))
 }
@@ -295,39 +301,44 @@ cv_cov <- function(data, k, alpha) {
 #Checking for correct coverage
 
 set.seed(4)
+a <- rs_cov(leafs_log, 30, 0.1)
+b <- rs_cov(wood_log, 30, 0.1)
+c <- rs_cov(roots_log, 30,0.1)
 
-a <- rbind(cv_cov(leafs_log, 10, 0.1), cv_cov(leafs_log, 10, 0.1), cv_cov(leafs_log, 10, 0.1))
-b <- rbind(cv_cov(wood_log, 10, 0.1), cv_cov(wood_log, 10, 0.1), cv_cov(wood_log, 10, 0.1))
-c <- rbind(cv_cov(roots_log, 10, 0.1), cv_cov(roots_log, 10, 0.1), cv_cov(roots_log, 10, 0.1))
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
 
 a %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", binwidth = 0.012)+
+                 fill = "darkolivegreen3", bins = 30)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
   theme_bw()+
   labs(title = "Foliage")
 
 b %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", binwidth = 0.013)+
+                 fill = "darkolivegreen3", bins = 30)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   theme_bw()+
+  xlim(c(0.5,1))+
   labs(title = "Wood")
 
 c %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", binwidth = 0.03)+
+                 fill = "darkolivegreen3", bins = 30)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   theme_bw()+
+  xlim(c(0,1))+
   labs(title = "Roots")
-
-#Mean coverage:
-
-xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
-       "Mean coverage" =c(mean(a$Coverage), mean(b$Coverage), mean(c$Coverage))), type = latex)
 
 
 #Checking for conditional coverage----------------------------------------------
