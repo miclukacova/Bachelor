@@ -11,33 +11,18 @@ library(stargazer)
 leafs <- read.csv('Data/leafs.csv')
 wood <- read.csv("Data/wood.csv")
 roots <- read.csv("Data/roots.csv")
-
-leafs_train <- read.csv('Data/train_leafs.csv')
-roots_train <- read.csv('Data/train_roots.csv')
-wood_train<- read.csv('Data/train_wood.csv')
-
-leafs_test <- read.csv('Data/test_leafs.csv')
-roots_test <- read.csv('Data/test_roots.csv')
-wood_test <- read.csv('Data/test_wood.csv')
+leafs_log <- read.csv('Data/leafs_log.csv')
+wood_log <- read.csv("Data/wood_log.csv")
+roots_log <- read.csv("Data/roots_log.csv")
 
 #Creating function to be minimized
 MSE_NLR <- function(par, data){
   with(data, sum((Kgp-par[1]*Sc^par[2])^2))
 }
 
-
 #Testing function:
 MSE_NLR(c(1,1),leafs)
 sum((leafs$Kgp-1*leafs$Sc^1)^2)
-
-
-#Trying minimization out with initial parameters 1,1
-
-NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs)
-NLE_wood <- optim(par = c(1,1), fn = MSE_NLR, data = wood)
-NLE_roots <- optim(par = c(1,1), fn = MSE_NLR, data = roots)
-
-?optim
 
 #Trying out different methods
 optim(par = c(1,1), fn = MSE_NLR, data = leafs, method = "BFGS")$par
@@ -49,17 +34,62 @@ optim(par = c(1,1), fn = MSE_NLR, data = wood, method = "CG")$par
 optim(par = c(1,1), fn = MSE_NLR, data = roots, method = "CG")$par
 
 
-#Trying different starting points
-par_art_l <- c(0.3668,0.9441)
-par_art_w <- c(5.6658,1.1068)
-par_art_r <- c(1.1921,1.1730)
+#Grid search
 
-optim(par = par_art_l, fn = MSE_NLR, data = leafs, method = "BFGS")$par
-optim(par = par_art_w, fn = MSE_NLR, data = wood, method = "BFGS")$par
-optim(par = par_art_l, fn = MSE_NLR, data = roots, method = "BFGS")$par
+#starting values
+
+lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log)
+lm_wood_log <- lm(Kgp ~ Sc, data = wood_log)
+lm_roots_log <- lm(Kgp ~ Sc, data = roots_log)
+
+par_leafs <- c(exp(lm_leafs_log$coefficients[[1]]), lm_leafs_log$coefficients[[2]])
+par_wood <- c(exp(lm_wood_log$coefficients[[1]]), lm_wood_log$coefficients[[2]])
+par_roots <- c(exp(lm_roots_log$coefficients[[1]]), lm_roots_log$coefficients[[2]])
+
+#Grids
+hej <- TRUE
+
+for (i in seq(par_leafs[1]-3, par_leafs[1]+3, length.out = 50)){
+  if (hej){
+    grid_leafs <- tibble(b = rep(i,50), a = seq(0, par_leafs[2]+3, length.out = 50))
+    hej <- FALSE
+  }
+  else {
+    for (j in seq(0, par_leafs[2]+3, length.out = 50)){
+      grid_leafs <- add_row(grid_leafs, b = i, a = j)
+    }
+  }
+}
+
+ggplot(grid_leafs, aes(x = a, y = b)) +
+  geom_point()+
+  geom_point(aes(x=hat_alpha[1], y = hat_beta[1]), color = "red")+
+  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "blue")+
+  theme_bw()
+
+#Parameters along grid
+
+hej <- TRUE
+for (i in (1:nrow(grid_leafs))){
+  c <- c(grid_leafs[i,1], grid_leafs[i,2])
+  if (hej){
+    par_grid <- data.frame(b = optim(par = c, fn = MSE_NLR, data = leafs)$par[[1]],
+                           a = optim(par = c, fn = MSE_NLR, data = leafs)$par[[2]])
+    hej <- FALSE
+    }
+  else{
+    par_grid <- par_grid %>% add_row(b = optim(par = c, fn = MSE_NLR, data = leafs)$par[[1]],
+                                     a = optim(par = c, fn = MSE_NLR, data = leafs)$par[[2]])
+    }
+}
 
 
-#Using test and training to get MSE:
+ggplot(par_grid, aes(x = a, y = b)) +
+  geom_point()+
+  geom_point(aes(x=hat_alpha[1], y = hat_beta[1]), color = "red")+
+  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "blue")+
+  theme_bw()
+
 #Estimater
 
 NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs)
@@ -73,11 +103,6 @@ hat_beta <- c(NLE_leafs$par[[1]],
 hat_alpha <- c(NLE_leafs$par[[2]],
                NLE_wood$par[[2]],
                NLE_roots$par[[2]])
-
-#Ved ikke helt med denne her
-#var_hat <- c(var(lm_leafs_log$residuals),
-#             var(lm_roots_log$residuals),
-#             var(lm_wood_log$residuals))
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, 
               "beta" = hat_beta), type = "latex")
