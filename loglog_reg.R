@@ -20,6 +20,10 @@ leafs_test <- read.csv('Data/test_leafs.csv')
 roots_test <- read.csv('Data/test_roots.csv')
 wood_test <- read.csv('Data/test_wood.csv')
 
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+
 library(tidyverse)
 library(readr)
 library(infer)
@@ -30,26 +34,27 @@ library(stargazer)
 
 #Lineære modeller af log-log
 
-lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log_train)
-lm_roots_log <- lm(Kgp ~ Sc, data = roots_log_train)
-lm_wood_log <- lm(Kgp ~ Sc, data = wood_log_train)
+lm_leafs_log <- lm(Kgp ~ Sc, data = leafs_log)
+lm_wood_log <- lm(Kgp ~ Sc, data = wood_log)
+lm_roots_log <- lm(Kgp ~ Sc, data = roots_log)
+
 
 #Estimater
 
 hat_beta <- c(lm_leafs_log$coefficients[[1]],
-          lm_roots_log$coefficients[[1]],
-          lm_wood_log$coefficients[[1]])
+          lm_wood_log$coefficients[[1]],
+           lm_roots_log$coefficients[[1]])
 
 hat_alpha <- c(lm_leafs_log$coefficients[[2]],
-          lm_roots_log$coefficients[[2]],
-          lm_wood_log$coefficients[[2]])
+          lm_wood_log$coefficients[[2]],
+          lm_roots_log$coefficients[[2]])
 
 var_hat <- c(var(lm_leafs_log$residuals),
-             var(lm_roots_log$residuals),
-             var(lm_wood_log$residuals))
+             var(lm_wood_log$residuals),
+             var(lm_roots_log$residuals))
 
-xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, "beta_biascorrected" =exp(hat_beta)*exp(var_hat/2),
-              "log(beta)" = hat_beta, "var" = var_hat), type = "latex")
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, "var" = var_hat, "log(beta)" = hat_beta,
+       "beta" =exp(hat_beta)), type = "latex")
 
 
 #Y_hat estimater uden bias correction:
@@ -104,8 +109,9 @@ xtable(bias_f, type = "latex")
 #Plot
 
 f_hat_leafs_log <- function(x) hat_beta[1] + hat_alpha[1]*x
-f_hat_roots_log <- function(x) hat_beta[2] + hat_alpha[2]*x
-f_hat_wood_log <- function(x) hat_beta[3] + hat_alpha[3]*x
+f_hat_wood_log <- function(x) hat_beta[2] + hat_alpha[2]*x
+f_hat_roots_log <- function(x) hat_beta[3] + hat_alpha[3]*x
+
 
 #På test sæt i log skala
 
@@ -136,14 +142,14 @@ ggplot(roots_log_test, aes(x = Sc, y = Kgp)) +
 #På test sæt i ægte skala
 
 f_hat_leafs_real <- function(x) exp(hat_beta[1])*x^hat_alpha[1]
-f_hat_roots_real <- function(x) exp(hat_beta[2])*x^hat_alpha[2]
-f_hat_wood_real <- function(x) exp(hat_beta[3])*x^hat_alpha[3]
+f_hat_wood_real <- function(x) exp(hat_beta[2])*x^hat_alpha[2]
+f_hat_roots_real <- function(x) exp(hat_beta[3])*x^hat_alpha[3]
 
 
 #Y_hat estimater med bias correction: 
 f_hat_leafs_adj_real <- function(x) exp(hat_beta[1])*x^hat_alpha[1]*exp(var_hat[1]/2)
-f_hat_roots_adj_real <- function(x) exp(hat_beta[2])*x^hat_alpha[2]*exp(var_hat[2]/2)
-f_hat_wood_adj_real <- function(x) exp(hat_beta[3] )*x^hat_alpha[3]*exp(var_hat[3]/2)
+f_hat_wood_adj_real <- function(x) exp(hat_beta[2] )*x^hat_alpha[2]*exp(var_hat[2]/2)
+f_hat_roots_adj_real <- function(x) exp(hat_beta[3])*x^hat_alpha[3]*exp(var_hat[3]/2)
 
 cols <- c("hotpink","pink")
 
