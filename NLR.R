@@ -20,20 +20,6 @@ MSE_NLR <- function(par, data){
   with(data, sum((Kgp-par[1]*Sc^par[2])^2))
 }
 
-#Testing function:
-MSE_NLR(c(1,1),leafs)
-sum((leafs$Kgp-1*leafs$Sc^1)^2)
-
-#Trying out different methods
-optim(par = c(1,1), fn = MSE_NLR, data = leafs, method = "BFGS")$par
-optim(par = c(1,1), fn = MSE_NLR, data = wood, method = "BFGS")$par
-optim(par = c(1,1), fn = MSE_NLR, data = roots, method = "BFGS")$par
-
-optim(par = c(1,1), fn = MSE_NLR, data = leafs, method = "CG")$par
-optim(par = c(1,1), fn = MSE_NLR, data = wood, method = "CG")$par
-optim(par = c(1,1), fn = MSE_NLR, data = roots, method = "CG")$par
-
-
 #Grid search
 
 #starting values
@@ -46,55 +32,100 @@ par_leafs <- c(exp(lm_leafs_log$coefficients[[1]]), lm_leafs_log$coefficients[[2
 par_wood <- c(exp(lm_wood_log$coefficients[[1]]), lm_wood_log$coefficients[[2]])
 par_roots <- c(exp(lm_roots_log$coefficients[[1]]), lm_roots_log$coefficients[[2]])
 
-#Grids
-hej <- TRUE
+#Funktion
 
-for (i in seq(par_leafs[1]-3, par_leafs[1]+3, length.out = 50)){
-  if (hej){
-    grid_leafs <- tibble(b = rep(i,50), a = seq(0, par_leafs[2]+3, length.out = 50))
-    hej <- FALSE
-  }
-  else {
-    for (j in seq(0, par_leafs[2]+3, length.out = 50)){
-      grid_leafs <- add_row(grid_leafs, b = i, a = j)
+grid_search <- function(data, par_ols) {
+  hej <- TRUE
+  for (i in seq(0, par_ols[1]+4, length.out = 50)){
+    if (hej){
+      grid <- tibble(b = rep(i,50), a = seq(0, par_ols[2]+4, length.out = 50))
+      hej <- FALSE
+    }
+    else {
+      for (j in seq(0, par_ols[2]+4, length.out = 50)){
+        grid <- add_row(grid, b = i, a = j)
+      }
     }
   }
+  hej <- TRUE
+  for (i in (1:nrow(grid))){
+    c <- c(grid[i,1], grid[i,2])
+    if (hej){
+      NLR_loop <- optim(par = c, fn = MSE_NLR, data = data)
+      par_grid <- data.frame(b = NLR_loop$par[[1]],
+                             a = NLR_loop$par[[2]],
+                             MSE = NLR_loop$value)
+      hej <- FALSE
+    }
+    else{
+      NLR_loop <- optim(par = c, fn = MSE_NLR, data = data)
+      par_grid <- par_grid %>% add_row(b = NLR_loop$par[[1]],
+                                       a = NLR_loop$par[[2]],
+                                       MSE = NLR_loop$value)
+    }
+  }
+  return(list(grid, par_grid))
 }
 
-ggplot(grid_leafs, aes(x = a, y = b)) +
-  geom_point()+
-  geom_point(aes(x=hat_alpha[1], y = hat_beta[1]), color = "red")+
-  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "blue")+
+grid_search_leafs <- grid_search(leafs, par_leafs)
+grid_search_wood <- grid_search(wood, par_wood)
+grid_search_roots <- grid_search(roots, par_leafs)
+
+# Grid plot
+
+ggplot(grid_search_leafs[[1]], aes(x = a, y = b)) +
+  geom_point(size = 0.9)+
+  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "red", size = 4)+
+  geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", hjust = -.5, color = "red", size = 5)+
   theme_bw()
 
-#Parameters along grid
+# Mindste MSE
 
-hej <- TRUE
-for (i in (1:nrow(grid_leafs))){
-  c <- c(grid_leafs[i,1], grid_leafs[i,2])
-  if (hej){
-    par_grid <- data.frame(b = optim(par = c, fn = MSE_NLR, data = leafs)$par[[1]],
-                           a = optim(par = c, fn = MSE_NLR, data = leafs)$par[[2]])
-    hej <- FALSE
-    }
-  else{
-    par_grid <- par_grid %>% add_row(b = optim(par = c, fn = MSE_NLR, data = leafs)$par[[1]],
-                                     a = optim(par = c, fn = MSE_NLR, data = leafs)$par[[2]])
-    }
-}
+min_mse_leafs <- which.min(grid_search_leafs[[2]]$MSE)
+starting_point_leafs <- grid_search_leafs[[1]][min_mse_leafs,]
 
+min_mse_wood <- which.min(grid_search_wood[[2]]$MSE)
+starting_point_wood <- grid_search_wood[[1]][min_mse_wood,]
 
-ggplot(par_grid, aes(x = a, y = b)) +
+min_mse_roots <- which.min(grid_search_roots[[2]]$MSE)
+starting_point_roots <- grid_search_roots[[1]][min_mse_roots,]
+
+# a plottet mod b
+
+ggplot(grid_search_leafs[[2]], aes(x = a, y = b)) +
   geom_point()+
-  geom_point(aes(x=hat_alpha[1], y = hat_beta[1]), color = "red")+
-  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "blue")+
+  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "red", size = 3)+
+  geom_point(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), color = "blue", size = 3)+
+  geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", hjust = -.5, color = "red", size = 5)+
+  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), label = "Min. MSE", hjust = -.5, color = "blue", size = 5)+
   theme_bw()
+
+# a plottet mod MSE
+
+ggplot(grid_search_leafs[[2]], aes(x = a, y = MSE)) +
+  geom_point()+
+  geom_point(aes(x=par_leafs[2], y = MSE_NLR(par_leafs, leafs)), color = "red", size = 3)+
+  geom_point(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,3]), color = "blue", size = 3)+
+  geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", vjust = -2, color = "red", size = 5)+
+  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), label = "Min. MSE", color = "blue", size = 5)+
+  theme_bw()
+
+# b plottet mod MSE
+
+ggplot(grid_search_leafs[[2]], aes(x = b, y = MSE)) +
+  geom_point()+
+  geom_point(aes(x=par_leafs[1], y = MSE_NLR(par_leafs, leafs)), color = "red", size = 3)+
+  geom_point(aes(x=par_grid[min_mse,2], y = par_grid[min_mse,3]), color = "blue", size = 3)+
+  geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", hjust = 2, color = "red", size = 5)+
+  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), hjust = -0.05, label = "Min. MSE", color = "blue", size = 5)+
+  theme_bw()
+
 
 #Estimater
 
-NLE_leafs <- optim(par = c(1,1), fn = MSE_NLR, data = leafs)
-NLE_wood <- optim(par = c(1,1), fn = MSE_NLR, data = wood)
-NLE_roots <- optim(par = c(1,1), fn = MSE_NLR, data = roots)
+NLE_leafs <- optim(par = starting_point_leafs, fn = MSE_NLR, data = leafs)
+NLE_wood <- optim(par = starting_point_wood, fn = MSE_NLR, data = wood)
+NLE_roots <- optim(par = starting_point_roots, fn = MSE_NLR, data = roots)
 
 hat_beta <- c(NLE_leafs$par[[1]],
               NLE_wood$par[[1]],
