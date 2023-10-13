@@ -14,9 +14,14 @@ leafs_test <- read.csv('Data/test_leafs.csv')
 roots_test <- read.csv('Data/test_roots.csv')
 wood_test <- read.csv('Data/test_wood.csv')
 
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+
 library(tidyverse)
 library(readr)
 library(infer)
+library(xtable)
 ################################################################################################
 
 #Lineære modeller af log-log
@@ -27,17 +32,9 @@ lm_wood_log <- lm(Kgp ~ Sc, data = wood_log_train)
 
 #Estimater fra lm
 
-hat_beta <- c(lm_leafs_log$coefficients[[1]],
-              lm_roots_log$coefficients[[1]],
-              lm_wood_log$coefficients[[1]])
-
-hat_alpha <- c(lm_leafs_log$coefficients[[2]],
-               lm_roots_log$coefficients[[2]],
-               lm_wood_log$coefficients[[2]])
-
-var_hat <- c(var(lm_leafs_log$residuals),
-             var(lm_roots_log$residuals),
-             var(lm_wood_log$residuals))
+sd_hat <- c(sqrt(var(lm_leafs_log$residuals)),
+             sqrt(var(lm_roots_log$residuals)),
+             sqrt(var(lm_wood_log$residuals)))
 
 #Mean of the distribution on log scale
 
@@ -50,17 +47,16 @@ mean_r <- function(x) exp(lm_roots_log$coefficients[[1]])*x^lm_roots_log$coeffic
 
 # Quantiles
 
-quant_low_l <- function(x) qlnorm(0.05, meanlog = mean_l_log(x), sdlog = var_hat[1]) 
-quant_up_l <- function(x) qlnorm(0.95, meanlog = mean_l_log(x), sdlog = var_hat[1]) 
+quant_low_l <- function(x) qlnorm(0.05, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
+quant_up_l <- function(x) qlnorm(0.95, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
 
-quant_low_w <- function(x) qlnorm(0.05, meanlog = mean_w_log(x), sdlog = var_hat[2]) 
-quant_up_w <- function(x) qlnorm(0.95, meanlog = mean_w_log(x), sdlog = var_hat[2])
+quant_low_w <- function(x) qlnorm(0.05, meanlog = mean_w_log(x), sdlog = sd_hat[2]) 
+quant_up_w <- function(x) qlnorm(0.95, meanlog = mean_w_log(x), sdlog = sd_hat[2])
 
-quant_low_r <- function(x) qlnorm(0.05, meanlog = mean_r_log(x), sdlog = var_hat[3]) 
-quant_up_r <- function(x) qlnorm(0.95, meanlog = mean_r_log(x), sdlog = var_hat[3])
+quant_low_r <- function(x) qlnorm(0.05, meanlog = mean_r_log(x), sdlog = sd_hat[3]) 
+quant_up_r <- function(x) qlnorm(0.95, meanlog = mean_r_log(x), sdlog = sd_hat[3])
 
 #On test set 
-
 
 test_leafs_plot <- leafs_test %>%
   mutate(Indicator = if_else((quant_low_l(Sc) <= Kgp)&
@@ -135,72 +131,71 @@ rs_cov <- function(data, k, alpha) {
     # Test and train
     picked_rs <- sample(n,size = sample_size)
     train_rs = data[picked_rs,]
+    train_rs <- train_rs %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
     test_rs = data[-picked_rs,]
     
     # Fit model
     lm_rs <- lm(Kgp ~ Sc, data = train_rs)
-    sd_hat <- sqrt(sum(lm_rs$residuals^2)/(sample_size-1))
-    f_hat <- function(x) lm_rs$coefficients[[2]]*x + lm_rs$coefficients[[1]] 
+    sd_hat <- sqrt(var(lm_leafs_log$residuals))
+    f_hat_log <- function(x) lm_rs$coefficients[[1]]+ lm_rs$coefficients[[2]]*log(x)
     
     # Quantiles
-    upper <- function(x) {
-      f_hat(x) - qt(alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
-    }
-    
-    lower <- function(x) {
-      f_hat(x) - qt(1-alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
-    }
+    low <- function(x) qlnorm(0.05, meanlog = f_hat_log(x), sdlog = sd_hat)
+    up <- function(x) qlnorm(0.95, meanlog = f_hat_log(x), sdlog = sd_hat)
     
     #Definere
-    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
-                   &upper(test_rs$Sc) >= test_rs$Kgp)
+    cov[i] <- mean(low(test_rs$Sc) <= test_rs$Kgp 
+                   &up(test_rs$Sc) >= test_rs$Kgp)
   }
   return(tibble("Coverage" = cov))
 }
 
-##Checking for correct coverage
-#
-#set.seed(4)
-#a <- rs_cov(leafs_log, 30, 0.1)
-#b <- rs_cov(wood_log, 30, 0.1)
-#c <- rs_cov(roots_log, 30,0.1)
-#
-##Mean coverage:
-#mean_a <- mean(a$Coverage)
-#mean_b <- mean(b$Coverage)
-#mean_c <- mean(c$Coverage) 
-#
-#xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
-#              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
-#
-#a %>%
-#  ggplot() +
-#  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-#                 fill = "darkolivegreen3", bins = 30)+
-#  geom_vline(xintercept = 0.9, color = "hotpink") +
-#  xlim(0,1)+
-#  theme_bw()+
-#  labs(title = "Foliage")
-#
-#b %>%
-#  ggplot() +
-#  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-#                 fill = "darkolivegreen3", bins = 30)+
-#  geom_vline(xintercept = 0.9, color = "hotpink") +
-#  theme_bw()+
-#  xlim(c(0.5,1))+
-#  labs(title = "Wood")
-#
-#c %>%
-#  ggplot() +
-#  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-#                 fill = "darkolivegreen3", bins = 30)+
-#  geom_vline(xintercept = 0.9, color = "hotpink") +
-#  theme_bw()+
-#  xlim(c(0,1))+
-#  labs(title = "Roots")
-#
-#
+#Checking for correct coverage
+
+set.seed(7)
+a <- rs_cov(leafs, 30, 0.1)
+b <- rs_cov(wood, 30, 0.1)
+c <- rs_cov(roots, 30,0.1)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 50)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0.5,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+#Det her er lidt mærkeligt
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 70)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Roots")
+
+
 ##Checking for conditional coverage----------------------------------------------
 #
 #coverage <- function(data, upper, lower){
