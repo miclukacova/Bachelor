@@ -1,5 +1,6 @@
 library(tidyverse)
 library(ggplot2)
+library(dplyr)
 
 leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
@@ -21,9 +22,11 @@ test_leafs <- read.csv('Data/test_leafs.csv')
 test_roots <- read.csv('Data/test_roots.csv')
 test_wood <- read.csv('Data/test_wood.csv')
 
-#On test data log-scale
+####################################################################
+#Log-log ols--------------------------------------------------------
+####################################################################
 
-pred_int_making <- function(train_data, test_data) {
+pred_int_making_1 <- function(train_data) {
   #Test and calibration
   picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
   train <- train_data[picked,]
@@ -35,7 +38,7 @@ pred_int_making <- function(train_data, test_data) {
   var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
   f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]
   f_hat_adj <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
-  var_y_hat <- function(x) exp(2*f_hat_adj(x)+var_hat)*(exp(var_hat)-1)
+  var_y_hat <- function(x) exp(2*(lm$coefficients[[1]]+log(x)*lm$coefficients[[2]])+var_hat)*(exp(var_hat)-1)
 
   # Heuristic notion of uncertainty
   mse <- sort((f_hat(cali$Sc) - cali$Kgp)^2)
@@ -43,63 +46,58 @@ pred_int_making <- function(train_data, test_data) {
   quanti <- ceiling((nrow(cali)+1)*(1-0.1))
   q_hat <- mse[quanti]
   q_hat_adj <- mse_adj[quanti]
-
-  #Prediction interval
-  upper_adj <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)*var_y_hat(x)^(1/2)
-  lower_adj <- function(x) f_hat_adj(x) - sqrt(q_hat_adj)*var_y_hat(x)^(1/2)
-
-  #hmmm
-  upper <- function(x) f_hat(x) + sqrt(q_hat)*exp(var_hat^(1/2))
-  lower <- function(x) f_hat(x) - sqrt(q_hat)*exp(var_hat^(1/2))
-
-  #En anden mulighed
+  
+  #Prediction interval functions
   
   upper_1 <- function(x) f_hat(x) + sqrt(q_hat)
   lower_1 <- function(x) f_hat(x) - sqrt(q_hat)
   
   upper_2 <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)
-  lower_2 <- function(x) f_hat_adj(x) - sqrt(q_hata_adj)
+  lower_2 <- function(x) f_hat_adj(x) - sqrt(q_hat_adj)
   
-  return(list(f_hat_adj, f_hat, upper_adj, lower_adj, upper, lower, upper_1, lower_1, upper_2, lower_2))
+  return(list(f_hat_adj, f_hat, lower_1, upper_1, lower_2, upper_2))
+}
+pred_int_making_2 <- function(train_data) {
+  #Test and calibration
+  picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
+  train <- train_data[picked,]
+  cali <- train_data[-picked,]
+  cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
+  
+  #Linear model
+  lm <- lm(Kgp ~ Sc, train)
+  var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
+  f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
+  var_y_hat <- function(x) exp(2*(lm$coefficients[[1]]+log(x)*lm$coefficients[[2]])+var_hat)*(exp(var_hat)-1)
+  
+  # Heuristic notion of uncertainty
+  score <- sort(abs(f_hat(cali$Sc) - cali$Kgp)/var_y_hat(cali$Sc))
+  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  q_hat <- score[quanti]
+  
+  #Prediction intervals
+  upper <- function(x) f_hat(x) + q_hat*var_y_hat(x)
+  lower <- function(x) f_hat(x) - q_hat*var_y_hat(x)
+  
+  return(list(f_hat, lower, upper))
 }
 
-#Test and calibration
-picked <- sample(seq(1, nrow(leafs_log_train)), 0.8*nrow(leafs_log_train))
-train <- leafs_log_train[picked,]
-cali <- leafs_log_train[-picked,]
-cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
+a <- pred_int_making_1(train_leafs_log)
+b <- pred_int_making_1(train_wood_log)
+#c <- pred_int_making(train_roots_log)
+c <- pred_int_making_2(train_leafs_log)
+d <- pred_int_making_2(train_wood_log)
 
-#Linear model
-lm <- lm(Kgp ~ Sc, train)
-var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
-f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]
-f_hat_adj <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
-var_y_hat <- function(x) exp(2*f_hat_adj(x)+var_hat)*(exp(var_hat)-1)
+#Der er ikke nok data punkter i roots --  vi får NA's
 
-# Heuristic notion of uncertainty
-mse <- sort((f_hat(cali$Sc) - cali$Kgp)^2)
-mse_adj <- sort((f_hat_adj(cali$Sc) - cali$Kgp)^2)
-quanti <- ceiling((nrow(cali)+1)*(1-0.1))
-q_hat <- mse[quanti]
-q_hat_adj <- mse_adj[quanti]
+#Coverage på test set
 
-#Prediction interval
-upper_adj <- function(x) f_hat_adj(x) + q_hat_adj*var_y_hat(x)^(1/2)
-lower_adj <- function(x) f_hat_adj(x) - q_hat_adj*var_y_hat(x)^(1/2)
-
-#hmmm
-upper <- function(x) f_hat(x) + q_hat*exp(var_hat)^(1/2)
-lower <- function(x) f_hat(x) - q_hat*exp(var_hat)^(1/2)
-
-#En anden mulighed
-
-upper_1 <- function(x) f_hat(x) + sqrt(q_hat)
-lower_1 <- function(x) f_hat(x) - sqrt(q_hat)
-
-upper_2 <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)
-lower_2 <- function(x) f_hat_adj(x) - sqrt(q_hat_adj)
-
-a <- pred_int_making(train_leafs_log, test_leafs_log)
+mean(a[[3]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[4]](test_leafs$Sc))
+mean(b[[3]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[4]](test_wood$Sc))
+mean(a[[5]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[6]](test_leafs$Sc))
+mean(b[[5]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[6]](test_wood$Sc))
+mean(c[[2]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[3]](test_leafs$Sc))
+mean(d[[2]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[3]](test_wood$Sc))
 
 ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
@@ -107,32 +105,35 @@ ggplot(test_leafs, aes(x = Sc, y = Kgp)) +
   xlab('Sc') + 
   ylab('Kgp')+
   geom_function(fun = a[[1]], colour = "red") +
-  geom_function(fun = a[[1]], colour = "blue") +
-  geom_function(fun = a[[2]], colour = "blue") +
+  geom_function(fun = a[[5]], colour = "blue") +
+  geom_function(fun = a[[6]], colour = "blue") +
   labs(title = "Kgp as function of Sc with conformal prediction intervals")
 
+
+#De her to er efter metoderne i noten, men de bliver bare virkelig bred
 
 ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
-  xlab('log(Sc)') + 
-  ylab('log(Kgp)')+
-  geom_function(fun = f_hat_adj, colour = "red") +
-  geom_function(fun = upper, colour = "blue") +
-  geom_function(fun = lower, colour = "blue") +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = c[[1]], colour = "red") +
+  geom_function(fun = c[[2]], colour = "blue") +
+  geom_function(fun = c[[3]], colour = "blue") +
   labs(title = "Kgp as function of Sc with conformal prediction intervals")
 
-#Coverage
+ggplot(test_wood, aes(x = Sc, y = Kgp)) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = d[[1]], colour = "red") +
+  geom_function(fun = d[[2]], colour = "blue") +
+  geom_function(fun = d[[3]], colour = "blue") +
+  labs(title = "Kgp as function of Sc with conformal prediction intervals")
 
-up1 <- f_hat(test_leafs_log$Sc) + sqrt(q_hat)
-low1 <- f_hat(test_leafs_log$Sc) - sqrt(q_hat)
-up <- f_hat(test_leafs_log$Sc) + q_hat*sigma_hat^(1/2)
-low <- f_hat(test_leafs_log$Sc) - q_hat*sigma_hat^(1/2)
 
-mean(low1 <= test_leafs_log$Kgp & test_leafs_log$Kgp  <= up1)
-mean(low <= test_leafs_log$Kgp & test_leafs_log$Kgp  <= up)
-
-#cv
+#Distribution of coverage by resampling
 
 cv_cov <- function(data, k, alpha) {
   cov <- c()
