@@ -95,9 +95,9 @@ starting_point_roots <- grid_search_roots[[1]][min_mse_roots,]
 ggplot(grid_search_leafs[[2]], aes(x = a, y = b)) +
   geom_point()+
   geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "red", size = 3)+
-  geom_point(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), color = "blue", size = 3)+
+  geom_point(aes(x=grid_search_leafs[[2]][min_mse_leafs,1], y = grid_search_leafs[[2]][min_mse_leafs,2]), color = "blue", size = 3)+
   geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", hjust = -.5, color = "red", size = 5)+
-  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), label = "Min. MSE", hjust = -.5, color = "blue", size = 5)+
+  geom_text(aes(x=grid_search_leafs[[2]][min_mse_leafs,1], y = grid_search_leafs[[2]][min_mse_leafs,2]), label = "Min. MSE", hjust = -.5, color = "blue", size = 5)+
   theme_bw()
 
 # a plottet mod MSE
@@ -105,9 +105,9 @@ ggplot(grid_search_leafs[[2]], aes(x = a, y = b)) +
 ggplot(grid_search_leafs[[2]], aes(x = a, y = MSE)) +
   geom_point()+
   geom_point(aes(x=par_leafs[2], y = MSE_NLR(par_leafs, leafs)), color = "red", size = 3)+
-  geom_point(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,3]), color = "blue", size = 3)+
+  geom_point(aes(x=grid_search_leafs[[2]][min_mse_leafs,1], y = grid_search_leafs[[2]][min_mse_leafs,3]), color = "blue", size = 3)+
   geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", vjust = -2, color = "red", size = 5)+
-  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), label = "Min. MSE", color = "blue", size = 5)+
+  geom_text(aes(x=grid_search_leafs[[2]][min_mse_leafs,1], y = grid_search_leafs[[2]][min_mse_leafs,2]), label = "Min. MSE", color = "blue", size = 5)+
   theme_bw()
 
 # b plottet mod MSE
@@ -115,9 +115,9 @@ ggplot(grid_search_leafs[[2]], aes(x = a, y = MSE)) +
 ggplot(grid_search_leafs[[2]], aes(x = b, y = MSE)) +
   geom_point()+
   geom_point(aes(x=par_leafs[1], y = MSE_NLR(par_leafs, leafs)), color = "red", size = 3)+
-  geom_point(aes(x=par_grid[min_mse,2], y = par_grid[min_mse,3]), color = "blue", size = 3)+
+  geom_point(aes(x=grid_search_leafs[[2]][min_mse_leafs,2], y = grid_search_leafs[[2]][min_mse_leafs,3]), color = "blue", size = 3)+
   geom_text(aes(x=par_leafs[2], y = par_leafs[1]), label = "OLS", hjust = 2, color = "red", size = 5)+
-  geom_text(aes(x=par_grid[min_mse,1], y = par_grid[min_mse,2]), hjust = -0.05, label = "Min. MSE", color = "blue", size = 5)+
+  geom_text(aes(x=grid_search_leafs[[2]][min_mse_leafs,1], y = grid_search_leafs[[2]][min_mse_leafs,2]), hjust = -0.05, label = "Min. MSE", color = "blue", size = 5)+
   theme_bw()
 
 
