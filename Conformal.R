@@ -5,69 +5,121 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
-# Split Data 1 
-sample_size1 = floor(0.7*nrow(leafs_log))
-set.seed(777)
+train_leafs_log <- read.csv('Data/train_leafs_log.csv')
+train_roots_log <- read.csv('Data/train_roots_log.csv')
+train_wood_log<- read.csv('Data/train_wood_log.csv')
 
-# Randomly split data
-picked = sample(seq_len(nrow(leafs_log)),size = sample_size1)
-train_leafs_log = leafs_log[picked,]
-cali_leafs_log = leafs_log[-picked,]
+test_leafs_log <- read.csv('Data/test_leafs_log.csv')
+test_roots_log <- read.csv('Data/test_roots_log.csv')
+test_wood_log<- read.csv('Data/test_wood_log.csv')
 
-# Split Data 2
+leafs_train <- read.csv('Data/train_leafs.csv')
+roots_train <- read.csv('Data/train_roots.csv')
+wood_train<- read.csv('Data/train_wood.csv')
 
-sample_size2 = floor(0.5*nrow(cali_leafs_log))
-set.seed(777)
+test_leafs <- read.csv('Data/test_leafs.csv')
+test_roots <- read.csv('Data/test_roots.csv')
+test_wood <- read.csv('Data/test_wood.csv')
 
-# Randomly split data 2
-picked = sample(seq_len(nrow(cali_leafs_log)),size = sample_size2)
-test_leafs_log = cali_leafs_log[picked,]
-cali_leafs_log = cali_leafs_log[-picked,]
+#On test data log-scale
 
-# The linear model
+pred_int_making <- function(train_data, test_data) {
+  #Test and calibration
+  picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
+  train <- train_data[picked,]
+  cali <- train_data[-picked,]
+  cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
 
-lm <- lm(Kgp ~ Sc, train_leafs_log)
-sigma_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
-f_hat <- function(x) lm$coefficients[[2]]*x + lm$coefficients[[1]]
+  #Linear model
+  lm <- lm(Kgp ~ Sc, train)
+  var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
+  f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]
+  f_hat_adj <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
+  var_y_hat <- function(x) exp(2*f_hat_adj(x)+var_hat)*(exp(var_hat)-1)
+
+  # Heuristic notion of uncertainty
+  mse <- sort((f_hat(cali$Sc) - cali$Kgp)^2)
+  mse_adj <- sort((f_hat_adj(cali$Sc) - cali$Kgp)^2)
+  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  q_hat <- mse[quanti]
+  q_hat_adj <- mse_adj[quanti]
+
+  #Prediction interval
+  upper_adj <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)*var_y_hat(x)^(1/2)
+  lower_adj <- function(x) f_hat_adj(x) - sqrt(q_hat_adj)*var_y_hat(x)^(1/2)
+
+  #hmmm
+  upper <- function(x) f_hat(x) + sqrt(q_hat)*exp(var_hat^(1/2))
+  lower <- function(x) f_hat(x) - sqrt(q_hat)*exp(var_hat^(1/2))
+
+  #En anden mulighed
+  
+  upper_1 <- function(x) f_hat(x) + sqrt(q_hat)
+  lower_1 <- function(x) f_hat(x) - sqrt(q_hat)
+  
+  upper_2 <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)
+  lower_2 <- function(x) f_hat_adj(x) - sqrt(q_hata_adj)
+  
+  return(list(f_hat_adj, f_hat, upper_adj, lower_adj, upper, lower, upper_1, lower_1, upper_2, lower_2))
+}
+
+#Test and calibration
+picked <- sample(seq(1, nrow(leafs_log_train)), 0.8*nrow(leafs_log_train))
+train <- leafs_log_train[picked,]
+cali <- leafs_log_train[-picked,]
+cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
+
+#Linear model
+lm <- lm(Kgp ~ Sc, train)
+var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
+f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]
+f_hat_adj <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
+var_y_hat <- function(x) exp(2*f_hat_adj(x)+var_hat)*(exp(var_hat)-1)
 
 # Heuristic notion of uncertainty
-
-mse <- sort((f_hat(cali_leafs_log$Sc) - cali_leafs_log$Kgp)^2)
-
-quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
-
+mse <- sort((f_hat(cali$Sc) - cali$Kgp)^2)
+mse_adj <- sort((f_hat_adj(cali$Sc) - cali$Kgp)^2)
+quanti <- ceiling((nrow(cali)+1)*(1-0.1))
 q_hat <- mse[quanti]
+q_hat_adj <- mse_adj[quanti]
 
-# Conformal prediction interval
+#Prediction interval
+upper_adj <- function(x) f_hat_adj(x) + q_hat_adj*var_y_hat(x)^(1/2)
+lower_adj <- function(x) f_hat_adj(x) - q_hat_adj*var_y_hat(x)^(1/2)
 
-# Som i noten
+#hmmm
+upper <- function(x) f_hat(x) + q_hat*exp(var_hat)^(1/2)
+lower <- function(x) f_hat(x) - q_hat*exp(var_hat)^(1/2)
 
-upper <- function(x) f_hat(x) + q_hat*sigma_hat^(1/2)
-lower <- function(x) f_hat(x) - q_hat*sigma_hat^(1/2)
-
-ggplot(test_leafs_log, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
-  theme_bw() +
-  xlab('log(Sc)') + 
-  ylab('log(Kgp)')+
-  geom_function(fun = f_hat, colour = "red") +
-  geom_function(fun = upper, colour = "blue") +
-  geom_function(fun = lower, colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
-
-#Som jeg tænkter (næsten det samme?????)
+#En anden mulighed
 
 upper_1 <- function(x) f_hat(x) + sqrt(q_hat)
 lower_1 <- function(x) f_hat(x) - sqrt(q_hat)
 
-ggplot(test_leafs_log, aes(x = Sc, y = Kgp)) + 
+upper_2 <- function(x) f_hat_adj(x) + sqrt(q_hat_adj)
+lower_2 <- function(x) f_hat_adj(x) - sqrt(q_hat_adj)
+
+a <- pred_int_making(train_leafs_log, test_leafs_log)
+
+ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
+  geom_point() + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = a[[1]], colour = "red") +
+  geom_function(fun = a[[1]], colour = "blue") +
+  geom_function(fun = a[[2]], colour = "blue") +
+  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+
+
+ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('log(Sc)') + 
   ylab('log(Kgp)')+
-  geom_function(fun = f_hat, colour = "red") +
-  geom_function(fun = upper_1, colour = "blue") +
-  geom_function(fun = lower_1, colour = "blue") +
+  geom_function(fun = f_hat_adj, colour = "red") +
+  geom_function(fun = upper, colour = "blue") +
+  geom_function(fun = lower, colour = "blue") +
   labs(title = "Kgp as function of Sc with conformal prediction intervals")
 
 #Coverage
@@ -146,8 +198,8 @@ mse <- sort((f_hat_leafs(cali_leafs_log$Sc) - exp(cali_leafs_log$Kgp))^2)
 quanti <- ceiling((nrow(cali_leafs_log)+1)*(1-0.1))
 q_hat <- mse[quanti]
 
-upper <- function(x) f_hat_leafs(x) + sqrt(q_hat)
-lower <- function(x) f_hat_leafs(x) - sqrt(q_hat)
+upper <- function(x) f_hat_leafs(exp(x)) + sqrt(q_hat)
+lower <- function(x) f_hat_leafs(exp(x)) - sqrt(q_hat)
 
 ggplot(test_leafs_log, aes(x = Sc, y = exp(Kgp))) + 
   geom_point() + 

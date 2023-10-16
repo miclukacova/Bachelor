@@ -346,7 +346,6 @@ c %>%
 coverage <- function(data, upper, lower){
   mean(lower(data$Sc) <= data$Kgp & upper(data$Sc) >= data$Kgp)
 }
-
 cond_cov <- function(data, upper, lower, num_bins){
   #Bins
   bins <- sort(data$Sc)[seq(1,num_bins)*floor(nrow(data)/num_bins)]
