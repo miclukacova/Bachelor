@@ -31,7 +31,7 @@ test_wood <- read.csv('Data/test_wood.csv')
 #Log-log ols--------------------------------------------------------
 ####################################################################
 
-#Tre forskellige score funktioner
+#To forskellige score funktioner
 
 #Absolute error
 pred_int_making_1 <- function(train_data) {
@@ -99,22 +99,38 @@ b <- pred_int_making_1(train_wood_log)
 #c <- pred_int_making(train_roots_log)
 #Der er ikke nok data punkter i roots --  vi får NA's
 
-mean(a[[3]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[4]](test_leafs$Sc))
-mean(b[[3]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[4]](test_wood$Sc))
-mean(a[[5]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[6]](test_leafs$Sc))
-mean(b[[5]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[6]](test_wood$Sc))
+
+z1 <- mean(a[[3]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[4]](test_leafs$Sc))
+z2 <- mean(b[[3]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[4]](test_wood$Sc))
+z3 <- mean(a[[5]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[6]](test_leafs$Sc))
+z4 <- mean(b[[5]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[6]](test_wood$Sc))
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Naive" = c(z1, z2), "Bias adjusted" = c(z3, z4)))
 
 ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = a[[1]], colour = "red") +
-  geom_function(fun = a[[5]], colour = "blue") +
-  geom_function(fun = a[[6]], colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+  geom_function(fun = a[[1]], colour = "hotpink") +
+  geom_function(fun = a[[5]], colour = "darkolivegreen4") +
+  geom_function(fun = a[[6]], colour = "darkolivegreen4") +
+  labs(title = "Leafs")
 
-# Score funktion foreslået af noten
+# Score funktion foreslået af noten 
+## Denne giver mærkelige pred intervaller - problematisk. Grundet høje varians estimater
+## De høje varians estimater kan ses her:
+
+lm <- lm(Kgp ~ Sc, train_leafs_log)
+var_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
+func1 <- function(x) sqrt(exp(2*(lm$coefficients[[1]]+log(x)*lm$coefficients[[2]])+var_hat)*(exp(var_hat)-1))
+ggplot(leafs_train, aes(x = Sc, y = Kgp)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  geom_function(fun = func1, colour = "darkolivegreen") +
+  labs(title = "Variance estimate")
+
+#Pred intervallerne 
 
 set.seed(1)
 c <- pred_int_making_2(train_leafs_log)
@@ -127,23 +143,25 @@ ggplot(test_leafs, aes(x = Sc, y = Kgp)) +
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = c[[1]], colour = "red") +
-  geom_function(fun = c[[2]], colour = "blue") +
-  geom_function(fun = c[[3]], colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+  geom_function(fun = c[[1]], colour = "hotpink") +
+  geom_function(fun = c[[2]], colour = "darkolivegreen4") +
+  geom_function(fun = c[[3]], colour = "darkolivegreen4") +
+  labs(title = "Leafs")
 
-ggplot(wood_train, aes(x = Sc, y = Kgp)) + 
+ggplot(test_wood, aes(x = Sc, y = Kgp)) + 
   geom_point() + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = d[[1]], colour = "red") +
-  geom_function(fun = d[[2]], colour = "blue") +
-  geom_function(fun = d[[3]], colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+  geom_function(fun = d[[1]], colour = "hotpink") +
+  geom_function(fun = d[[2]], colour = "darkolivegreen4") +
+  geom_function(fun = d[[3]], colour = "darkolivegreen4") +
+  labs(title = "Wood")
 
-mean(c[[2]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[3]](test_leafs$Sc))
-mean(d[[2]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[3]](test_wood$Sc))
+z1 <- mean(c[[2]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[3]](test_leafs$Sc))
+z2 <- mean(d[[2]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[3]](test_wood$Sc))
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Bias adj." = c(z1, z2)))
 
 #Distribution of coverage by resampling
 
