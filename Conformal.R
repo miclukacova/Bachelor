@@ -339,7 +339,7 @@ rs_cov <- function(data, k, alpha, model) {
     
     #Definere
     cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
-                   &upper(test_rs$Sc) >= test_rs$Kgp)
+                   & upper(test_rs$Sc) >= test_rs$Kgp)
   }
   return(tibble("Coverage" = cov))
 }
@@ -607,15 +607,20 @@ rs_cov <- function(data, k, alpha) {
     quanti <- ceiling((nrow(cali)+1)*(1-0.1))
     q_hat <- score[quanti]
     
-    cov[i] <- mean(t_05(test$Sc) - q_hat <= test$Kgp & test$Kgp <= t_95(x) + q_hat)
+    print(mean(t_05(test$Sc) - q_hat <= test$Kgp))
+    print(mean(test$Kgp <= t_95(test$Sc) + q_hat))
+    print(mean(test$Kgp <= t_95(test$Sc) + q_hat &
+                 test$Kgp <= t_95(test$Sc) + q_hat))
+    cov[i] <- mean(t_05(test$Sc) - q_hat <= test$Kgp &
+                     test$Kgp <= t_95(test$Sc) + q_hat)
   }
   return(tibble("Coverage" = cov))
 }
 
 
 set.seed(4)
-a <- rs_cov(leafs, 30, 0.1)
-b <- rs_cov(wood, 30, 0.1, f_hat_w)
+a <- rs_cov(leafs, 1, 0.1)
+b <- rs_cov(wood, 30, 0.1)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
