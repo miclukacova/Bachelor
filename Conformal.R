@@ -6,6 +6,8 @@ library(infer)
 library(foreign)
 library(xtable)
 library(stargazer)
+library(randomForest)
+library(quantregForest)
 
 leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
@@ -28,8 +30,12 @@ test_roots <- read.csv('Data/test_roots.csv')
 test_wood <- read.csv('Data/test_wood.csv')
 
 ####################################################################
-#Log-log ols--------------------------------------------------------
+#########################---SPLIT CONFORMAIL---#####################
 ####################################################################
+
+####################################################################
+#Log-log ols--------------------------------------------------------
+
 
 #To forskellige score funktioner
 
@@ -68,7 +74,7 @@ pred_int_making_1 <- function(train_data) {
 #Absolute error / sd hat(Y)
 pred_int_making_2 <- function(train_data) {
   #Test and calibration
-  picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
+  picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
   train <- train_data[picked,]
   cali <- train_data[-picked,]
   cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
@@ -267,28 +273,43 @@ pred_int_making <- function(train_data, model) {
 
 a <- pred_int_making(leafs_train, f_hat_l)
 b <- pred_int_making(wood_train, f_hat_w)
-mean(a[[1]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[2]](test_leafs$Sc))
-mean(b[[1]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[2]](test_wood$Sc))
+z1 <- mean(a[[1]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[2]](test_leafs$Sc))
+z2 <- mean(b[[1]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[2]](test_wood$Sc))
 
-ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
+xtable(tibble(" " = c("Leafs", "Wood"), "Covergae" = c(z1, z2)), type = latex)
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((a[[1]](Sc) <= Kgp)&
+                               (Kgp <= a[[2]](Sc)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((b[[1]](Sc) <= Kgp)&
+                               (Kgp <= b[[2]](Sc)),"in", "out"))
+
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = a[[1]], colour = "red") +
-  geom_function(fun = a[[2]], colour = "blue") +
-  geom_function(fun = f_hat_l, colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+  geom_function(fun = a[[1]], colour = "hotpink4") +
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = f_hat_l, colour = "hotpink") +
+  scale_color_manual(values = color) +
+  labs(title = "Leafs")
 
-ggplot(test_wood, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = b[[1]], colour = "red") +
-  geom_function(fun = b[[2]], colour = "blue") +
-  geom_function(fun = f_hat_w, colour = "blue") +
-  labs(title = "Kgp as function of Sc with conformal prediction intervals")
+  geom_function(fun = b[[1]], colour = "hotpink4") +
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = f_hat_w, colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
 
 
 #Distribution of coverage by resampling for the NLR model
@@ -353,4 +374,286 @@ b %>%
   labs(title = "Wood")
 
 #Ret jævnt fordelt
+
+
+####################################################################
+#Regression forest--------------------------------------------------------
+####################################################################
+
+pred_int_making <- function(train_data) {
+  #Test and calibration
+  picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
+  train <- train_data[picked,]
+  cali <- train_data[-picked,]
+  train_x <- data.frame(Sc = train[,1])
+  train_y <- train[,2]
+  qrf <- quantregForest(x = train_x, y = train_y, nodesize = 30)
+  qrf_func <- function(x) {
+    if (is.atomic(x)){
+      x <- data.frame(Sc = x)
+      return(predict(qrf, x, what = mean))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+  }
+    
+  # Heuristic notion of uncertainty
+  score <- sort(abs(qrf_func(cali) - cali$Kgp))
+  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  q_hat <- score[quanti]
+  
+  #Prediction interval functions
+  
+  upper <- function(x) qrf_func(x) + q_hat
+  lower <- function(x) qrf_func(x) - q_hat
+  
+  return(list(lower, upper, qrf_func))
+}
+
+set.seed(4)
+a <- pred_int_making(leafs_train)
+b <- pred_int_making(wood_train)
+z1 <- mean(a[[1]](test_leafs) <= test_leafs$Kgp &
+             test_leafs$Kgp  <= a[[2]](test_leafs))
+z2 <- mean(b[[1]](test_wood) <= test_wood$Kgp &
+             test_wood$Kgp  <= b[[2]](test_wood))
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Covergae" = c(z1, z2)), type = latex)
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((a[[1]](test_leafs) <= Kgp) &
+                               (Kgp <= a[[2]](test_leafs)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((b[[1]](test_wood) <= Kgp)&
+                               (Kgp <= b[[2]](test_wood)),"in", "out"))
+
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = a[[1]], colour = "hotpink4") +
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = a[[3]], colour = "hotpink") +
+  scale_color_manual(values = color) +
+  labs(title = "Leafs")
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = b[[1]], colour = "hotpink4") +
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = b[[3]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+####################################################################
+#Conformalised quantile regression forest--------------------------------------------------------
+####################################################################
+
+pred_int_making <- function(train_data) {
+  #Test and calibration
+  picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
+  train <- train_data[picked,]
+  cali <- train_data[-picked,]
+  train_x <- data.frame(Sc = train[,1])
+  train_y <- train[,2]
+  qrf <- quantregForest(x = train_x, y = train_y, nodesize = 30)
+  
+  #Functions
+  qrf_func <- function(x) {
+    if (is.atomic(x)){
+      return(predict(qrf, data.frame(Sc = x), what = mean))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+  }
+  t_05 <- function(x) {
+    if (is.atomic(x)){
+      return(predict(qrf, data.frame(Sc = x), what = 0.05))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = 0.05))
+  }
+  t_95<- function(x) {
+    if (is.atomic(x)){
+      return(predict(qrf, data.frame(Sc = x), what = 0.95))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = 0.95))
+  }
+  
+  #Scores
+  score <- c()
+  for (i in (1:nrow(cali))){
+    score[i] <- max((t_05(cali[i,]) - cali[i,]$Kgp), (cali[i,]$Kgp- t_95(cali[i,])))
+  }
+  score <- sort(score)
+  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  q_hat <- score[quanti]
+  
+  #Prediction interval functions
+  
+  upper <- function(x) t_95(x) + q_hat
+  lower <- function(x) t_05(x) - q_hat
+  
+  return(list(lower, upper, qrf_func))
+}
+
+
+set.seed(4)
+a <- pred_int_making(leafs_train)
+b <- pred_int_making(wood_train)
+z1 <- mean(a[[1]](test_leafs) <= test_leafs$Kgp &
+             test_leafs$Kgp  <= a[[2]](test_leafs))
+z2 <- mean(b[[1]](test_wood) <= test_wood$Kgp &
+             test_wood$Kgp  <= b[[2]](test_wood))
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Covergae" = c(z1, z2)), type = latex)
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((a[[1]](test_leafs) <= Kgp) &
+                               (Kgp <= a[[2]](test_leafs)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((b[[1]](test_wood) <= Kgp)&
+                               (Kgp <= b[[2]](test_wood)),"in", "out"))
+
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = a[[1]], colour = "hotpink4") +
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = a[[3]], colour = "hotpink") +
+  scale_color_manual(values = color) +
+  labs(title = "Leafs")
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = b[[1]], colour = "hotpink4") +
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = b[[3]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+#Distribution of coverage by resampling for the NLR model
+
+rs_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked <- sample(n,size = sample_size)
+    train_data = data[picked,]
+    test = data[-picked,]
+    
+    # Train and cali
+    picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
+    train <- train_data[picked,]
+    cali <- train_data[-picked,]
+    train_x <- data.frame(Sc = train[,1])
+    train_y <- train[,2]
+    qrf <- quantregForest(x = train_x, y = train_y, nodesize = 30)
+    
+    #Functions
+    qrf_func <- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = mean))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+    }
+    t_05 <- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = 0.05))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = 0.05))
+    }
+    t_95<- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = 0.95))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = 0.95))
+    
+    score <- sort(abs(model(cali_rs$Sc) - cali_rs$Kgp))
+    quanti <- ceiling((nrow(cali_rs)+1)*(1-0.1))
+    q_hat <- score[quanti] 
+    
+    upper <- function(x) model(x) + q_hat
+    lower <- function(x) model(x) - q_hat
+    
+    #Definere
+    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                   &upper(test_rs$Sc) >= test_rs$Kgp)
+    }
+    
+    #Scores
+    score <- c()
+    for (i in (1:nrow(cali))){
+      score[i] <- max((t_05(cali[i,]) - cali[i,]$Kgp), (cali[i,]$Kgp- t_95(cali[i,])))
+    }
+    score <- sort(score)
+    quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+    q_hat <- score[quanti]
+    
+    cov[i] <- mean(t_05(test$Sc) - q_hat <= test$Kgp & test$Kgp <= t_95(x) + q_hat)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1)
+b <- rs_cov(wood, 30, 0.1, f_hat_w)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 50)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0.5,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 40)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+#Ret jævnt fordelt
+
+
+####################################################################
+#########################---FULL CONFORMAIL---#####################
+####################################################################
+
+library(devtools)
+install_github(repo="ryantibs/conformal", subdir="conformalInference")
+library(conformalInference)
+
+?conformal.pred
+
+
 
