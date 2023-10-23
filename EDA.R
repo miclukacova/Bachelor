@@ -13,38 +13,38 @@ wood_log <- read.csv('Data/wood_log.csv')
 #Histogrammer over fordelingen af biomasse
 
 a <- ggplot(data = leafs)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
   theme_bw()+
-  labs(title = "Distribution of leafs biomass")
+  labs(title = "Leafs")
 
-b <- ggplot(data = roots)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+b <- ggplot(data = wood)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
   theme_bw()+
-  labs(title = "Distribution of root biomass")
+  labs(title = "Wood")
 
-c <- ggplot(data = wood)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
+c <- ggplot(data = roots)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
   theme_bw()+
-  labs(title = "Distribution of wood biomass")
+  labs(title = "Roots")
 
 ggarrange(a,b,c, ncol = 3, nrow = 1)
 
 #Histogrammer over fordelingen af biomasse efter log transformationen
 
 a1 <- ggplot(data = leafs_log)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
-  theme_bw()+
-  labs(title = "Distribution of log leafs biomass")
-
-b1 <- ggplot(data = roots_log)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = "white", bins = 10)+
-  theme_bw()+
-  labs(title = "Distribution of log root biomass")
-
-c1 <- ggplot(data = wood_log)+
   geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
   theme_bw()+
-  labs(title = "Distribution of log wood biomass")
+  labs(title = "Leafs")
+
+b1 <- ggplot(data = wood_log)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
+  theme_bw()+
+  labs(title = "Wood")
+
+c1 <- ggplot(data = roots_log)+
+  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
+  theme_bw()+
+  labs(title = "Roots")
 
 ggarrange(a1,b1,c1, ncol = 3, nrow = 1)
 
@@ -79,7 +79,6 @@ ggarrange(leafs_sc_plot, roots_sc_plot, wood_sc_plot, ncol = 3, nrow = 1)
 
 #Med log-log transformation
 
-
 ggplot(leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
@@ -107,32 +106,42 @@ ggplot(wood_log, aes(x = Sc, y = Kgp)) +
 
 #Residual plots
 
+lm_leafs <- lm(Kgp ~ Sc, leafs)
+lm_wood <- lm(Kgp ~ Sc, wood)
+lm_roots <- lm(Kgp ~ Sc, roots)
+lm_leafs_log <- lm(Kgp ~ Sc, leafs_log)
+lm_wood_log<- lm(Kgp ~ Sc, wood_log)
+lm_roots_log <- lm(Kgp ~ Sc, roots_log)
+
 ggplot(lm_leafs, aes(x = lm_leafs$fitted.values, y = lm_leafs$residuals)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.3, shape = 21)  +
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Residual plot")
+  labs(title = "Leafs")
+
+ggplot(lm_wood, aes(x = lm_wood$fitted.values, y = lm_wood$residuals)) +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.3, shape = 21)  +
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Wood")
 
 ggplot(lm_roots, aes(x = lm_roots$fitted.values, y = lm_roots$residuals)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  + 
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Resdiual plot")
-
-ggplot(lm_wood, aes(x = lm_wood$fitted.values, y = lm_wood$residuals)) + 
-  geom_point() + 
-  theme_bw() +
-  xlab('Fitted values') + 
-  ylab('Residuals')+
-  labs(title = "Resdiual plot")
+  labs(title = "Roots")
 
 
 #Residual plots
 
 ggplot(lm_leafs_log, aes(x = lm_leafs_log$fitted.values, y = lm_leafs_log$residuals)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
@@ -140,14 +149,14 @@ ggplot(lm_leafs_log, aes(x = lm_leafs_log$fitted.values, y = lm_leafs_log$residu
   labs(title = "Residual plot")
        
 ggplot(lm_roots_log, aes(x = lm_roots_log$fitted.values, y = lm_roots_log$residuals)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
   labs(title = "Resdiual plot")
 
 ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = lm_wood_log$residuals)) + 
-  geom_point() + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
@@ -179,18 +188,31 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = rstandard(lm_wood_log
   geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
   labs(title = "Standardized Resdiual plot")
 
-# Histogram over fordelingen af residualerne
+# Residuals against predicted 
 
-#x <- residuals(lm_koen)/sd(residuals(lm_koen))
+ggplot(leafs_log, aes(x = Kgp, y = rstandard(lm_leafs_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Kgp') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Leafs")
 
+ggplot(wood_log, aes(x = Kgp, y = rstandard(lm_wood_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Kgp') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Wood")
 
-#ggplot(data = tibble(x=x))+
-#  geom_histogram(aes(x=x, y=..density..), color = "white", bins = 8)+
-#  labs(title = "Histogram over fordelingen af residualerne")+
-#  geom_function(fun = dnorm, color = "red")
-
-
-
+ggplot(roots_log, aes(x = Kgp, y = rstandard(lm_roots_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Kgp') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Roots")
 
 
 

@@ -655,10 +655,16 @@ b %>%
 ####################################################################
 
 library(devtools)
-install_github(repo="ryantibs/conformal", subdir="conformalInference")
+#install_github(repo="ryantibs/conformal", subdir="conformalInference")
 library(conformalInference)
 
 ?conformal.pred
 
+leafs_train
+
+train_function <- function(x,y) lm(Sc ~ Kgp, data = data.frame(Sc = x, Kgp = y))
+train_function(leafs_train$Sc, leafs_train$Kgp)
+
+conformal.pred(leafs_train$Sc, leafs_train$Kgp, test_leafs[1,1], train_function)
 
 
