@@ -118,9 +118,9 @@ ggplot(test_leafs, aes(x = Sc, y = Kgp)) +
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = a[[1]], colour = "hotpink") +
-  geom_function(fun = a[[5]], colour = "darkolivegreen4") +
-  geom_function(fun = a[[6]], colour = "darkolivegreen4") +
+  geom_function(fun = a[[2]], colour = "hotpink") +
+  geom_function(fun = a[[3]], colour = "darkolivegreen4") +
+  geom_function(fun = a[[4]], colour = "darkolivegreen4") +
   labs(title = "Leafs")
 
 # Score funktion foreslået af noten 
@@ -248,7 +248,6 @@ b %>%
 
 f_hat_l <- function(x) 0.5686253*x^0.7160437
 f_hat_w <- function(x) 6.9512896*x^0.9841950
-f_hat_r <- function(x) 0.1206638*x^1.7371556
 
 
 #Evt. optimer train cali split, og også måske noget med et usikkerhedsmål
@@ -654,17 +653,60 @@ b %>%
 #########################---FULL CONFORMAIL---#####################
 ####################################################################
 
+#OLS model
+
 library(devtools)
 #install_github(repo="ryantibs/conformal", subdir="conformalInference")
 library(conformalInference)
 
-?conformal.pred
-
-leafs_train
-
-train_function <- function(x,y) lm(Sc ~ Kgp, data = data.frame(Sc = x, Kgp = y))
-train_function(leafs_train$Sc, leafs_train$Kgp)
-
-conformal.pred(leafs_train$Sc, leafs_train$Kgp, test_leafs[1,1], train_function)
+train_function <- function(x,y, out) {
+  lm(Kgp ~ Sc, data = data.frame(Sc = log(x), Kgp = log(y)))
+}
+predict_function <- function(out, newx) {
+  exp(out$coefficients[[1]])*newx^out$coefficients[[2]]*exp(var(out$residuals))
+} 
 
 
+ggplot(aa) + 
+  geom_point(aes(x = Sc, y = Pred), color = "Hotpink4") + 
+  geom_point(aes(x = Sc, y = Kgp), color = "Hotpink") +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")
+
+conformal_leafs <- conformal.pred(leafs_train$Sc, leafs_train$Kgp, test_leafs[,1], train_function, predict_function)
+conformal_wood <- conformal.pred(wood_train$Sc, wood_train$Kgp, test_wood[,1], train_function, predict_function)
+  
+data_plot_leafs <- tibble("Sc" = test_leafs[,1], "Kgp" = test_leafs[,2], "Fit" = conformal_leafs$pred[,1], 
+                    "Up" = conformal_leafs$up[,1], "Low" = conformal_leafs$lo[,1])
+
+data_plot_wood <- tibble("Sc" = test_wood[,1], "Kgp" = test_wood[,2], "Fit" = conformal_wood$pred[,1], 
+                    "Up" = conformal_wood$up[,1], "Low" = conformal_wood$lo[,1])
+
+ggplot(data_plot_leafs) + 
+  geom_point(aes(x = Sc, y = Fit), color = 'hotpink3', fill = 'hotpink4', shape = 21) + 
+  geom_point(aes(x = Sc, y = Low), color = 'hotpink', fill = 'hotpink2', shape = 21) +
+  geom_point(aes(x = Sc, y = Up), color = 'hotpink', fill = 'hotpink2', shape = 21) +
+  geom_point(aes(x = Sc, y = Kgp), color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")
+
+ggplot(data_plot_wood) + 
+  geom_point(aes(x = Sc, y = Fit), color = "Hotpink4") + 
+  geom_point(aes(x = Sc, y = Low), color = "Hotpink") +
+  geom_point(aes(x = Sc, y = Up), color = "Hotpink") +
+  geom_point(aes(x = Sc, y = Kgp), color = "Darkolivegreen4") +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")
+
+
+#mean(test$lo <= test_leafs_log$Kgp &  test_leafs_log$Kgp  <= test$up)
+#mean(test$lo- test$up)
+#max(test$lo- test$up)
+#min(test$lo- test$up)
+#mean(test$pred)

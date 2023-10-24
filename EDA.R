@@ -195,7 +195,7 @@ ggplot(leafs_log, aes(x = Kgp, y = rstandard(lm_leafs_log))) +
   theme_bw() +
   xlab('Kgp') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Leafs")
 
 ggplot(wood_log, aes(x = Kgp, y = rstandard(lm_wood_log))) + 
@@ -203,7 +203,7 @@ ggplot(wood_log, aes(x = Kgp, y = rstandard(lm_wood_log))) +
   theme_bw() +
   xlab('Kgp') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Wood")
 
 ggplot(roots_log, aes(x = Kgp, y = rstandard(lm_roots_log))) + 
@@ -211,7 +211,7 @@ ggplot(roots_log, aes(x = Kgp, y = rstandard(lm_roots_log))) +
   theme_bw() +
   xlab('Kgp') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Roots")
 
 
