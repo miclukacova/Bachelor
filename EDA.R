@@ -190,7 +190,7 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = rstandard(lm_wood_log
 
 # Residuals against predicted 
 
-ggplot(leafs_log, aes(x = Kgp, y = rstandard(lm_leafs_log))) + 
+ggplot(leafs_log, aes(x = Sc, y = rstandard(lm_leafs_log))) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
   theme_bw() +
   xlab('Kgp') + 
@@ -198,7 +198,7 @@ ggplot(leafs_log, aes(x = Kgp, y = rstandard(lm_leafs_log))) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Leafs")
 
-ggplot(wood_log, aes(x = Kgp, y = rstandard(lm_wood_log))) + 
+ggplot(wood_log, aes(x = Sc, y = rstandard(lm_wood_log))) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
   theme_bw() +
   xlab('Kgp') + 
@@ -206,7 +206,7 @@ ggplot(wood_log, aes(x = Kgp, y = rstandard(lm_wood_log))) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Wood")
 
-ggplot(roots_log, aes(x = Kgp, y = rstandard(lm_roots_log))) + 
+ggplot(roots_log, aes(x = Sc, y = rstandard(lm_roots_log))) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
   theme_bw() +
   xlab('Kgp') + 
@@ -214,8 +214,72 @@ ggplot(roots_log, aes(x = Kgp, y = rstandard(lm_roots_log))) +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
   labs(title = "Roots")
 
+# Residuals against order
+
+leafs_log_plot <- leafs_log %>% mutate(order = seq(1,nrow(leafs_log)))
+
+ggplot(leafs_log_plot, aes(x = order, y = rstandard(lm_leafs_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Leafs")
+
+wood_log_plot <- wood_log %>% mutate(order = seq(1,nrow(wood_log)))
+
+ggplot(wood_log_plot, aes(x = order, y = rstandard(lm_wood_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Wood")
+
+roots_log_plot <- roots_log %>% mutate(order = seq(1,nrow(roots_log)))
+
+ggplot(roots_log_plot, aes(x = order, y = rstandard(lm_roots_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth( se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Roots")
+
+# Residuals against order
+
+leafs_log_plot <- leafs_log %>% mutate(order = seq(1,nrow(leafs_log))) %>%
+  arrange(Kgp)
+
+ggplot(leafs_log_plot, aes(x = order, y = rstandard(lm_leafs_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Leafs")
+
+wood_log_plot <- wood_log %>% mutate(order = seq(1,nrow(wood_log)) %>%
+                                       arrange(Kgp)
+
+ggplot(wood_log_plot, aes(x = order, y = rstandard(lm_wood_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Wood")
+
+roots_log_plot <- roots_log %>% mutate(order = seq(1,nrow(roots_log))) %>%
+  arrange(Kgp)
+
+ggplot(roots_log_plot, aes(x = order, y = rstandard(lm_roots_log))) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Order') + 
+  ylab('Residuals')+
+  geom_smooth( se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Roots")
 
 
-
-
-
+##Ingen tendenser....
