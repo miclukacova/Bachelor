@@ -110,7 +110,7 @@ f_hat_wood_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[
 
 #Prediction intervals log scale
 
-alpha <- 0.1
+alpha <- 0.2
 
 upper_leafs <- function(x) {
   f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
@@ -254,12 +254,12 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
   scale_color_manual(values = color)
 
 coverage <- function(data, upper, lower){
-  mean(lower(data$Sc) <= exp(data$Kgp) & upper(data$Sc) >= exp(data$Kgp))
+  mean(lower(data$Sc) <= data$Kgp & upper(data$Sc) >= data$Kgp)
 }
 
-a <- coverage(test_leafs_log, upper_leafs_exp, lower_leafs_exp)
-b <- coverage(test_wood_log, upper_wood_exp, lower_wood_exp)
-c <- coverage(test_roots_log, upper_roots_exp, lower_roots_exp)
+a <- coverage(test_leafs, upper_leafs_exp, lower_leafs_exp)
+b <- coverage(test_wood, upper_wood_exp, lower_wood_exp)
+c <- coverage(test_roots, upper_roots_exp, lower_roots_exp)
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type = latex)
 
@@ -384,18 +384,20 @@ cond_cov <- function(data, upper, lower, num_bins){
   return(tibble(Bin = bins2, "Conditional coverage" = cond_cov_vec))
 }
 
-a <- cond_cov(test_leafs_log, upper_leafs, lower_leafs, 5)
-b <- cond_cov(test_wood_log, upper_wood, lower_wood, 5)
-
-nrow(test_wood_log)
+a <- cond_cov(leafs_log, upper_leafs, lower_leafs, 5)
+b <- cond_cov(wood_log, upper_wood, lower_wood, 5)
 
 xtable(cbind(a,b), type = latex)
 xtable(b, type = latex)
 
-bins <- sort(test_leafs_log$Sc)[seq(1,5)*floor(nrow(test_leafs_log)/5)]
+bins <- sort(leafs_log$Sc)[seq(1,5)*floor(nrow(leafs_log)/5)]
+
+test_leafs_log_plot <- leafs_log %>%
+  mutate(Indicator = if_else((lower_leafs(Sc) <= Kgp)&
+                               (Kgp <= upper_leafs(Sc)),"in", "out"))
 
 ggplot(test_leafs_log_plot, aes(x = Sc, y = Kgp)) + 
-  geom_point(aes(color = Indicator)) + 
+  geom_point(aes(color = Indicator), alpha = 0.4) + 
   theme_bw() +
   xlab('log(Sc)') + 
   ylab('log(Kgp)')+
@@ -410,7 +412,7 @@ ggplot(test_leafs_log_plot, aes(x = Sc, y = Kgp)) +
   labs(title = "Leafs")+
   scale_color_manual(values = color)
 
-bins <- sort(test_wood_log$Sc)[seq(1,5)*floor(nrow(test_wood_log)/5)]
+bins <- sort(wood_log$Sc)[seq(1,5)*floor(nrow(wood_log)/5)]
 
 ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) + 
   geom_point(aes(color = Indicator)) + 

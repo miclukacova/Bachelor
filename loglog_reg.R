@@ -340,3 +340,5 @@ cv_mse_bias <- tibble("Model" = c("Leafs", "Wood", "Roots"),
 xtable(cv_mse_bias, type = latex)
 
 
+
+

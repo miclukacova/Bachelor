@@ -649,22 +649,38 @@ b %>%
 #Ret jævnt fordelt
 
 
-####################################################################
-#########################---FULL CONFORMAIL---#####################
-####################################################################
+################################################################################
+#########################---FULL CONFORMAIL---##################################
+################################################################################
 
-#OLS model
+################################ OLS model #####################################
 
 #library(devtools)
 #install_github(repo="ryantibs/conformal", subdir="conformalInference")
 library(conformalInference)
 
+
+################################# Logget data ##################################
+
+#Pred og train funktioner til kommandoen
+
 funs <- lm.funs()
 
-conformal_leafs <- conformal.pred(x = train_leafs_log$Sc, y = train_leafs_log$Kgp, x0 = test_leafs_log[,1],
-                                  train.fun = funs$train.fun, predict.fun = funs$predict.fun)
-conformal_wood <- conformal.pred(train_wood_log$Sc, train_wood_log$Kgp, test_wood_log[,1],
-                                 train.fun = funs$train.fun, predict.fun = funs$predict.fun)
+#Full conformal 
+
+conformal_leafs <- conformal.pred(x = train_leafs_log$Sc, 
+                                  y = train_leafs_log$Kgp, 
+                                  x0 = test_leafs_log[,1],
+                                  train.fun = funs$train.fun, 
+                                  predict.fun = funs$predict.fun)
+
+conformal_wood <- conformal.pred(train_wood_log$Sc,
+                                 train_wood_log$Kgp, 
+                                 test_wood_log[,1],
+                                 train.fun = funs$train.fun, 
+                                 predict.fun = funs$predict.fun)
+
+#Plot leafs - log scale
   
 data_plot_leafs <- tibble("Sc" = test_leafs_log[,1], "Kgp" = test_leafs_log[,2], "Fit" = conformal_leafs$pred[,1], 
                     "Up" = conformal_leafs$up[,1], "Low" = conformal_leafs$lo[,1])
@@ -679,6 +695,8 @@ ggplot(data_plot_leafs) +
   ylab('Kgp')+
   labs(title = "Leafs")
 
+# Plot leafs - real scale (created by simply exponentiating)
+
 data_plot_leafs <- tibble("Sc" = test_leafs[,1], "Kgp" = test_leafs[,2], 
                           "Up" = exp(conformal_leafs$up[,1]), "Low" = exp(conformal_leafs$lo[,1]))
 
@@ -691,6 +709,7 @@ ggplot(data_plot_leafs) +
   ylab('Kgp')+
   labs(title = "Leafs")
 
+#Plot wood - log scale
 
 data_plot_wood <- tibble("Sc" = test_wood_log[,1], "Kgp" = test_wood_log[,2], "Fit" = conformal_wood$pred[,1], 
                          "Up" = conformal_wood$up[,1], "Low" = conformal_wood$lo[,1])
@@ -705,6 +724,8 @@ ggplot(data_plot_wood) +
   ylab('Kgp')+
   labs(title = "Wood")
 
+# Plot wood - real scale (created by simply exponentiating)
+
 data_plot_wood <- tibble("Sc" = test_wood[,1], "Kgp" = test_wood[,2], 
                          "Up" = exp(conformal_wood$up[,1]), "Low" = exp(conformal_wood$lo[,1]))
 
@@ -718,7 +739,58 @@ ggplot(data_plot_wood) +
   labs(title = "Wood")
 
 
+###################### Ægte data ###############################################
+
+funs <- lm.funs()
+
+#Conformal prediction
+
+conformal_leafs <- conformal.pred(x = leafs_train$Sc, 
+                                  y = leafs_train$Kgp, 
+                                  x0 = test_leafs[,1],
+                                  train.fun = funs$train.fun, 
+                                  predict.fun = funs$predict.fun)
+
+conformal_wood <- conformal.pred(train_wood_log$Sc, 
+                                 train_wood_log$Kgp, 
+                                 test_wood_log[,1],
+                                 train.fun = funs$train.fun, 
+                                 predict.fun = funs$predict.fun)
+
+#Plot leafs
+
+data_plot_leafs <- tibble("Sc" = test_leafs[,1], "Kgp" = test_leafs[,2], "Fit" = conformal_leafs$pred[,1], 
+                          "Up" = conformal_leafs$up[,1], "Low" = conformal_leafs$lo[,1])
+
+ggplot(data_plot_leafs) + 
+  geom_point(aes(x = Sc, y = Fit), color = 'hotpink3', fill = 'hotpink4', shape = 21) + 
+  geom_point(aes(x = Sc, y = Low), color = 'hotpink', fill = 'hotpink2', shape = 21) +
+  geom_point(aes(x = Sc, y = Up), color = 'hotpink', fill = 'hotpink2', shape = 21) +
+  geom_point(aes(x = Sc, y = Kgp), color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")
+
+#Plot wood
+
+data_plot_wood <- tibble("Sc" = test_wood_log[,1], "Kgp" = test_wood_log[,2], "Fit" = conformal_wood$pred[,1], 
+                         "Up" = conformal_wood$up[,1], "Low" = conformal_wood$lo[,1])
+
+ggplot(data_plot_wood) + 
+  geom_point(aes(x = Sc, y = Fit), color = "Hotpink4") + 
+  geom_point(aes(x = Sc, y = Low), color = "Hotpink") +
+  geom_point(aes(x = Sc, y = Up), color = "Hotpink") +
+  geom_point(aes(x = Sc, y = Kgp), color = "Darkolivegreen4") +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")
+
+
 #################################################
+# Af en eller anden grund vil den ikke lade mig definere de her funktioner som jeg vil
+# Den ender med at tage log af log :(((((((( hjælp Dina
 
 
 train_function <- function(x,y, out = NULL) {
