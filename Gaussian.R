@@ -96,6 +96,8 @@ var_hat <- c(var(lm_leafs_log$residuals),
              var(lm_roots_log$residuals),
              var(lm_wood_log$residuals))
 
+sum(lm_leafs_log$residuals^2)/(nrow(leafs_log_train)-1)
+
 #log_hat estimater uden bias correction:
 
 f_hat_leafs <- function(x) hat_beta[1] + hat_alpha[1]*x
@@ -113,22 +115,22 @@ f_hat_wood_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[
 alpha <- 0.2
 
 upper_leafs <- function(x) {
-  f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
+  f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-2)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
 }
 lower_leafs <- function(x) {
-  f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-1)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
+  f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
 }
 upper_wood <- function(x) {
-  f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-1)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
 }
 lower_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-1)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
 }
 upper_roots <- function(x) {
-  f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-1)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-2)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
 }
 lower_roots <- function(x) {
-  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-1)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
 }
 
 
@@ -284,11 +286,11 @@ rs_cov <- function(data, k, alpha) {
     
     # Quantiles
     upper <- function(x) {
-      f_hat(x) - qt(alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
+      f_hat(x) - qt(alpha/2, sample_size-2)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
     }
     
     lower <- function(x) {
-      f_hat(x) - qt(1-alpha/2, sample_size-1)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
+      f_hat(x) - qt(1-alpha/2, sample_size-2)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
     }
     
     #Definere
