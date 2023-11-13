@@ -96,7 +96,6 @@ var_hat <- c(var(lm_leafs_log$residuals),
              var(lm_roots_log$residuals),
              var(lm_wood_log$residuals))
 
-sum(lm_leafs_log$residuals^2)/(nrow(leafs_log_train)-1)
 
 #log_hat estimater uden bias correction:
 
@@ -343,7 +342,7 @@ c %>%
   labs(title = "Roots")
 
 
-#Checking for conditional coverage----------------------------------------------
+#Checking for conditional coverage in bins--------------------------------------
 
 coverage <- function(data, upper, lower){
   mean(lower(data$Sc) <= data$Kgp & upper(data$Sc) >= data$Kgp)
@@ -431,3 +430,63 @@ ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) +
   geom_vline(xintercept = bins[5], linetype = "dotted", linewidth = 0.3, color = "hotpink3")+
   labs(title = "Wood")+
   scale_color_manual(values = color)
+
+
+#------------------Rolling coverage---------------------------------------------
+
+#Leafs
+
+bin_size <- 50
+roll_cov <- c()
+
+leafs_log_arr <- leafs_log %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(leafs_log)-bin_size)){
+  data_cov <- leafs_log_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, upper_leafs, lower_leafs)
+}
+
+my_tib <- tibble("Bin" = leafs_log_arr[1:(nrow(leafs_log)-bin_size),1], "Roll_cov" = roll_cov)
+
+#Mangler lige lidt color coding, men ellers er den god
+  
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.3, color = "darkolivegreen") + 
+  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs Coverage")+
+  scale_color_manual(values = color)
+
+#Wood
+
+bin_size <- 50
+roll_cov <- c()
+
+wood_log_arr <- wood_log %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(wood_log)-bin_size)){
+  data_cov <- wood_log_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, upper_wood, lower_wood)
+}
+
+my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_log)-bin_size),1], "Roll_cov" = roll_cov)
+
+#Mangler lige lidt color coding, men ellers er den god
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.3, color = "darkolivegreen") + 
+  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Wood Coverage")+
+  scale_color_manual(values = color)
+
+
+
