@@ -157,7 +157,7 @@ ggplot(pred_int_roots)+
   labs(title = "Roots")+
   scale_color_manual(values = color)
 
-#Coverage
+#Coverage of test sets
 
 coverage <- function(pred_int){
   mean(pred_int$down <= pred_int$Kgp & pred_int$Kgp <= pred_int$up)

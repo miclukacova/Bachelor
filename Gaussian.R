@@ -439,16 +439,16 @@ ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) +
 bin_size <- 50
 roll_cov <- c()
 
-leafs_log_arr <- leafs_log %>%
+leafs_log_arr <- leafs_log_test %>%
   arrange(Sc)
 
-for (i in seq(1,nrow(leafs_log)-bin_size)){
+for (i in seq(1,nrow(leafs_log_test)-bin_size)){
   data_cov <- leafs_log_arr %>%
     slice(i:(i+bin_size))
   roll_cov[i] <- coverage(data_cov, upper_leafs, lower_leafs)
 }
 
-my_tib <- tibble("Bin" = leafs_log_arr[1:(nrow(leafs_log)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = leafs_log_arr[1:(nrow(leafs_log_test)-bin_size),1], "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
   
@@ -466,16 +466,16 @@ ggplot(my_tib, aes(x = Bin, y = Roll_cov)) +
 bin_size <- 50
 roll_cov <- c()
 
-wood_log_arr <- wood_log %>%
+wood_log_arr <- wood_log_test %>%
   arrange(Sc)
 
-for (i in seq(1,nrow(wood_log)-bin_size)){
+for (i in seq(1,nrow(wood_log_test)-bin_size)){
   data_cov <- wood_log_arr %>%
     slice(i:(i+bin_size))
   roll_cov[i] <- coverage(data_cov, upper_wood, lower_wood)
 }
 
-my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_log)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_log_test)-bin_size),1], "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
 
@@ -488,5 +488,6 @@ ggplot(my_tib, aes(x = Bin, y = Roll_cov)) +
   labs(title = "Wood Coverage")+
   scale_color_manual(values = color)
 
+#Skal dette være på test sæt???
 
 

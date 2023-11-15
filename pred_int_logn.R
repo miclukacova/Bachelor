@@ -47,14 +47,16 @@ mean_r <- function(x) exp(lm_roots_log$coefficients[[1]])*x^lm_roots_log$coeffic
 
 # Quantiles
 
-quant_low_l <- function(x) qlnorm(0.05, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
-quant_up_l <- function(x) qlnorm(0.95, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
+alpha <- 0.1
 
-quant_low_w <- function(x) qlnorm(0.05, meanlog = mean_w_log(x), sdlog = sd_hat[2]) 
-quant_up_w <- function(x) qlnorm(0.95, meanlog = mean_w_log(x), sdlog = sd_hat[2])
+quant_low_l <- function(x) qlnorm(alpha/2, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
+quant_up_l <- function(x) qlnorm(1-alpha/2, meanlog = mean_l_log(x), sdlog = sd_hat[1]) 
 
-quant_low_r <- function(x) qlnorm(0.05, meanlog = mean_r_log(x), sdlog = sd_hat[3]) 
-quant_up_r <- function(x) qlnorm(0.95, meanlog = mean_r_log(x), sdlog = sd_hat[3])
+quant_low_w <- function(x) qlnorm(alpha/2, meanlog = mean_w_log(x), sdlog = sd_hat[2]) 
+quant_up_w <- function(x) qlnorm(1 - alpha/2, meanlog = mean_w_log(x), sdlog = sd_hat[2])
+
+quant_low_r <- function(x) qlnorm(alpha/2, meanlog = mean_r_log(x), sdlog = sd_hat[3]) 
+quant_up_r <- function(x) qlnorm(1 - alpha/2, meanlog = mean_r_log(x), sdlog = sd_hat[3])
 
 #On test set 
 
@@ -120,6 +122,37 @@ ggplot(test_roots_plot, aes(x = Sc, y = Kgp)) +
   scale_color_manual(values = color)
 
 
+#Checking coverage for different alphas
+
+alphas <- c(0.01, 0.05, 0.1, 0.2)
+cov_alpha_l <- c()
+cov_alpha_w <- c()
+cov_alpha_r <- c()
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  quant_low_l <- quant_low_l
+  quant_up_l <- quant_up_l
+  cov_alpha_l[i] <- coverage(leafs_test, quant_up_l, quant_low_l)
+}
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  quant_low_w <- quant_low_w
+  quant_up_w <- quant_up_w
+  cov_alpha_w[i] <- coverage(wood_test, quant_up_w, quant_low_w)
+}
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  quant_low_r <- quant_low_r
+  quant_up_r <- quant_up_r
+  cov_alpha_r[i] <- coverage(roots_test, quant_up_r, quant_low_r)
+}
+
+
+#Checking for correct coverage
+
 #Random split to assess coverage: 
 
 rs_cov <- function(data, k, alpha) {
@@ -149,8 +182,6 @@ rs_cov <- function(data, k, alpha) {
   }
   return(tibble("Coverage" = cov))
 }
-
-#Checking for correct coverage
 
 set.seed(7)
 a <- rs_cov(leafs, 30, 0.1)
@@ -272,7 +303,7 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
   ylab('Kgp')+
   geom_function(fun = mean_w, colour = "hotpink1") +
   geom_function(fun = quant_low_w, colour = "hotpink4") +
-  geom_function(fun = quant_low_w, colour = "hotpink4") +
+  geom_function(fun = quant_up_w, colour = "hotpink4") +
   geom_vline(xintercept = bins[1], linetype = "dotted", linewidth = 0.5, color = "hotpink3")+
   geom_vline(xintercept = bins[2], linetype = "dotted", linewidth = 0.5, color = "hotpink3")+
   geom_vline(xintercept = bins[3], linetype = "dotted", linewidth = 0.5, color = "hotpink3")+
@@ -284,6 +315,67 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
 
 ## Min metode - giver præcis det samme, overvej hvorfor???
 
+
+#------------------Rolling coverage---------------------------------------------
+
+#Leafs
+
+bin_size <- 50
+roll_cov <- c()
+
+leafs_arr <- leafs_test %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(leafs_test)-bin_size)){
+  data_cov <- leafs_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, quant_up_l, quant_low_l)
+}
+
+my_tib <- tibble("Bin" = leafs_arr[1:(nrow(leafs_test)-bin_size),1], "Roll_cov" = roll_cov)
+
+#Mangler lige lidt color coding, men ellers er den god
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.3, color = "darkolivegreen") + 
+  geom_hline(yintercept = 0.9, color = "hotpink")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs Coverage")+
+  scale_color_manual(values = color)
+
+#Wood
+
+bin_size <- 50
+roll_cov <- c()
+
+wood_arr <- wood_test %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(wood_test)-bin_size)){
+  data_cov <- wood_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, quant_up_w, quant_low_w)
+}
+
+my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_test)-bin_size),1], "Roll_cov" = roll_cov)
+
+#Mangler lige lidt color coding, men ellers er den god
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.3, color = "darkolivegreen") + 
+  geom_hline(yintercept = 0.9, color = "hotpink")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Wood Coverage")+
+  scale_color_manual(values = color)
+
+
+
+#Jeg kan ikke huske hvad det her er????
+#Slettes?
 #Varians af y- y_hat
 
 var_yy_l <- function(x) x^2*sd_hat[1]^2/(sum(leafs_log_train^2)) + sd_hat[1]^2
