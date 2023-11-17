@@ -151,6 +151,9 @@ for (i in (1:4)){
 }
 
 
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
 #Checking for correct coverage
 
 #Random split to assess coverage: 
@@ -197,22 +200,26 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
               "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
 
 a %>%
-  ggplot() +
-  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+  ggplot(aes(x = Coverage, y = ..density..)) +
+  geom_histogram(color = "white", 
                  fill = "darkolivegreen3", bins = 50)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
-  xlim(0.5,1)+
+  xlim(0.5,1.01)+
+  xlab('Coverage')+  
   theme_bw()+
   labs(title = "Foliage")
+
+median(c$Coverage)
 
 
 b %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", bins = 30)+
+                 fill = "darkolivegreen3", bins = 40)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   theme_bw()+
-  xlim(c(0.5,1))+
+  xlab('Coverage')+ 
+  xlim(c(0.5,1.01))+
   labs(title = "Wood")
 
 #Det her er lidt mærkeligt
@@ -220,10 +227,10 @@ b %>%
 c %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", bins = 70)+
+                 fill = "darkolivegreen3", bins = 50)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   theme_bw()+
-  xlim(c(0.5,1))+
+  xlim(c(0.5,1.01))+
   labs(title = "Roots")
 
 
@@ -313,13 +320,12 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
   scale_color_manual(values = color)
 
 
-## Min metode - giver præcis det samme, overvej hvorfor???
-
 
 #------------------Rolling coverage---------------------------------------------
 
 #Leafs
 
+alpha <- 0.1
 bin_size <- 50
 roll_cov <- c()
 
@@ -338,15 +344,16 @@ my_tib <- tibble("Bin" = leafs_arr[1:(nrow(leafs_test)-bin_size),1], "Roll_cov" 
 
 ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
   geom_point(size = 0.3, color = "darkolivegreen") + 
-  geom_hline(yintercept = 0.9, color = "hotpink")+
+  geom_hline(yintercept = 1-alpha, color = "hotpink")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
-  labs(title = "Leafs Coverage")+
+  labs(title = "Leafs")+
   scale_color_manual(values = color)
 
 #Wood
 
+alpha <- 0.1
 bin_size <- 50
 roll_cov <- c()
 
@@ -359,17 +366,17 @@ for (i in seq(1,nrow(wood_test)-bin_size)){
   roll_cov[i] <- coverage(data_cov, quant_up_w, quant_low_w)
 }
 
-my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_test)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = wood_arr[1:(nrow(wood_test)-bin_size),1], "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
 
 ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
   geom_point(size = 0.3, color = "darkolivegreen") + 
-  geom_hline(yintercept = 0.9, color = "hotpink")+
+  geom_hline(yintercept = 1-alpha, color = "hotpink")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
-  labs(title = "Wood Coverage")+
+  labs(title = "Wood")+
   scale_color_manual(values = color)
 
 
