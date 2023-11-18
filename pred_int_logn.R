@@ -222,7 +222,6 @@ b %>%
   xlim(c(0.5,1.01))+
   labs(title = "Wood")
 
-#Det her er lidt mærkeligt
 
 c %>%
   ggplot() +
@@ -338,7 +337,7 @@ for (i in seq(1,nrow(leafs_test)-bin_size)){
   roll_cov[i] <- coverage(data_cov, quant_up_l, quant_low_l)
 }
 
-my_tib <- tibble("Bin" = leafs_arr[1:(nrow(leafs_test)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = seq(1,nrow(leafs_test)-bin_size), "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
 
@@ -353,7 +352,7 @@ ggplot(my_tib, aes(x = Bin, y = Roll_cov)) +
 
 #Wood
 
-alpha <- 0.1
+alpha <- 0.2
 bin_size <- 50
 roll_cov <- c()
 
@@ -366,36 +365,17 @@ for (i in seq(1,nrow(wood_test)-bin_size)){
   roll_cov[i] <- coverage(data_cov, quant_up_w, quant_low_w)
 }
 
-my_tib <- tibble("Bin" = wood_arr[1:(nrow(wood_test)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = seq(1,nrow(wood_test)-bin_size), "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
 
 ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
-  geom_point(size = 0.3, color = "darkolivegreen") + 
+  geom_point(size = 0.7, aes(color = Roll_cov)) + 
   geom_hline(yintercept = 1-alpha, color = "hotpink")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
   labs(title = "Wood")+
-  scale_color_manual(values = color)
+  scale_color_gradient(low = 'blue', high = 'red')
 
-
-
-#Jeg kan ikke huske hvad det her er????
-#Slettes?
-#Varians af y- y_hat
-
-var_yy_l <- function(x) x^2*sd_hat[1]^2/(sum(leafs_log_train^2)) + sd_hat[1]^2
-
-quant_yy_exp_l_down <- function(x) qlnorm(0.05, meanlog = 0, sdlog = sqrt(var_yy_l(log(x))))
-quant_yy_exp_l_up <- function(x) qlnorm(0.95, meanlog = 0, sdlog = sqrt(var_yy_l(log(x))))
-
-pred_up <- function(x) quant_yy_exp_l_up(x)*mean_l(x)
-pred_down <- function(x) quant_yy_exp_l_down(x)*mean_l(x)
-
-
-mean(quant_yy_exp_l_down(leafs_test$Sc) <= leafs_test$Kgp / mean_l(leafs_test$Sc) &
-       quant_yy_exp_l_up(leafs_test$Sc) >= leafs_test$Kgp / mean_l(leafs_test$Sc))
-
-mean(pred_down(leafs_test$Sc)<= leafs_test$Kgp & pred_up(leafs_test$Sc) >= leafs_test$Kgp)
 

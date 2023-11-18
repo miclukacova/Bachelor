@@ -163,9 +163,11 @@ coverage <- function(pred_int){
   mean(pred_int$down <= pred_int$Kgp & pred_int$Kgp <= pred_int$up)
 }
 
-coverage(pred_int_leafs)
-coverage(pred_int_wood)
-coverage(pred_int_roots)
+a <- coverage(pred_int_leafs)
+b <- coverage(pred_int_wood)
+c <- coverage(pred_int_roots)
+
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type = latex)
 
 #For different alphas
 
@@ -188,6 +190,82 @@ for (i in (1:4)){
   pred_int_alpha <- pred_int(roots_boot, roots_log_test, alphas[i]) 
   cov_alpha_r[i] <- coverage(pred_int_alpha)
 }
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
+
+#Checking for correct coverage
+
+rs_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit model
+    lm_rs <- lm(Kgp ~ Sc, data = train_rs)
+    
+    #Perform bootstrap
+    boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
+    
+    # Quantiles
+    pred_int_rs <- pred_int(boot_rs, test_rs, alpha) 
+    
+    #Definere
+    cov[i] <- coverage(pred_int_rs)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+set.seed(4)
+a <- rs_cov(leafs_log, 30, 0.1)
+b <- rs_cov(wood_log, 30, 0.1)
+c <- rs_cov(roots_log, 30,0.1)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+median(a$Coverage)
+median(b$Coverage)
+median(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0,1.1))+
+  labs(title = "Roots")
 
 
 ###################################################################################################
@@ -274,9 +352,11 @@ coverage <- function(pred_int){
   mean(pred_int$down <= pred_int$Kgp & pred_int$Kgp <= pred_int$up)
 }
 
-coverage(pred_int_leafs2)
-coverage(pred_int_wood2)
-coverage(pred_int_roots2)
+a2 <- coverage(pred_int_leafs2)
+b2 <- coverage(pred_int_wood2)
+c2 <- coverage(pred_int_roots2)
+
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a2,b2,c2)), type = latex)
 
 #For different alphas
 
@@ -318,7 +398,7 @@ rs_cov <- function(data, k, alpha) {
     lm_rs <- lm(Kgp ~ Sc, data = train_rs)
     
     #Perform bootstrap
-    boot_rs <- boot(lm_leafs, leafs_train, test_leafs, 100)
+    boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
     
     # Quantiles
     pred_int_rs <- pred_int2(boot_rs, test_rs, alpha) 
