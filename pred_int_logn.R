@@ -342,13 +342,13 @@ my_tib <- tibble("Bin" = seq(1,nrow(leafs_test)-bin_size), "Roll_cov" = roll_cov
 #Mangler lige lidt color coding, men ellers er den god
 
 ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
-  geom_point(size = 0.3, color = "darkolivegreen") + 
-  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  geom_point(size = 0.7, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
   labs(title = "Leafs")+
-  scale_color_manual(values = color)
+  scale_color_gradient(low = 'blue', high = 'red')
 
 #Wood
 
@@ -371,7 +371,7 @@ my_tib <- tibble("Bin" = seq(1,nrow(wood_test)-bin_size), "Roll_cov" = roll_cov)
 
 ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
   geom_point(size = 0.7, aes(color = Roll_cov)) + 
-  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
