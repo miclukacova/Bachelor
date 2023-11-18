@@ -554,3 +554,128 @@ tibble(
 
 
 
+##############################################################################
+#Attempting to create a non-linear bootstrap:
+
+#Boostrap using NLR:
+
+#Defining the models and the starting-points we found when obtaining the model:
+#Creating function to be minimized
+MSE_NLR <- function(par, data){
+  with(data, sum((Kgp-par[1]*Sc^par[2])^2))
+}
+
+
+starting_point_leafs <- c(0.61,0.81)
+starting_point_wood <- c(5.51,0.73)
+starting_point_roots <- c(3.66,0.1)
+
+NLE_leafs <- optim(par = starting_point_leafs, fn = MSE_NLR, data = leafs_train)
+NLE_wood <- optim(par = starting_point_wood, fn = MSE_NLR, data = wood_train)
+NLE_roots <- optim(par = starting_point_roots, fn = MSE_NLR, data = roots_train)
+
+leafs_model <- function(x){NLE_leafs$par[1]*(x)^(NLE_leafs$par[2])}
+wood_model <- function(x){NLE_wood$par[1]*(x)^(NLE_wood$par[2])}
+roots_model <- function(x){NLE_leafs$par[1]*(x)^(roots$par[2])}
+
+
+#Defining NLR-specific bootstrapping function:
+set.seed(72)
+boot <- function(model, data_train, data_test, B) {
+  #Obtaining standardized residuals 
+  Y_p <- model$par[1]*(data_test$Sc)^(model$par[2])
+  
+  rep_e_n1 <- function(lm, data, X_n_1){
+    #Make bootstrapped data
+    boot_data <- data[sample( nrow(data), replace = TRUE),]
+    
+    # Do bootstrap NLR
+    boot_parameters <- optim(par = starting_point_leafs, fn = MSE_NLR, data = boot_data)
+    boot_model <- function(x){boot_parameters$par[1]*(x)^(boot_parameters$par[2])}
+
+    # Calculating residuals
+    bs_res <- data$Kgp - boot_model(data$Sc)
+    
+    # Calculate draw on prediction error
+    e_N_1 <- leafs_model(X_n_1) - boot_model(X_n_1) + sample(bs_res,size=1)
+    
+    return(unname(e_N_1))
+  }
+  
+  #Replicate
+  
+  ep <- matrix(nrow = B, ncol = nrow(data_test))
+  
+  for (i in (1:nrow(data_test))){
+    for (j in (1:B)){
+      ep[j,i] <- rep_e_n1(model, data_train, data_test[i,1])
+    }
+  }
+  return(list(ep, Y_p))
+}
+
+leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 10)
+wood_boot <- boot(lm_wood_log, train_wood_log, test_wood_log, 100)
+roots_boot <- boot(lm_roots_log, train_roots_log, test_roots_log, 100)
+
+#Creating the prediction intervals
+
+pred_int <- function(boot, data,alpha) {
+  down <- c()
+  up <- c()
+  
+  for (i in ncol(boot[[1]])){
+    down <- boot[[2]] + quantile(boot[[1]][,i], probs = alpha/2)
+    up <- boot[[2]] + quantile(boot[[1]][,i], probs = 1-alpha/2)
+  } 
+  
+  plot_data <- tibble("Sc" = data$Sc, "Kgp" = data$Kgp,
+                      "Pred" = boot[[2]], "down" = down, "up" = up) %>%
+    mutate(Sc = exp(Sc), Kgp = exp(Kgp), down = exp(down), up = exp(up))%>%
+    mutate(indicator = if_else((down <= Kgp)&(Kgp <= up),"in", "out"))
+  
+  return(plot_data)
+}
+
+#Plot
+
+pred_int_leafs <- pred_int(leafs_boot, test_leafs, 0.1) 
+pred_int_wood <- pred_int(wood_boot, wood_log_test, 0.1)
+pred_int_roots <- pred_int(roots_boot, roots_log_test, 0.1)
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(pred_int_leafs) + 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = leafs_model, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
+
+
+ggplot(pred_int_wood) + 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = pred_wood, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+ggplot(pred_int_roots)+ 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = pred_roots, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Roots")+
+  scale_color_manual(values = color)
+
