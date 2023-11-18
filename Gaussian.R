@@ -317,13 +317,13 @@ my_tib <- tibble("Bin" = leafs_log_arr[1:(nrow(leafs_log_test)-bin_size),1], "Ro
 #Mangler lige lidt color coding, men ellers er den god
   
 ggplot(my_tib, aes(x = exp(Bin), y = Roll_cov)) + 
-  geom_point(size = 0.3, color = "darkolivegreen") + 
-  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
   labs(title = "Leafs")+
-  scale_color_manual(values = color)
+  scale_color_gradient(low = 'blue', high = 'red')
 
 #Wood
 
@@ -341,19 +341,88 @@ for (i in seq(1,nrow(wood_log_test)-bin_size)){
 
 my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_log_test)-bin_size),1], "Roll_cov" = roll_cov)
 
-#Mangler lige lidt color coding, men ellers er den god
 
 ggplot(my_tib, aes(x = exp(Bin), y = Roll_cov)) + 
-  geom_point(size = 0.3, color = "darkolivegreen") + 
-  geom_hline(yintercept = 1-alpha, color = "hotpink")+
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
   xlab('Sc') + 
   ylab('Coverage')+
   labs(title = "Wood")+
-  scale_color_manual(values = color)
+  scale_color_gradient(low = 'blue', high = 'red')
 
-#Skal dette være på test sæt???
+#------------------Rolling coverage part 2--------------------------------------
 
+cov_window <- function(binsize = 49, data, alpha = 0.1) {
+  roll_cov <- c()
+  n <- nrow(data)
+  
+  #Arrange data
+  data <- data %>%
+    arrange(Sc)
+  
+  for (i in seq(1,n-binsize)){
+    
+    #"Test" data
+    data_cov <- data %>%
+      slice(i:(i+binsize))
+    
+    #Model fit data
+    data_fit <- data %>%
+      slice(-(i:(i+binsize)))
+    n_fit <- nrow(data_fit)
+    
+    # Fit model
+    lm_rw <- lm(Kgp ~ Sc, data = data_fit)
+    sd_hat <- sqrt(var(lm_rw$residuals))
+    f_hat <- function(x) lm_rw$coefficients[[2]]*x + lm_rw$coefficients[[1]] 
+    
+    # Quantiles
+    upper <- function(x) {
+      f_hat(x) - qt(alpha/2, n_fit-2)*sqrt(x^2/sum(data_fit$Sc^2)+1)*sd_hat
+    }
+    
+    lower <- function(x) {
+      f_hat(x) - qt(1-alpha/2, n_fit-2)*sqrt(x^2/sum(data_fit$Sc^2)+1)*sd_hat
+    }
+    
+    roll_cov[i] <- coverage(data_cov, upper, lower)
+  }
+  return(roll_cov)
+}
+
+#Leafs
+
+roll_cov_leafs <- cov_window(data = leafs_log)
+
+my_tib <- tibble("Bin" = seq(1,nrow(leafs_log)-49), "Roll_cov" = roll_cov_leafs)
+
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
+#Wood
+
+roll_cov_wood <- cov_window(data = wood_log)
+
+my_tib <- tibble("Bin" = seq(1,nrow(wood_log)-49), "Roll_cov" = roll_cov_wood)
+
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "wood")+
+  scale_color_gradient(low = 'blue', high = 'red')
 
 #Checking coverage for different alphas
 
