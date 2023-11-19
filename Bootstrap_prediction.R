@@ -576,7 +576,7 @@ NLE_roots <- optim(par = starting_point_roots, fn = MSE_NLR, data = roots_train)
 
 leafs_model <- function(x){NLE_leafs$par[1]*(x)^(NLE_leafs$par[2])}
 wood_model <- function(x){NLE_wood$par[1]*(x)^(NLE_wood$par[2])}
-roots_model <- function(x){NLE_leafs$par[1]*(x)^(roots$par[2])}
+roots_model <- function(x){NLE_roots$par[1]*(x)^(NLE_roots$par[2])}
 
 
 #Defining NLR-specific bootstrapping function:
@@ -587,7 +587,7 @@ boot <- function(model, data_train, data_test, B) {
   
   rep_e_n1 <- function(lm, data, X_n_1){
     #Make bootstrapped data
-    boot_data <- data[sample( nrow(data), replace = TRUE),]
+    boot_data <- data[sample(nrow(data), replace = TRUE),]
     
     # Do bootstrap NLR
     boot_parameters <- optim(par = starting_point_leafs, fn = MSE_NLR, data = boot_data)
@@ -601,7 +601,7 @@ boot <- function(model, data_train, data_test, B) {
     
     return(unname(e_N_1))
   }
-  
+
   #Replicate
   
   ep <- matrix(nrow = B, ncol = nrow(data_test))
@@ -614,13 +614,17 @@ boot <- function(model, data_train, data_test, B) {
   return(list(ep, Y_p))
 }
 
-leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 10)
-wood_boot <- boot(lm_wood_log, train_wood_log, test_wood_log, 100)
-roots_boot <- boot(lm_roots_log, train_roots_log, test_roots_log, 100)
+leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 100)
+wood_boot <- boot(NLE_wood, wood_train, test_wood, 100)
+roots_boot <- boot(NLE_roots, roots_train, test_roots, 100)
+
+mean(leafs_boot[[1]])
+mean(leafs_boot[[2]])
+
 
 #Creating the prediction intervals
 
-pred_int <- function(boot, data,alpha) {
+pred_int <- function(boot, data, alpha) {
   down <- c()
   up <- c()
   
@@ -631,7 +635,7 @@ pred_int <- function(boot, data,alpha) {
   
   plot_data <- tibble("Sc" = data$Sc, "Kgp" = data$Kgp,
                       "Pred" = boot[[2]], "down" = down, "up" = up) %>%
-    mutate(Sc = exp(Sc), Kgp = exp(Kgp), down = exp(down), up = exp(up))%>%
+    mutate(Sc = Sc, Kgp = Kgp, down = down, up = up)%>%
     mutate(indicator = if_else((down <= Kgp)&(Kgp <= up),"in", "out"))
   
   return(plot_data)
@@ -640,8 +644,8 @@ pred_int <- function(boot, data,alpha) {
 #Plot
 
 pred_int_leafs <- pred_int(leafs_boot, test_leafs, 0.1) 
-pred_int_wood <- pred_int(wood_boot, wood_log_test, 0.1)
-pred_int_roots <- pred_int(roots_boot, roots_log_test, 0.1)
+pred_int_wood <- pred_int(wood_boot, test_wood, 0.1)
+pred_int_roots <- pred_int(roots_boot, test_roots, 0.1)
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
@@ -660,7 +664,7 @@ ggplot(pred_int_leafs) +
 ggplot(pred_int_wood) + 
   geom_point(aes(x = Sc, y = down), color = 'hotpink') +
   geom_point(aes(x = Sc, y = up), color = 'hotpink') +
-  geom_function(fun = pred_wood, color = "hotpink4") +
+  geom_function(fun = wood_model, color = "hotpink4") +
   geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
   theme_bw() +
   xlab('Sc') + 
@@ -671,7 +675,7 @@ ggplot(pred_int_wood) +
 ggplot(pred_int_roots)+ 
   geom_point(aes(x = Sc, y = down), color = 'hotpink') +
   geom_point(aes(x = Sc, y = up), color = 'hotpink') +
-  geom_function(fun = pred_roots, color = "hotpink4") +
+  geom_function(fun = roots_model, color = "hotpink4") +
   geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
   theme_bw() +
   xlab('Sc') + 
@@ -679,3 +683,110 @@ ggplot(pred_int_roots)+
   labs(title = "Roots")+
   scale_color_manual(values = color)
 
+#Coverage
+
+coverage <- function(pred_int){
+  mean(pred_int$down <= pred_int$Kgp & pred_int$Kgp <= pred_int$up)
+}
+
+a2 <- coverage(pred_int_leafs)
+b2 <- coverage(pred_int_wood)
+c2 <- coverage(pred_int_roots)
+
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a2,b2,c2)), type = latex)
+
+#For different alphas
+
+alphas <- c(0.01, 0.05, 0.1, 0.2)
+cov_alpha_l2 <- c()
+cov_alpha_w2 <- c()
+cov_alpha_r2 <- c()
+
+for (i in (1:4)){
+  pred_int_alpha <- pred_int2(leafs_boot2, leafs_test, alphas[i]) 
+  cov_alpha_l2[i] <- coverage(pred_int_alpha)
+}
+
+for (i in (1:4)){
+  pred_int_alpha <- pred_int2(wood_boot2, wood_test, alphas[i]) 
+  cov_alpha_w2[i] <- coverage(pred_int_alpha)
+}
+
+for (i in (1:4)){
+  pred_int_alpha <- pred_int2(roots_boot2, roots_test, alphas[i]) 
+  cov_alpha_r2[i] <- coverage(pred_int_alpha)
+}
+
+
+#Checking for correct coverage
+leafs <- read.csv("Data/leafs.csv")
+wood <- read.csv("Data/wood.csv")
+roots <- read.csv("Data/roots.csv")
+
+rs_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit model
+    lm_rs <- lm(Kgp ~ Sc, data = train_rs)
+    
+    #Perform bootstrap
+    boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
+    
+    # Quantiles
+    pred_int_rs <- pred_int(boot_rs, test_rs, alpha) 
+    
+    #Definere
+    cov[i] <- coverage(pred_int_rs)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+#Det her tager ægte lang tid, jeg ved ikke om det går godt...
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1)
+b <- rs_cov(wood, 30, 0.1)
+c <- rs_cov(roots, 30,0.1)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0,1))+
+  labs(title = "Roots")
