@@ -261,7 +261,7 @@ f_hat_leafs <- function(x) hat_beta[1] + hat_alpha[1]*x
 f_hat_wood <- function(x) hat_beta[2] + hat_alpha[2]*x
 f_hat_roots <- function(x) hat_beta[3] + hat_alpha[3]*x
 
-#Evaluering af de to modeller---------------------------------------------------
+#Evaluering af model------------------------------------------------------------
 
 #MSE
 

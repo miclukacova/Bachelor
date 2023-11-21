@@ -83,12 +83,15 @@ ggplot(grid_search_leafs[[1]], aes(x = a, y = b)) +
 
 min_mse_leafs <- which.min(grid_search_leafs[[2]]$MSE)
 starting_point_leafs <- grid_search_leafs[[1]][min_mse_leafs,]
+#starting_point_leafs <- c(0.57, 0.72)
 
 min_mse_wood <- which.min(grid_search_wood[[2]]$MSE)
 starting_point_wood <- grid_search_wood[[1]][min_mse_wood,]
+#starting_point_wood <- c(6.95, 0.98)
 
 min_mse_roots <- which.min(grid_search_roots[[2]]$MSE)
 starting_point_roots <- grid_search_roots[[1]][min_mse_roots,]
+#starting_point_roots <- c(0.12, 1.74)
 
 # a plottet mod b
 

@@ -19,7 +19,7 @@ test_leafs_y = leafs[-picked_leafs,2]
 
 #Quantile regression forest
 
-qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 30)
+qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 76)
 plot(qrf)
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
@@ -87,7 +87,7 @@ ggplot(plot_data, aes(x = Sc)) +
   theme_bw()+
   scale_color_manual(values = colors)
 
- #in relation to predictor-variables
+#in relation to predictor-variables
 plot_data <- data.frame(test_leafs_x, conditionalQuantiles, pred = test_leafs_x)
 head(plot_data)
 
@@ -228,7 +228,7 @@ Sc_plot <- function(data,title, y){
     mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
   #Plot
   ggplot(plot_data, aes(x = pred)) +
-    geom_smooth(aes(y=quantile..0.9), color = 'darkolivegreen') +
+    geom_point(aes(y=quantile..0.9), color = 'darkolivegreen', fill = "darkolivegreen", shape = 24, alpha = 0.7) +
     geom_point(aes(y=quantile..0.1), color = 'darkolivegreen', fill = "darkolivegreen", shape = 24, alpha = 0.7) +
     geom_segment(aes(x = pred, y = quantile..0.1, xend = pred, yend = quantile..0.9),
                  color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
