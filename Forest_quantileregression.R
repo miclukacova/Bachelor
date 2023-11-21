@@ -9,41 +9,25 @@ library(foreign)
 library(xtable)
 library(stargazer)
 
-leafs <- read.csv('Data/leafs.csv')
-wood <- read.csv('Data/wood.csv')
-roots <- read.csv('Data/roots.csv')
+train_leafs_log <- read.csv('Data/train_leafs_log.csv')
+train_roots_log <- read.csv('Data/train_roots_log.csv')
+train_wood_log<- read.csv('Data/train_wood_log.csv')
 
-#Train/test split
+test_leafs_log <- read.csv('Data/test_leafs_log.csv')
+test_roots_log <- read.csv('Data/test_roots_log.csv')
+test_wood_log<- read.csv('Data/test_wood_log.csv')
 
-sample_size_wood = floor(0.8*nrow(wood))
-set.seed(777)
-picked_wood = sample(seq_len(nrow(wood)),size = sample_size_wood)
-train_wood = wood[picked_wood,]
-test_wood = wood[-picked_wood,]
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log<- read.csv('Data/wood_log.csv')
 
-sample_size_leafs = floor(0.8*nrow(leafs))
-set.seed(777)
-picked_leafs = sample(seq_len(nrow(leafs)),size = sample_size_leafs)
-train_leafs = leafs[picked_leafs,]
-test_leafs = leafs[-picked_leafs,]
+leafs_train <- read.csv('Data/train_leafs.csv')
+roots_train <- read.csv('Data/train_roots.csv')
+wood_train<- read.csv('Data/train_wood.csv')
 
-sample_size_roots = floor(0.8*nrow(roots))
-set.seed(777)
-picked_roots = sample(seq_len(nrow(roots)),size = sample_size_roots)
-train_roots = roots[picked_roots,]
-test_roots = roots[-picked_roots,]
-
-#tree <- rpart(Kgp~., data=train_leafs)
-#rpart.plot(tree)
-#?rpart
-#summary(tree)
-#printcp(tree)
-#plotcp(tree)
-
-##Random Forest
-#rf <- randomForest(Kgp~., data=train_leafs)
-#plot(rf)
-#predict(rf, test_leafs)
+test_leafs <- read.csv('Data/test_leafs.csv')
+test_roots <- read.csv('Data/test_roots.csv')
+test_wood <- read.csv('Data/test_wood.csv')
 
 
 #Quantile regression forest
@@ -62,6 +46,8 @@ train_roots_x = data.frame(Sc = roots[picked_roots,1])
 train_roots_y = roots[picked_roots,2]
 test_roots_x = data.frame(Sc=roots[-picked_roots,1])
 test_roots_y = roots[-picked_roots,2]
+
+set.seed(253)
 
 qrf_leafs <- quantregForest(x = train_leafs_x, y =train_leafs_y)
 qrf_wood <- quantregForest(x = train_wood_x, y =train_wood_y)
@@ -99,7 +85,6 @@ cv <- function(data, k, min_node_size) {
   return(tibble("MSE" = MSE_cv))
 }
 
-
 #10 fold cv to find optimal node size function and summary function:
 
 opt_node_size <- function(data, node_sizes){
@@ -134,37 +119,49 @@ summ <- function(result) {
 # For leafs: 
 
 set.seed(41)
-results_leafs <- opt_node_size(train_leafs, seq(1:100))
+results_leafs <- opt_node_size(train_leafs, c(1,2,5, seq(10, 100, 10), seq(120, 260, 20)))
 results_leafs <- summ(results_leafs)
 
 which.min(results_leafs$mean_cv)
 which.min(results_leafs$var_cv)
 
-results_leafs <- results_leafs %>% add_column(index = seq(1:100))
+which.min(results_wood$mean_cv)
+results_wood[9,4]
 
-ggplot(results_leafs, aes(x = index)) +
-  geom_point(aes(y = mean_cv),  color = "hotpink")+
+which.min(results_wood$var_cv)
+results_wood[16,4]
+
+results_leafs <- results_leafs %>% add_column(index = c(1,2,5, seq(10, 100, 10), seq(120, 260, 20)))
+
+ggplot(results_leafs, aes(y = mean_cv, x = index)) +
+  geom_point(color = "hotpink")+
   labs(title = "Leafs",
        y = "Mean MSE",
        x = "Nodesize")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
   theme_bw()
+
 
 # For wood: 
 
 set.seed(41)
-results_wood <- opt_node_size(train_wood, seq(1:100))
+results_wood <- opt_node_size(train_wood, c(1,2, seq(5, 95, 5), seq(100, 200, 20)))
 results_wood <- summ(results_wood)
 
 which.min(results_wood$mean_cv)
+results_wood[7,4]
+
 which.min(results_wood$var_cv)
+results_wood[11,4]
 
-results_wood <- results_wood %>% add_column(index = seq(1:100))
+results_wood <- results_wood %>% add_column(index = c(1,2, seq(5, 95, 5), seq(100, 200, 20)))
 
-ggplot(results_wood, aes(x = index)) +
-  geom_point(aes(y = mean_cv),  color = "hotpink")+
+ggplot(results_wood, aes(x = index, y = mean_cv)) +
+  geom_point(,  color = "hotpink")+
   labs(title = "Wood",
        y = "Mean MSE",
        x = "Nodesize")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
   theme_bw()
 
 
@@ -178,8 +175,9 @@ which.min(results_roots$var_cv)
 
 results_roots <- results_roots %>% add_column(index = seq(1:10))
 
-ggplot(results_roots, aes(x = index)) +
-  geom_point(aes(y = mean_cv),  color = "hotpink")+
+ggplot(results_roots, aes(x = index, y = mean_cv)) +
+  geom_point(color = "hotpink")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
   labs(title = "Roots",
        y = "Mean MSE",
        x = "Nodesize")+
@@ -188,11 +186,9 @@ ggplot(results_roots, aes(x = index)) +
 
 #Into tex
 
-results_leafs[seq(10,100,10),1:3] %>% xtable(type = "latex")
-results_wood[seq(10,100,10),1:3] %>% xtable(type = "latex")
+results_leafs[seq(1,nrow(results_leafs), by = 2),1:3] %>% xtable(type = "latex")
+results_wood[round(seq(1,nrow(results_wood), length.out = 11)),1:3] %>% xtable(type = "latex")
 results_roots[,1:3] %>% xtable(type = "latex")
-
-
 
 ggarrange(leafs_mse_cv_plot, wood_mse_cv_plot, roots_mse_cv_plot, ncol = 3, nrow = 1)
 
@@ -296,3 +292,23 @@ ggplot(plot_data, aes(x = Sc)) +
        x = "Crown size")+
   theme_bw()+
   scale_color_manual(values = colors)
+
+
+
+
+
+
+#Random
+
+#tree <- rpart(Kgp~., data=train_leafs)
+#rpart.plot(tree)
+#?rpart
+#summary(tree)
+#printcp(tree)
+#plotcp(tree)
+
+##Random Forest
+#rf <- randomForest(Kgp~., data=train_leafs)
+#plot(rf)
+#predict(rf, test_leafs)
+

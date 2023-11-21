@@ -32,7 +32,7 @@ library(xtable)
 library(stargazer)
 
 ################################################################################
-## ---------------------------------- sum model ----------------------------- ##
+## ------------------------------ sum model OLS ----------------------------- ##
 ################################################################################
 
 lm_leafs <- lm(Kgp ~ Sc, data = leafs)
@@ -59,7 +59,9 @@ sum_roots <- function(x) hat_alpha[3] * sum(x) + length(x)*hat_beta[3]
 
 sum_biomass <- function(x,y,z) sum_leafs(x) + sum_wood(y) + sum_roots(z)
 
+################################################################################
 #Gaussian prediction interval
+################################################################################
 
 #Leafs
 
@@ -364,5 +366,52 @@ ggplot(my_tib) +
   xlab(bquote('Crown area'~m^2/plant)) + 
   ylab('Dry mass (kg/plant)')+
   labs(title = "Sum of biomass")
+
+################################################################################
+#De gaussiske virker ikke så godt...
+################################################################################
+
+################################################################################
+# ----------------------------------- Bootstrap ------------------------------ #
+################################################################################
+
+
+################################################################################
+# ----------------------------------- Conformal ------------------------------ #
+################################################################################
+
+#Absolute error
+pred_int_making <- function(train_data, alpha=0.1) {
+  #Test and calibration
+  picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
+  train <- train_data[picked,]
+  cali <- train_data[-picked,]
+  cali <- cali %>% mutate(Sc = exp(Sc), Kgp = exp(Kgp))
+  
+  #Linear model
+  lm <- lm(Kgp ~ Sc, train)
+  var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
+  f_hat <- function(x) lm$coefficients[[1]]+ x*lm$coefficients[[2]]
+  
+  # Heuristic notion of uncertainty
+  score <- sort(abs(f_hat(cali$Sc) - cali$Kgp))
+  quanti <- ceiling((nrow(cali)+1)*(1-alpha))
+  q_hat <- score[quanti]
+  
+  #Prediction interval functions
+  
+  upper_1 <- function(x) f_hat(x) + q_hat
+  lower_1 <- function(x) f_hat(x) - q_hat
+
+  return(list(f_hat_adj, f_hat, lower_1, upper_1, lower_2, upper_2))
+}
+
+#Kan vi det her???
+
+
+
+
+
+
 
 
