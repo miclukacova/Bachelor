@@ -585,7 +585,7 @@ boot <- function(model, data_train, data_test, B) {
   #Obtaining standardized residuals 
   Y_p <- model$par[1]*(data_test$Sc)^(model$par[2])
   
-  rep_e_n1 <- function(lm, data, X_n_1){
+  rep_e_n1 <- function(nlr, data, X_n_1){
     #Make bootstrapped data
     boot_data <- data[sample(nrow(data), replace = TRUE),]
     
@@ -597,7 +597,7 @@ boot <- function(model, data_train, data_test, B) {
     bs_res <- data$Kgp - boot_model(data$Sc)
     
     # Calculate draw on prediction error
-    e_N_1 <- leafs_model(X_n_1) - boot_model(X_n_1) + sample(bs_res,size=1)
+    e_N_1 <- model$par[1]*(X_n_1)^(model$par[2]) - boot_model(X_n_1) + sample(bs_res,size=1)
     
     return(unname(e_N_1))
   }
@@ -720,7 +720,7 @@ leafs <- read.csv("Data/leafs.csv")
 wood <- read.csv("Data/wood.csv")
 roots <- read.csv("Data/roots.csv")
 
-rs_cov <- function(data, k, alpha) {
+rs_cov <- function(data, k, alpha, starting_points) {
   cov <- c()
   n <- nrow(data)
   sample_size <- floor(0.8*n)
@@ -731,8 +731,8 @@ rs_cov <- function(data, k, alpha) {
     train_rs = data[picked_rs,]
     test_rs = data[-picked_rs,]
     
-    # Fit model
-    lm_rs <- lm(Kgp ~ Sc, data = train_rs)
+    # Fit NLR-model
+    lm_rs <- optim(par = starting_points, fn = MSE_NLR, data = train_rs)
     
     #Perform bootstrap
     boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
@@ -749,9 +749,10 @@ rs_cov <- function(data, k, alpha) {
 #Det her tager ægte lang tid, jeg ved ikke om det går godt...
 
 set.seed(4)
-a <- rs_cov(leafs, 30, 0.1)
-b <- rs_cov(wood, 30, 0.1)
-c <- rs_cov(roots, 30,0.1)
+a <- rs_cov(leafs, 30, 0.1, starting_point_leafs)
+b <- rs_cov(wood, 30, 0.1, starting_point_wood)
+c <- rs_cov(roots, 30,0.1, starting_point_roots)
+
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
@@ -788,7 +789,7 @@ c %>%
   xlim(c(0,1))+
   labs(title = "Roots")
 
-
+###Michaela start her og slut i bunden:
 ###################################################################################################
 #NLR del 2 - multiplikativt:
 #Defining the models and the starting-points we found when obtaining the model:
@@ -821,15 +822,17 @@ boot <- function(model, data_train, data_test, B) {
     #Make bootstrapped data
     boot_data <- data[sample(nrow(data), replace = TRUE),]
     
-    # Do bootstrap NLR
+    # Doing NLR on bootstrapped data, and calculating estimates of beta/beta and alpha-alpha
     boot_parameters <- optim(par = starting_point_leafs, fn = MSE_NLR, data = boot_data)
     boot_model <- function(x){boot_parameters$par[1]*(x)^(boot_parameters$par[2])}
+    beta <- model$par[1]/boot_parameters$par[1]
+    alph <- model$par[2]-boot_parameters$par[2]
     
-    # Calculating residuals
+    # Obtaining residuals
     bs_res <- data$Kgp/boot_model(data$Sc)
     
     # Calculate draw on prediction error
-    e_N_1 <- leafs_model(X_n_1) - boot_model(X_n_1) * sample(bs_res,size=1)
+    e_N_1 <- beta * X_n_1^alph * sample(bs_res,size=1)
     
     return(unname(e_N_1))
   }
@@ -850,9 +853,6 @@ leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 100)
 wood_boot <- boot(NLE_wood, wood_train, test_wood, 100)
 roots_boot <- boot(NLE_roots, roots_train, test_roots, 100)
 
-mean(leafs_boot[[1]])
-mean(leafs_boot[[2]])
-
 
 #Creating the prediction intervals
 
@@ -861,8 +861,8 @@ pred_int <- function(boot, data, alpha) {
   up <- c()
   
   for (i in ncol(boot[[1]])){
-    down <- boot[[2]] + quantile(boot[[1]][,i], probs = alpha/2)
-    up <- boot[[2]] + quantile(boot[[1]][,i], probs = 1-alpha/2)
+    down <- boot[[2]] * quantile(boot[[1]][,i], probs = alpha/2)
+    up <- boot[[2]] * quantile(boot[[1]][,i], probs = 1-alpha/2)
   } 
   
   plot_data <- tibble("Sc" = data$Sc, "Kgp" = data$Kgp,
@@ -914,3 +914,77 @@ ggplot(pred_int_roots)+
   ylab('Kgp')+
   labs(title = "Roots")+
   scale_color_manual(values = color)
+
+#Checking for correct coverage
+leafs <- read.csv("Data/leafs.csv")
+wood <- read.csv("Data/wood.csv")
+roots <- read.csv("Data/roots.csv")
+
+rs_cov <- function(data, k, alpha, starting_points) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit NLR-model
+    lm_rs <- optim(par = starting_points, fn = MSE_NLR, data = train_rs)
+    
+    #Perform bootstrap
+    boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
+    
+    # Quantiles
+    pred_int_rs <- pred_int(boot_rs, test_rs, alpha) 
+    
+    #Definere
+    cov[i] <- coverage(pred_int_rs)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+#Det her tager ægte lang tid, jeg ved ikke om det går godt...
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1, starting_point_leafs)
+b <- rs_cov(wood, 30, 0.1, starting_point_wood)
+c <- rs_cov(roots, 30,0.1, starting_point_roots)
+
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0,1))+
+  labs(title = "Roots")
