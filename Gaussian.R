@@ -1,4 +1,4 @@
-#################################--Indlæsning af pakker og data---###############################
+#################################--Indlæsning af pakker og data---##############
 
 train_leafs_log <- read.csv('Data/train_leafs_log.csv')
 train_roots_log <- read.csv('Data/train_roots_log.csv')
@@ -20,13 +20,21 @@ test_leafs <- read.csv('Data/test_leafs.csv')
 test_roots <- read.csv('Data/test_roots.csv')
 test_wood <- read.csv('Data/test_wood.csv')
 
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+
 library(tidyverse)
 library(readr)
 library(infer)
 library(foreign)
 library(xtable)
 library(stargazer)
-###################################################################################################
+################################################################################
+
+################################################################################
+#################################--Log-log OLS model---#########################
+################################################################################
 
 #Lineære modeller af log-log
 
@@ -547,6 +555,271 @@ ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) +
   labs(title = "Wood")+
   scale_color_manual(values = color)
 
+################################################################################
+#################################----- OLS model ------#########################
+################################################################################
 
 
+#Lineære modeller af log-log
+
+lm_leafs <- lm(Kgp ~ Sc, data = leafs_train)
+lm_wood <- lm(Kgp ~ Sc, data = wood_train)
+lm_roots <- lm(Kgp ~ Sc, data = roots_train)
+
+#Y_hat estimater:
+
+f_hat_leafs <- function(x) lm_leafs$coefficients[1] + lm_leafs$coefficients[2]*x
+f_hat_wood <- function(x) lm_wood$coefficients[1] + lm_wood$coefficients[2]*x
+f_hat_roots <- function(x) lm_roots$coefficients[1] + lm_roots$coefficients[2]*x
+
+
+#Prediction intervals
+
+alpha <- 0.1
+
+upper_leafs <- function(x) {
+  f_hat_leafs(x) - qt(alpha/2, nrow(leafs_train)-2)*sqrt(x^2/sum(leafs_train$Sc^2)+1)*sqrt(var(lm_leafs$residuals))
+}
+lower_leafs <- function(x) {
+  f_hat_leafs(x) - qt(1-alpha/2, nrow(leafs_train)-2)*sqrt(x^2/sum(leafs_train$Sc^2)+1)*sqrt(var(lm_leafs$residuals))
+}
+upper_wood <- function(x) {
+  f_hat_wood(x) - qt(alpha/2, nrow(wood_train)-2)*sqrt(x^2/sum(wood_train$Sc^2)+1)*sqrt(var(lm_wood$residuals))
+}
+lower_wood <- function(x) {
+  f_hat_wood(x) - qt(1-alpha/2, nrow(wood_train)-2)*sqrt(x^2/sum(wood_train$Sc^2)+1)*sqrt(var(lm_wood$residuals))
+}
+upper_roots <- function(x) {
+  f_hat_roots(x) - qt(alpha/2, nrow(roots_train)-2)*sqrt(x^2/sum(roots_train$Sc^2)+1)*sqrt(var(lm_roots$residuals))
+}
+lower_roots <- function(x) {
+  f_hat_roots(x) - qt(1-alpha/2, nrow(roots_train)-2)*sqrt(x^2/sum(roots_train$Sc^2)+1)*sqrt(var(lm_roots$residuals))
+}
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((lower_leafs(test_leafs$Sc) <= test_leafs$Kgp)&
+                               (test_leafs$Kgp <= upper_leafs(test_leafs$Sc)),"in", "out"))
+
+test_roots_plot <- test_roots %>%
+  mutate(Indicator = if_else((lower_roots(test_roots$Sc) <= test_roots$Kgp)&
+                               (test_roots$Kgp <= upper_roots(test_roots$Sc)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((lower_wood(test_wood$Sc) <= test_wood$Kgp)&
+                               (test_wood$Kgp <= upper_wood(test_wood$Sc)),"in", "out"))
+
+#Plots
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = f_hat_leafs, colour = "hotpink1") +
+  geom_function(fun = upper_leafs, colour = "hotpink4") +
+  geom_function(fun = lower_leafs, colour = "hotpink4") +
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = f_hat_wood, colour = "hotpink1") +
+  geom_function(fun = upper_wood, colour = "hotpink4") +
+  geom_function(fun = lower_wood, colour = "hotpink4") +
+  labs(title = "wood")+
+  scale_color_manual(values = color)
+
+ggplot(test_roots_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = f_hat_roots, colour = "hotpink1") +
+  geom_function(fun = upper_roots, colour = "hotpink4") +
+  geom_function(fun = lower_roots, colour = "hotpink4") +
+  labs(title = "roots")+
+  scale_color_manual(values = color)
+
+
+coverage <- function(data, upper, lower){
+  mean(lower(data$Sc) <= data$Kgp &upper(data$Sc) >= data$Kgp)
+}
+
+a <- coverage(test_leafs, upper_leafs, lower_leafs)
+b <- coverage(test_wood, upper_wood, lower_wood)
+c <- coverage(test_roots, upper_roots, lower_roots)
+
+xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type = latex)
+
+#Random split to assess coverage: 
+
+rs_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit model
+    lm_rs <- lm(Kgp ~ Sc, data = train_rs)
+    sd_hat <- sqrt(sum(lm_rs$residuals^2)/(sample_size-1))
+    f_hat <- function(x) lm_rs$coefficients[[2]]*x + lm_rs$coefficients[[1]] 
+    
+    # Quantiles
+    upper <- function(x) {
+      f_hat(x) - qt(alpha/2, sample_size-2)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
+    }
+    
+    lower <- function(x) {
+      f_hat(x) - qt(1-alpha/2, sample_size-2)*sqrt(x^2/sum(train_rs$Sc^2)+1)*sd_hat
+    }
+    
+    #Definere
+    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                   &upper(test_rs$Sc) >= test_rs$Kgp)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+
+#Checking for correct coverage
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1)
+b <- rs_cov(wood, 30, 0.1)
+c <- rs_cov(roots, 30,0.1)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+median(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = after_stat(density)), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = after_stat(density)), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = after_stat(density)), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0,1.1))+
+  labs(title = "Roots")
+
+#------------------Rolling coverage---------------------------------------------
+
+#Leafs
+
+bin_size <- 50
+roll_cov <- c()
+
+leafs_arr <- test_leafs %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_leafs)-bin_size)){
+  data_cov <- leafs_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, upper_leafs, lower_leafs)
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_leafs)-bin_size), "Roll_cov" = roll_cov)
+
+#Mangler lige lidt color coding, men ellers er den god
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
+#Wood
+
+bin_size <- 50
+roll_cov <- c()
+
+wood_arr <- test_wood %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_wood)-bin_size)){
+  data_cov <- wood_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- coverage(data_cov, upper_wood, lower_wood)
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_wood)-bin_size), "Roll_cov" = roll_cov)
+
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-alpha, color = "purple")+
+  theme_bw() +
+  xlab('') + 
+  ylab('Coverage')+
+  labs(title = "Wood")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+#Checking coverage for different alphas
+
+alphas <- c(0.01, 0.05, 0.1, 0.2)
+cov_alpha_l <- c()
+cov_alpha_w <- c()
+cov_alpha_r <- c()
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  upper_leafs <- upper_leafs
+  lower_leafs <- lower_leafs
+  cov_alpha_l[i] <- coverage(test_leafs, upper_leafs, lower_leafs)
+}
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  upper_wood <- upper_wood
+  lower_wood <- lower_wood
+  cov_alpha_w[i] <- coverage(test_wood, upper_wood, lower_wood)
+}
+
+for (i in (1:4)){
+  alpha <- alphas[i]
+  upper_roots <- upper_roots
+  lower_roots <- lower_roots
+  cov_alpha_r[i] <- coverage(test_roots, upper_roots, lower_roots)
+}
+
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
 
