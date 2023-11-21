@@ -39,35 +39,35 @@ library(stargazer)
 #Lineære modeller af log-log
 
 lm_leafs_log <- lm(Kgp ~ Sc, data = train_leafs_log)
-lm_roots_log <- lm(Kgp ~ Sc, data = train_roots_log)
 lm_wood_log <- lm(Kgp ~ Sc, data = train_wood_log)
+lm_roots_log <- lm(Kgp ~ Sc, data = train_roots_log)
 
 
 #Estimater
 
 hat_beta <- c(lm_leafs_log$coefficients[[1]],
-              lm_roots_log$coefficients[[1]],
-              lm_wood_log$coefficients[[1]])
+              lm_wood_log$coefficients[[1]],
+              lm_roots_log$coefficients[[1]])
 
 hat_alpha <- c(lm_leafs_log$coefficients[[2]],
-               lm_roots_log$coefficients[[2]],
-               lm_wood_log$coefficients[[2]])
+               lm_wood_log$coefficients[[2]],
+               lm_roots_log$coefficients[[2]])
 
 var_hat <- c(var(lm_leafs_log$residuals),
-             var(lm_roots_log$residuals),
-             var(lm_wood_log$residuals))
+             var(lm_wood_log$residuals),
+             var(lm_roots_log$residuals))
 
 
 #log_hat estimater uden bias correction:
 
 f_hat_leafs <- function(x) hat_beta[1] + hat_alpha[1]*x
-f_hat_roots <- function(x) hat_beta[2] + hat_alpha[2]*x
-f_hat_wood <- function(x) hat_beta[3] + hat_alpha[3]*x
+f_hat_wood <- function(x) hat_beta[2] + hat_alpha[2]*x
+f_hat_roots <- function(x) hat_beta[3] + hat_alpha[3]*x
 
 #Y_hat estimater med bias correction: 
 f_hat_leafs_exp_adj <- function(x) exp(hat_beta[1] + hat_alpha[1]*x)*exp(var_hat[1]/2)
-f_hat_roots_exp_adj <- function(x) exp(hat_beta[2] + hat_alpha[2]*x)*exp(var_hat[2]/2)
-f_hat_wood_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[3]/2)
+f_hat_wood_exp_adj <- function(x) exp(hat_beta[2] + hat_alpha[2]*x)*exp(var_hat[2]/2)
+f_hat_roots_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat[3]/2)
 
 
 #Prediction intervals log scale
@@ -81,10 +81,10 @@ lower_leafs <- function(x) {
   f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
 }
 upper_wood <- function(x) {
-  f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[2])
 }
 lower_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[2])
 }
 upper_roots <- function(x) {
   f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-2)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
@@ -157,8 +157,8 @@ xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "Coverage" = c(a,b,c)), type
 
 #Y_hat estimater uden bias correction: 
 f_hat_leafs_exp <- function(x) exp(hat_beta[1])*x^hat_alpha[1]
-f_hat_roots_exp <- function(x) exp(hat_beta[2])*x^hat_alpha[2]
-f_hat_wood_exp <- function(x) exp(hat_beta[3])*x^hat_alpha[3]
+f_hat_wood_exp <- function(x) exp(hat_beta[2])*x^hat_alpha[2]
+f_hat_roots_exp <- function(x) exp(hat_beta[3])*x^hat_alpha[3]
 
 upper_leafs_exp <- function(x) exp(upper_leafs(log(x)))
 lower_leafs_exp <- function(x) exp(lower_leafs(log(x)))
@@ -311,20 +311,20 @@ c %>%
 bin_size <- 50
 roll_cov <- c()
 
-leafs_log_arr <- leafs_log_test %>%
+leafs_log_arr <- test_leafs_log %>%
   arrange(Sc)
 
-for (i in seq(1,nrow(leafs_log_test)-bin_size)){
+for (i in seq(1,nrow(test_leafs_log)-bin_size)){
   data_cov <- leafs_log_arr %>%
     slice(i:(i+bin_size))
   roll_cov[i] <- coverage(data_cov, upper_leafs, lower_leafs)
 }
 
-my_tib <- tibble("Bin" = leafs_log_arr[1:(nrow(leafs_log_test)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = seq(1,nrow(test_leafs_log)-bin_size), "Roll_cov" = roll_cov)
 
 #Mangler lige lidt color coding, men ellers er den god
   
-ggplot(my_tib, aes(x = exp(Bin), y = Roll_cov)) + 
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
   geom_point(size = 0.6, aes(color = Roll_cov)) + 
   geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
@@ -338,19 +338,19 @@ ggplot(my_tib, aes(x = exp(Bin), y = Roll_cov)) +
 bin_size <- 50
 roll_cov <- c()
 
-wood_log_arr <- wood_log_test %>%
+wood_log_arr <- test_wood_log %>%
   arrange(Sc)
 
-for (i in seq(1,nrow(wood_log_test)-bin_size)){
+for (i in seq(1,nrow(test_wood_log)-bin_size)){
   data_cov <- wood_log_arr %>%
     slice(i:(i+bin_size))
   roll_cov[i] <- coverage(data_cov, upper_wood, lower_wood)
 }
 
-my_tib <- tibble("Bin" = wood_log_arr[1:(nrow(wood_log_test)-bin_size),1], "Roll_cov" = roll_cov)
+my_tib <- tibble("Bin" = seq(1,nrow(test_wood_log)-bin_size), "Roll_cov" = roll_cov)
 
 
-ggplot(my_tib, aes(x = exp(Bin), y = Roll_cov)) + 
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
   geom_point(size = 0.6, aes(color = Roll_cov)) + 
   geom_hline(yintercept = 1-alpha, color = "purple")+
   theme_bw() +
