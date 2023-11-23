@@ -452,7 +452,7 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
   scale_color_manual(values = color)
 
 ####################################################################
-#Conformalised quantile regression forest--------------------------------------------------------
+#Conformalised quantile regression forest---------------------------------------
 ####################################################################
 
 pred_int_making <- function(train_data) {

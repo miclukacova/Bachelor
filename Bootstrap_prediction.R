@@ -986,5 +986,6 @@ c %>%
                  fill = "darkolivegreen3", bins = 30)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   theme_bw()+
-  xlim(c(0,1))+
+  xlim(c(0,1.1))+
   labs(title = "Roots")
+

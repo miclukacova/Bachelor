@@ -5,21 +5,35 @@ library(ggplot2)
 library(rpart)
 library(rpart.plot)
 library(xtable)
+
 set.seed(777)
-leafs <- read.csv('Data/leafs.csv')
-wood <- read.csv("Data/wood.csv")
-roots <- read.csv("Data/roots.csv")
-sample_size_leafs = floor(0.8*nrow(leafs))
-picked_leafs = sample(seq_len(nrow(leafs)),size = sample_size_leafs)
+leafs_train <- read.csv('Data/train_leafs.csv')
+roots_train <- read.csv('Data/train_roots.csv')
+wood_train<- read.csv('Data/train_wood.csv')
 
-train_leafs_x = data.frame(Sc = leafs[picked_leafs,1])
-train_leafs_y = leafs[picked_leafs,2]
-test_leafs_x = data.frame(Sc=leafs[-picked_leafs,1])
-test_leafs_y = leafs[-picked_leafs,2]
+test_leafs <- read.csv('Data/test_leafs.csv')
+test_roots <- read.csv('Data/test_roots.csv')
+test_wood <- read.csv('Data/test_wood.csv')
 
-#Quantile regression forest
+train_leafs_x = data.frame(Sc = leafs_train[,1])
+train_leafs_y = leafs_train[,2]
+test_leafs_x = data.frame(Sc=test_leafs[,1])
+test_leafs_y = test_leafs[,2]
 
-qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 76)
+train_wood_x = data.frame(Sc = wood_train[,1])
+train_wood_y = wood_train[,2]
+test_wood_x = data.frame(Sc=test_wood[,1])
+test_wood_y = test_wood[,2]
+
+train_roots_x = data.frame(Sc = roots_train[,1])
+train_roots_y = roots_train[,2]
+test_roots_x = data.frame(Sc=test_roots[,1])
+test_roots_y = test_roots[,2]
+
+#Quantile regression forest for leafs
+
+set.seed(4)
+qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 100)
 plot(qrf)
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
@@ -38,7 +52,6 @@ ggplot(data = obs_fitted, aes(x=fitted, y = observed)) +
 obs_intervals <- data.frame(observed = test_leafs_y, conditionalQuantiles[,c(1,3)], 
                                 interval = conditionalQuantiles[,3]-conditionalQuantiles[,1])
 obs_intervals <- arrange(obs_intervals, interval)
-head(obs_intervals_cent)
 
 q_mean <- apply(obs_intervals[2:3], MARGIN = 1, FUN = mean)
 obs_intervals_cent <- obs_intervals-q_mean
@@ -150,7 +163,6 @@ cv <- function(data, k) {
 cv_intervals_leafs <- cv(leafs,10)
 cv_intervals_wood <- cv(wood, 10)
 cv_intervals_roots <- cv(roots, 10)
-head(cv_intervals)
 
 cv_int <- function(x){
   cv_intervals <- data.frame(x, 
@@ -354,3 +366,99 @@ Sc_plot_smoothed <- function(data,title, y){
 Sc_plot_smoothed(cv_intervals_leafs,"Foliage",'Foliage dry mass (kg/plant)')
 Sc_plot_smoothed(cv_intervals_wood,"Wood",'Wood dry mass (kg/plant)')
 Sc_plot_smoothed(cv_intervals_roots,"Roots",'Root dry mass (kg/plant)')
+
+
+
+
+
+#Quantile regression forest for wood
+
+set.seed(4)
+qrf <- quantregForest(x = train_wood_x, y =train_wood_y, nodesize = 70)
+plot(qrf)
+
+conditionalQuantiles <- predict(qrf, test_wood_x)
+conditionalMean <-  predict(qrf, test_wood_x, what = mean)
+conditionalMedian <-  predict(qrf, test_wood_x, what = median)
+
+obs_fitted <- data.frame(observed = test_wood_y, fitted = conditionalMedian)
+
+#Arranging prediction intervals
+obs_intervals <- data.frame(observed = test_wood_y, conditionalQuantiles[,c(1,3)], 
+                            interval = conditionalQuantiles[,3]-conditionalQuantiles[,1])
+obs_intervals <- arrange(obs_intervals, interval)
+
+q_mean <- apply(obs_intervals[2:3], MARGIN = 1, FUN = mean)
+obs_intervals_cent <- obs_intervals-q_mean
+
+
+obs_intervals_cent$indx <- as.numeric(row.names(obs_intervals))
+
+
+ggplot(data = obs_intervals_cent, aes(x = indx)) +
+  geom_point(aes(y=quantile..0.1), color = 'hotpink',
+             fill = 'hotpink', size = 0.8, shape = 24) +
+  geom_point(aes(y=quantile..0.9), color = 'hotpink', 
+             fill = 'hotpink', size = 0.8, shape = 25)+
+  geom_point(aes(y=observed),color = 'darkolivegreen', size = 0.8)+
+  geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+               color = "hotpink", alpha = 0.4, lwd = 0.4) +
+  theme_bw()
+
+obs_intervals_cent <- obs_intervals_cent %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+count <- obs_intervals_cent %>%
+  count(indicator)
+
+coverage <- count[1,2]/sum(count[,2])
+coverage
+
+plot_data <- data.frame(obs_intervals, pred = test_wood_x)
+head(plot_data)
+
+plot_data <- plot_data %>%
+  mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
+
+head(obs_intervals)
+colors <- c("Quantiles" = "darkolivegreen", "Observed" = "hotpink")
+
+ggplot(plot_data, aes(x = Sc)) +
+  geom_point(aes(y=quantile..0.9, color = "Quantiles"), fill = "darkolivegreen", shape = 25, alpha = 0.7) +
+  geom_point(aes(y=quantile..0.1, color = "Quantiles"), fill = "darkolivegreen", shape = 24, alpha = 0.7) +
+  geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
+               color = "darkolivegreen3", alpha = 0.2, lwd = 0.9)+
+  geom_point(aes(y=observed, color = "Observed"), alpha=0.5, fill = "hotpink3") +
+  labs(title = "Wood")+
+  xlab(bquote('Crown area'~(m^2/plant)))+
+  ylab('Foliage dry mass (kg/plant)')+
+  theme_bw()+
+  scale_color_manual(values = colors)
+
+#in relation to predictor-variables
+plot_data <- data.frame(test_wood_x, conditionalQuantiles, pred = test_wood_x)
+head(plot_data)
+
+plot_data <- arrange(plot_data, Sc)
+?order
+
+colors <- c("0.1" = "hotpink", "0.5" = "darkolivegreen", "0.9" = "darkolivegreen2")
+
+ggplot(plot_data, aes(x = Sc)) +
+  geom_point(aes(y=quantile..0.1, color = "0.1")) +
+  geom_point(aes(y=quantile..0.5, color = "0.5")) +
+  geom_point(aes(y=quantile..0.9, color = "0.9" )) +
+  geom_smooth(aes(y=quantile..0.1, color = "0.1"), se = F)+
+  geom_smooth(aes(y=quantile..0.5, color = "0.5"), se = F)+
+  geom_smooth(aes(y=quantile..0.9, color = "0.9"), se = F)+
+  labs(color = "quantile",
+       y = "Quantiles",
+       x = "Crown size")+
+  theme_bw()+
+  scale_color_manual(values = colors)
+
+
+
+
+
+
