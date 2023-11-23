@@ -989,3 +989,207 @@ c %>%
   xlim(c(0,1.1))+
   labs(title = "Roots")
 
+###################################################################################################
+#NLR del 3 - multiplikativt med residual-sampling:
+#Defining the models and the starting-points we found when obtaining the model:
+#Creating function to be minimized
+MSE_NLR <- function(par, data){
+  with(data, sum((Kgp-par[1]*Sc^par[2])^2))
+}
+
+
+starting_point_leafs <- c(0.61,0.81)
+starting_point_wood <- c(5.51,0.73)
+starting_point_roots <- c(3.66,0.1)
+
+NLE_leafs <- optim(par = starting_point_leafs, fn = MSE_NLR, data = leafs_train)
+NLE_wood <- optim(par = starting_point_wood, fn = MSE_NLR, data = wood_train)
+NLE_roots <- optim(par = starting_point_roots, fn = MSE_NLR, data = roots_train)
+
+leafs_model <- function(x){NLE_leafs$par[1]*(x)^(NLE_leafs$par[2])}
+wood_model <- function(x){NLE_wood$par[1]*(x)^(NLE_wood$par[2])}
+roots_model <- function(x){NLE_roots$par[1]*(x)^(NLE_roots$par[2])}
+
+
+#Defining NLR-specific bootstrapping function:
+set.seed(72)
+boot <- function(model, data_train, data_test, B) {{
+  #Obtaining predicted values and residuals:
+  Y_p <- model$par[1]*(data_test$Sc)^(model$par[2])
+  res <- data_train$Kgp/model$par[1]*(data_train$Sc)^(model$par[2])}
+  
+  rep_e_n1 <- function(nlr, data, X_n_1){
+    #Make bootstrapped data
+    samp_res <- sample(res, nrow(data), replace = TRUE)
+    boot_y <- model$par[1]*(data$Sc)^(model$par[2])*samp_res
+    boot_data <- data.frame(Sc=data$Sc, Kgp = boot_y)
+    
+    # Doing NLR on bootstrapped data, and calculating estimates of beta/beta and alpha-alpha
+    boot_parameters <- optim(par = starting_point_leafs, fn = MSE_NLR, data = boot_data)
+    boot_model <- function(x){boot_parameters$par[1]*(x)^(boot_parameters$par[2])}
+    beta <- model$par[1]/boot_parameters$par[1]
+    alph <- model$par[2]-boot_parameters$par[2]
+    
+    # Obtaining residuals
+    bs_res <- data$Kgp/boot_model(data$Sc)
+    
+    # Calculate draw on prediction error
+    e_N_1 <- beta * X_n_1^alph * sample(bs_res,size=1)
+    
+    return(unname(e_N_1))
+  }
+  
+  #Replicate
+  
+  ep <- matrix(nrow = B, ncol = nrow(data_test))
+  
+  for (i in (1:nrow(data_test))){
+    for (j in (1:B)){
+      ep[j,i] <- rep_e_n1(model, data_train, data_test[i,1])
+    }
+  }
+  return(list(ep, Y_p))
+}
+
+head(leafs_boot)
+
+leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 10)
+wood_boot <- boot(NLE_wood, wood_train, test_wood, 100)
+roots_boot <- boot(NLE_roots, roots_train, test_roots, 100)
+
+
+#Creating the prediction intervals
+
+pred_int <- function(boot, data, alpha) {
+  down <- c()
+  up <- c()
+  
+  for (i in ncol(boot[[1]])){
+    down <- boot[[2]] * quantile(boot[[1]][,i], probs = alpha/2)
+    up <- boot[[2]] * quantile(boot[[1]][,i], probs = 1-alpha/2)
+  } 
+  
+  plot_data <- tibble("Sc" = data$Sc, "Kgp" = data$Kgp,
+                      "Pred" = boot[[2]], "down" = down, "up" = up) %>%
+    mutate(Sc = Sc, Kgp = Kgp, down = down, up = up)%>%
+    mutate(indicator = if_else((down <= Kgp)&(Kgp <= up),"in", "out"))
+  
+  return(plot_data)
+}
+
+#Plot
+
+pred_int_leafs <- pred_int(leafs_boot, test_leafs, 0.1) 
+pred_int_wood <- pred_int(wood_boot, test_wood, 0.1)
+pred_int_roots <- pred_int(roots_boot, test_roots, 0.1)
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(pred_int_leafs) + 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = leafs_model, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
+
+
+ggplot(pred_int_wood) + 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = wood_model, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+ggplot(pred_int_roots)+ 
+  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+  geom_function(fun = roots_model, color = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Roots")+
+  scale_color_manual(values = color)
+
+#Checking for correct coverage
+leafs <- read.csv("Data/leafs.csv")
+wood <- read.csv("Data/wood.csv")
+roots <- read.csv("Data/roots.csv")
+
+rs_cov <- function(data, k, alpha, starting_points) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit NLR-model
+    lm_rs <- optim(par = starting_points, fn = MSE_NLR, data = train_rs)
+    
+    #Perform bootstrap
+    boot_rs <- boot(lm_rs, train_rs, test_rs, 100)
+    
+    # Quantiles
+    pred_int_rs <- pred_int(boot_rs, test_rs, alpha) 
+    
+    #Definere
+    cov[i] <- coverage(pred_int_rs)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+#Det her tager ægte lang tid, jeg ved ikke om det går godt...
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1, starting_point_leafs)
+b <- rs_cov(wood, 30, 0.1, starting_point_wood)
+c <- rs_cov(roots, 30,0.1, starting_point_roots)
+
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0,1.1))+
+  labs(title = "Roots")
+

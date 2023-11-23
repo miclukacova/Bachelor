@@ -9,6 +9,18 @@ library(foreign)
 library(xtable)
 library(stargazer)
 
+train_leafs_log <- read.csv('Data/train_leafs_log.csv')
+train_roots_log <- read.csv('Data/train_roots_log.csv')
+train_wood_log<- read.csv('Data/train_wood_log.csv')
+
+test_leafs_log <- read.csv('Data/test_leafs_log.csv')
+test_roots_log <- read.csv('Data/test_roots_log.csv')
+test_wood_log<- read.csv('Data/test_wood_log.csv')
+
+leafs_log <- read.csv('Data/leafs_log.csv')
+roots_log <- read.csv('Data/roots_log.csv')
+wood_log<- read.csv('Data/wood_log.csv')
+
 leafs_train <- read.csv('Data/train_leafs.csv')
 roots_train <- read.csv('Data/train_roots.csv')
 wood_train<- read.csv('Data/train_wood.csv')
@@ -18,26 +30,25 @@ test_roots <- read.csv('Data/test_roots.csv')
 test_wood <- read.csv('Data/test_wood.csv')
 
 leafs <- read.csv('Data/leafs.csv')
-roots <- read.csv('Data/roots.csv')
 wood <- read.csv('Data/wood.csv')
-
+roots <- read.csv('Data/.csv')
 
 #Quantile regression forest
 
-train_leafs_x = data.frame(Sc = leafs_train[,1])
-train_leafs_y = leafs_train[,2]
-test_leafs_x = data.frame(Sc=test_leafs[,1])
-test_leafs_y = test_leafs[,2]
+train_leafs_x = data.frame(Sc = leafs[picked_leafs,1])
+train_leafs_y = leafs[picked_leafs,2]
+test_leafs_x = data.frame(Sc=leafs[-picked_leafs,1])
+test_leafs_y = leafs[-picked_leafs,2]
 
-train_wood_x = data.frame(Sc = wood_train[,1])
-train_wood_y = wood_train[,2]
-test_wood_x = data.frame(Sc=test_wood[,1])
-test_wood_y = test_wood[,2]
+train_wood_x = data.frame(Sc = wood[picked_wood,1])
+train_wood_y = wood[picked_wood,2]
+test_wood_x = data.frame(Sc=wood[-picked_wood,1])
+test_wood_y = wood[-picked_wood,2]
 
-train_roots_x = data.frame(Sc = roots_train[,1])
-train_roots_y = roots_train[,2]
-test_roots_x = data.frame(Sc=test_roots[,1])
-test_roots_y = test_roots[,2]
+train_roots_x = data.frame(Sc = roots[picked_roots,1])
+train_roots_y = roots[picked_roots,2]
+test_roots_x = data.frame(Sc=roots[-picked_roots,1])
+test_roots_y = roots[-picked_roots,2]
 
 set.seed(253)
 
@@ -117,6 +128,12 @@ results_leafs <- summ(results_leafs)
 which.min(results_leafs$mean_cv)
 which.min(results_leafs$var_cv)
 
+which.min(results_wood$mean_cv)
+results_wood[9,4]
+
+which.min(results_wood$var_cv)
+results_wood[16,4]
+
 results_leafs <- results_leafs %>% add_column(index = c(1,2,5, seq(10, 100, 10), seq(120, 260, 20)))
 
 ggplot(results_leafs, aes(y = mean_cv, x = index)) +
@@ -176,8 +193,10 @@ results_leafs[seq(1,nrow(results_leafs), by = 2),1:3] %>% xtable(type = "latex")
 results_wood[round(seq(1,nrow(results_wood), length.out = 11)),1:3] %>% xtable(type = "latex")
 results_roots[,1:3] %>% xtable(type = "latex")
 
+ggarrange(leafs_mse_cv_plot, wood_mse_cv_plot, roots_mse_cv_plot, ncol = 3, nrow = 1)
 
 #QRF
+
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
 
@@ -276,6 +295,9 @@ ggplot(plot_data, aes(x = Sc)) +
        x = "Crown size")+
   theme_bw()+
   scale_color_manual(values = colors)
+
+
+
 
 
 

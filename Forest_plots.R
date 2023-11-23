@@ -458,7 +458,155 @@ ggplot(plot_data, aes(x = Sc)) +
   scale_color_manual(values = colors)
 
 
+###############################################################################################################
+#Den rigtige version af dette her:
+
+#Vi starter med at træne modellerne på træningssættet:
+leafs_qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 100)
+wood_qrf <- quantregForest(x = train_wood_x, y =train_wood_y, nodesize = 70)
+roots_qrf <- quantregForest(x = train_roots_x, y =train_roots_y, nodesize = 5)
+
+#Predicted quantiles
+leafs_pred <- predict(leafs_qrf, test_leafs_x, what = c(0.05,0.95))
+leafs_pred_mean <- predict(leafs_qrf, test_leafs_x, what = mean)
+wood_pred <- predict(wood_qrf, test_wood_x, what = c(0.05,0.95))
+wood_pred_mean <- predict(wood_qrf, test_wood_x, what = mean)
+roots_pred <- predict(roots_qrf, test_roots_x, what = c(0.05,0.95))
+roots_pred_mean <- predict(roots_qrf, test_roots_x, what = mean)
+
+
+plot_data <- function(int, obs, Sc, mean){
+  plot_data <- data.frame(int, observed = obs, Sc = Sc, mean = mean)
+  plot_data <- plot_data %>%
+    mutate(indicator = if_else((quantile..0.05 <= observed)&(observed <= quantile..0.95),"in", "out"))
+}
+
+plot_leafs <- plot_data(leafs_pred, test_leafs_y, test_leafs_x, leafs_pred_mean)
+plot_wood <- plot_data(wood_pred, test_wood_y, test_wood_x, wood_pred_mean)
+plot_roots <- plot_data(roots_pred, test_roots_y, test_roots_x, roots_pred_mean)
+
+head(plot_leafs)
+nrow(plot_leafs)
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(plot_leafs) + 
+  geom_point(aes(x = Sc, y = quantile..0.05), color = 'hotpink', size = 1.5) +
+  geom_point(aes(x = Sc, y = quantile..0.95), color = 'hotpink', size = 1.5) +
+  geom_point(aes(x = Sc, y = observed, color = indicator), size = 1.5) +
+  geom_point(aes(x = Sc, y = mean), color = 'hotpink4', size = 1.5) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
+
+ggplot(plot_wood) + 
+  geom_point(aes(x = Sc, y = quantile..0.05), color = 'hotpink', size = 1.5) +
+  geom_point(aes(x = Sc, y = quantile..0.95), color = 'hotpink', size = 1.5) +
+  geom_point(aes(x = Sc, y = observed, color = indicator), size = 1.5) +
+  geom_point(aes(x = Sc, y = mean), color = 'hotpink4', size = 1.5) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+
+ggplot(plot_roots) + 
+  geom_point(aes(x = Sc, y = quantile..0.05), color = 'hotpink', size = 2.5) +
+  geom_point(aes(x = Sc, y = quantile..0.95), color = 'hotpink', size = 2.5) +
+  geom_point(aes(x = Sc, y = observed, color = indicator), size = 2.5) +
+  geom_point(aes(x = Sc, y = mean), color = 'hotpink4', size = 2.5) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Roots")+
+  scale_color_manual(values = color)
+
+####Coverage:
+#Indlæser data:
+leafs <- read.csv('Data/leafs.csv')
+wood <- read.csv('Data/wood.csv')
+roots <- read.csv('Data/roots.csv')
+
+
+#Cross validation til coverage:
+
+
+cv_cov <- function(data, k, nodesize) {
+    cov <- c()
+    n <- nrow(data)
+    sample_size <- floor(0.8*n)
+    
+    for (i in (1:k)){
+      # Test and train
+      picked_rs <- sample(n,size = sample_size)
+      train_rs = data[picked_rs,]
+      test_rs = data[-picked_rs,]
+    
+  
+      #Fit model
+      train_x <- data.frame(train_rs$Sc)
+      train_y <- train_rs$Kgp
+      test_x <- data.frame(test_rs$Sc)
+      test_y <- test_rs$Kgp
+      qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
+      
+    #Getting quantiles
+    conditionalQuantiles_cv <- predict(qrf_cv, newdata = test_x, what = c(0.05,0.95))
+    
+    #Creating vectors with observations and quantiles
+    if (i == 1) {
+      pred <- c(data[group == i,1])
+      obs <- c(test_y)
+      q0.05 <- c(conditionalQuantiles_cv[,1])
+      q0.95 <- c(conditionalQuantiles_cv[,2])
+      cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
+    }
+    else {
+      pred <- c(pred, data[group == i,1])
+      obs <- c(obs, test_y)
+      q0.05 <- c(q0.05, conditionalQuantiles_cv[,1])
+      q0.95 <- c(q0.95, conditionalQuantiles_cv[,2])
+      cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
+    }
+  }
+  return("cov" = data.frame(coverage = cov))
+}
+
+cov_leafs <- cv_cov(leafs,10,100)
+cov_wood <- cv_cov(wood,10)
+cov_roots <- cv_cov(roots,10)
 
 
 
 
+
+
+
+
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins=10)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins=20)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", binwidth = 0.01)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  labs(title = "Roots")
