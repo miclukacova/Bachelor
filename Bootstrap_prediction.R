@@ -833,7 +833,7 @@ boot <- function(model, data_train, data_test, B) {
     
     # Calculate draw on prediction error
     e_N_1 <- beta * X_n_1^alph * sample(bs_res,size=1)
-    
+    print(e_N_1)
     return(unname(e_N_1))
   }
   
@@ -849,7 +849,7 @@ boot <- function(model, data_train, data_test, B) {
   return(list(ep, Y_p))
 }
 
-leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 100)
+leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 1)
 wood_boot <- boot(NLE_wood, wood_train, test_wood, 100)
 roots_boot <- boot(NLE_roots, roots_train, test_roots, 100)
 
@@ -1016,7 +1016,7 @@ set.seed(72)
 boot <- function(model, data_train, data_test, B) {{
   #Obtaining predicted values and residuals:
   Y_p <- model$par[1]*(data_test$Sc)^(model$par[2])
-  res <- data_train$Kgp/model$par[1]*(data_train$Sc)^(model$par[2])}
+  res <- data_train$Kgp/(model$par[1]*(data_train$Sc)^(model$par[2]))}
   
   rep_e_n1 <- function(nlr, data, X_n_1){
     #Make bootstrapped data
@@ -1035,7 +1035,6 @@ boot <- function(model, data_train, data_test, B) {{
     
     # Calculate draw on prediction error
     e_N_1 <- beta * X_n_1^alph * sample(bs_res,size=1)
-    
     return(unname(e_N_1))
   }
   
@@ -1050,8 +1049,6 @@ boot <- function(model, data_train, data_test, B) {{
   }
   return(list(ep, Y_p))
 }
-
-head(leafs_boot)
 
 leafs_boot <- boot(NLE_leafs, leafs_train, test_leafs, 10)
 wood_boot <- boot(NLE_wood, wood_train, test_wood, 100)
