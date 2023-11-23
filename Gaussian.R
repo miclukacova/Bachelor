@@ -74,39 +74,71 @@ f_hat_roots_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat
 
 alpha <- 0.1
 
+X_l <- model.matrix(lm_leafs_log)
+X_w <- model.matrix(lm_wood_log)
+X_r <- model.matrix(lm_roots_log)
+
+upper_leafs
+
 upper_leafs <- function(x) {
-  f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-2)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
+  (f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-2)*
+    sqrt(t(c(1,x))%*%solve((t(X_l) %*% X_l))%*%c(1,x) + 1)*sqrt(var_hat[1]))
 }
 lower_leafs <- function(x) {
-  f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*sqrt(x^2/sum(train_leafs_log$Sc^2)+1)*sqrt(var_hat[1])
+  f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*
+    sqrt(t(c(1,x)) %*% solve((t(X_l) %*% X_l))%*% c(1,x) + 1)*sqrt(var_hat[1])
 }
 upper_wood <- function(x) {
-  f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[2])
+  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*
+    sqrt(t(c(1,x))%*%solve((t(X_w) %*% X_w))%*%c(1,x) + 1)*sqrt(var_hat[2])
 }
 lower_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*sqrt(x^2/sum(train_wood_log$Sc^2)+1)*sqrt(var_hat[2])
+  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*
+    sqrt(t(c(1,x))%*%solve((t(X_w) %*% X_w))%*%c(1,x) + 1)*sqrt(var_hat[2])
 }
 upper_roots <- function(x) {
-  f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-2)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*
+    sqrt(t(c(1,x))%*%solve((t(X_r) %*% X_r))%*%c(1,x) + 1)*sqrt(var_hat[3])
 }
 lower_roots <- function(x) {
-  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*sqrt(x^2/sum(train_roots_log$Sc^2)+1)*sqrt(var_hat[3])
+  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*
+    sqrt(t(c(1,x))%*%solve((t(X_r) %*% X_r))%*%c(1,x) + 1)*sqrt(var_hat[3])
 }
-
 
 #Plot with prediction intervals log scale
 
+low_l <- c()
+high_l <- c()
+
+for (i in (1:nrow(test_leafs_log))){
+  low_l[i] <- lower_leafs(test_leafs_log$Sc[i])
+  high_l[i] <- upper_leafs(test_leafs_log$Sc[i])
+}
+
+low_w <- c()
+high_w <- c()
+
+for (i in (1:nrow(test_wood_log))){
+  low_w[i] <- lower_wood(test_wood_log$Sc[i])
+  high_w[i] <- upper_wood(test_wood_log$Sc[i])
+}
+
+low_r <- c()
+high_r <- c()
+
+for (i in (1:nrow(test_roots_log))){
+  low_r[i] <- lower_roots(test_roots_log$Sc[i])
+  high_r[i] <- upper_roots(test_roots_log$Sc[i])
+}
+
 test_leafs_log_plot <- test_leafs_log %>%
-  mutate(Indicator = if_else((lower_leafs(test_leafs_log$Sc) <= test_leafs_log$Kgp)&
-                               (test_leafs_log$Kgp <= upper_leafs(test_leafs_log$Sc)),"in", "out"))
+  mutate(Indicator = if_else((low_l <= test_leafs_log$Kgp)&(test_leafs_log$Kgp <= high_l),"in", "out"))
 
 test_roots_log_plot <- test_roots_log %>%
-  mutate(Indicator = if_else((lower_roots(test_roots_log$Sc) <= test_roots_log$Kgp)&
-                               (test_roots_log$Kgp <= upper_roots(test_roots_log$Sc)),"in", "out"))
+  mutate(Indicator = if_else((low_r <= test_roots_log$Kgp)&(test_roots_log$Kgp <= high_r),"in", "out"))
 
 test_wood_log_plot <- test_wood_log %>%
-  mutate(Indicator = if_else((lower_wood(test_wood_log$Sc) <= test_wood_log$Kgp)&
-                               (test_wood_log$Kgp <= upper_wood(test_wood_log$Sc)),"in", "out"))
+  mutate(Indicator = if_else((low_w <= test_wood_log$Kgp)&(test_wood_log$Kgp <= high_w,"in", "out"))
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
