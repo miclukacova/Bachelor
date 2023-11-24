@@ -109,11 +109,11 @@ lower_roots <- function(x) {
 test_leafs_log_plot <- test_leafs_log %>%
   mutate(Indicator = if_else((lower_leafs(Sc) <= Kgp)&(Kgp <= upper_leafs(Sc)),"in", "out"))
 
-test_roots_log_plot <- test_roots_log %>%
-  mutate(Indicator = if_else((lower_roots(Sc) <= Kgp)&(Kgp <= upper_roots(Sc)),"in", "out"))
-
 test_wood_log_plot <- test_wood_log %>%
   mutate(Indicator = if_else((lower_wood(Sc) <= Kgp)&(Kgp <= upper_wood(Sc)),"in", "out"))
+
+test_roots_log_plot <- test_roots_log %>%
+  mutate(Indicator = if_else((lower_roots(Sc) <= Kgp)&(Kgp <= upper_roots(Sc)),"in", "out"))
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
@@ -128,17 +128,6 @@ ggplot(test_leafs_log_plot, aes(x = Sc, y = Kgp)) +
   labs(title = "Leafs")+
   scale_color_manual(values = color)
 
-ggplot(test_roots_log_plot, aes(x = Sc, y = Kgp)) + 
-  geom_point(aes(color = Indicator)) + 
-  theme_bw() +
-  xlab('log(Sc)') + 
-  ylab('log(Kgp)')+
-  geom_function(fun = f_hat_roots, colour = "hotpink1") +
-  geom_function(fun = upper_roots, colour = "hotpink4") +
-  geom_function(fun = lower_roots, colour = "hotpink4") +
-  labs(title = "roots")+
-  scale_color_manual(values = color)
-
 ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) + 
   geom_point(aes(color = Indicator)) + 
   theme_bw() +
@@ -148,6 +137,17 @@ ggplot(test_wood_log_plot, aes(x = Sc, y = Kgp)) +
   geom_function(fun = upper_wood, colour = "hotpink4") +
   geom_function(fun = lower_wood, colour = "hotpink4") +
   labs(title = "wood")+
+  scale_color_manual(values = color)
+
+ggplot(test_roots_log_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('log(Sc)') + 
+  ylab('log(Kgp)')+
+  geom_function(fun = f_hat_roots, colour = "hotpink1") +
+  geom_function(fun = upper_roots, colour = "hotpink4") +
+  geom_function(fun = lower_roots, colour = "hotpink4") +
+  labs(title = "roots")+
   scale_color_manual(values = color)
 
 coverage <- function(data, upper, lower){
@@ -200,17 +200,6 @@ ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) +
   labs(title = "Leafs")+
   scale_color_manual(values = color)
 
-ggplot(test_roots_plot, aes(x = Sc, y = Kgp)) + 
-  geom_point(aes(color = Indicator)) + 
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
-  geom_function(fun = f_hat_roots_exp, colour = "hotpink1") +
-  geom_function(fun = upper_roots_exp, colour = "hotpink4") +
-  geom_function(fun = lower_roots_exp, colour = "hotpink4") +
-  labs(title = "Roots")+
-  scale_color_manual(values = color)
-
 ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
   geom_point(aes(color = Indicator)) + 
   theme_bw() +
@@ -220,6 +209,17 @@ ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) +
   geom_function(fun = upper_wood_exp, colour = "hotpink4") +
   geom_function(fun = lower_wood_exp, colour = "hotpink4") +
   labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+ggplot(test_roots_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = f_hat_roots_exp, colour = "hotpink1") +
+  geom_function(fun = upper_roots_exp, colour = "hotpink4") +
+  geom_function(fun = lower_roots_exp, colour = "hotpink4") +
+  labs(title = "Roots")+
   scale_color_manual(values = color)
 
 coverage <- function(data, upper, lower){
@@ -579,6 +579,8 @@ f_hat_leafs <- function(x) lm_leafs$coefficients[1] + lm_leafs$coefficients[2]*x
 f_hat_wood <- function(x) lm_wood$coefficients[1] + lm_wood$coefficients[2]*x
 f_hat_roots <- function(x) lm_roots$coefficients[1] + lm_roots$coefficients[2]*x
 
+var_hat <- c(var(lm_leafs$residuals), var(lm_wood$residuals), var(lm_roots$residuals))
+
 
 #Prediction intervals
 
@@ -590,12 +592,12 @@ P_r <- solve((t(model.matrix(lm_roots)) %*% model.matrix(lm_roots)))
 
 upper_leafs <- function(x) {
   (f_hat_leafs(x) - qt(alpha/2, nrow(leafs_train)-2)*
-     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
+     sqrt(P_l[1,1] + P_l[2,1] + P_l[1,2]*x+ P_l[2,2]*x^2+1)*sqrt(var_hat[1]))
 }
 
 lower_leafs <- function(x) {
   (f_hat_leafs(x) - qt(1-alpha/2, nrow(leafs_train)-2)*
-     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
+     sqrt(P_l[1,1] + P_l[2,1] + P_l[1,2]*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
 }
 
 upper_wood <- function(x) {
@@ -726,7 +728,7 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
 a %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = after_stat(density)), color = "white", 
-                 fill = "darkolivegreen3", bins = 30)+
+                 fill = "darkolivegreen3", bins = 40)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   xlim(0,1)+
   theme_bw()+
