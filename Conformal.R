@@ -29,6 +29,10 @@ test_leafs <- read.csv('Data/test_leafs.csv')
 test_roots <- read.csv('Data/test_roots.csv')
 test_wood <- read.csv('Data/test_wood.csv')
 
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+
 ####################################################################
 #########################---SPLIT CONFORMAIL---#####################
 ####################################################################
@@ -36,11 +40,12 @@ test_wood <- read.csv('Data/test_wood.csv')
 ####################################################################
 #Log-log ols--------------------------------------------------------
 
-
+####################################################################
 #To forskellige score funktioner
+####################################################################
 
 #Absolute error
-pred_int_making_1 <- function(train_data) {
+pred_int_making_1 <- function(train_data, , alpha = 0.1) {
   #Test and calibration
   picked <- sample(seq(1, nrow(train_data)), 0.8*nrow(train_data))
   train <- train_data[picked,]
@@ -71,8 +76,8 @@ pred_int_making_1 <- function(train_data) {
   return(list(f_hat_adj, f_hat, lower_1, upper_1, lower_2, upper_2))
 }
 
-#Absolute error / sd hat(Y)
-pred_int_making_2 <- function(train_data) {
+#Absolute error / sd hat(Y) (VIRKER IKKE SÅ GODT)
+pred_int_making_2 <- function(train_data, alpha = 0.1) {
   #Test and calibration
   picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
   train <- train_data[picked,]
@@ -82,21 +87,28 @@ pred_int_making_2 <- function(train_data) {
   #Linear model
   lm <- lm(Kgp ~ Sc, train)
   var_hat <- sum(lm$residuals^2)/(nrow(train)-1)
-  f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
+  f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]
+  f_hat_adj <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
   sd_y_hat <- function(x) sqrt(exp(2*(lm$coefficients[[1]]+log(x)*lm$coefficients[[2]])+var_hat)*(exp(var_hat)-1))
 
   # Heuristic notion of uncertainty
   score <- sort(abs(f_hat(cali$Sc) - cali$Kgp)/sd_y_hat(cali$Sc))
-  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  score_adj <- sort(abs(f_hat_adj(cali$Sc) - cali$Kgp)/sd_y_hat(cali$Sc))
+  quanti <- ceiling((nrow(cali)+1)*(1-alpha))
   q_hat <- score[quanti]
+  q_hat_adj <- score_adj[quanti]
   
   #Prediction intervals
   upper <- function(x) f_hat(x) + q_hat*sd_y_hat(x)
   lower <- function(x) f_hat(x) - q_hat*sd_y_hat(x)
   
-  return(list(f_hat, lower, upper))
+  upper_adj <- function(x) f_hat_adj(x) + q_hat_adj*sd_y_hat(x)
+  lower_adj <- function(x) f_hat_adj(x) - q_hat_adj*sd_y_hat(x)
+  
+  return(list(f_hat_adj, f_hat, upper, lower, upper_adj, lower_adj))
 }
 
+####################################################################
 # Absolute error score på OLS log log, naiv og bias adjusted
 
 set.seed(1)
@@ -105,6 +117,7 @@ b <- pred_int_making_1(train_wood_log)
 #c <- pred_int_making(train_roots_log)
 #Der er ikke nok data punkter i roots --  vi får NA's
 
+#Coverage på test sæt
 
 z1 <- mean(a[[3]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[4]](test_leafs$Sc))
 z2 <- mean(b[[3]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[4]](test_wood$Sc))
@@ -113,61 +126,89 @@ z4 <- mean(b[[5]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[6]](test
 
 xtable(tibble(" " = c("Leafs", "Wood"), "Naive" = c(z1, z2), "Bias adjusted" = c(z3, z4)))
 
-ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
+#Plots
+
+test_leafs_plot <- test_leafs %>%
+  mutate(indicator = if_else((a[[3]](Sc) <= Kgp)&(Kgp <= a[[4]](Sc)),"in", "out"))
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = a[[2]], colour = "hotpink") +
-  geom_function(fun = a[[3]], colour = "darkolivegreen4") +
-  geom_function(fun = a[[4]], colour = "darkolivegreen4") +
-  labs(title = "Leafs")
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = a[[3]], colour = "hotpink") +
+  geom_function(fun = a[[4]], colour = "hotpink") +
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
 
-# Score funktion foreslået af noten 
-## Denne giver mærkelige pred intervaller - problematisk. Grundet høje varians estimater
-## De høje varians estimater kan ses her:
 
-lm <- lm(Kgp ~ Sc, train_leafs_log)
-var_hat <- sum(lm$residuals^2)/(nrow(train_leafs_log)-1)
-func1 <- function(x) sqrt(exp(2*(lm$coefficients[[1]]+log(x)*lm$coefficients[[2]])+var_hat)*(exp(var_hat)-1))
-ggplot(leafs_train, aes(x = Sc, y = Kgp)) + 
+test_wood_plot <- test_wood %>%
+  mutate(indicator = if_else((b[[3]](Sc) <= Kgp)&(Kgp <= b[[4]](Sc)),"in", "out"))
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
   theme_bw() +
   xlab('Sc') + 
-  geom_function(fun = func1, colour = "darkolivegreen") +
-  labs(title = "Variance estimate")
+  ylab('Kgp')+
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = b[[3]], colour = "hotpink") +
+  geom_function(fun = b[[4]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
 
+####################################################################
+# Score funktion foreslået af noten 
+## Denne giver mærkelige pred intervaller - problematisk. Grundet høje varians estimater
+####################################################################
+
+#Note metoderne
 #Pred intervallerne 
 
 set.seed(1)
 c <- pred_int_making_2(train_leafs_log)
 d <- pred_int_making_2(train_wood_log)
 
-#Note metoderne
+#Coverage på test sæt
 
-ggplot(test_leafs, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
+z1 <- mean(c[[4]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[3]](test_leafs$Sc))
+z2 <- mean(d[[4]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[3]](test_wood$Sc))
+z3 <- mean(c[[6]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[5]](test_leafs$Sc))
+z4 <- mean(d[[6]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[5]](test_wood$Sc))
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Naive" = c(z1, z2), "Bias adjusted" = c(z3, z4)))
+
+test_leafs_plot1 <- test_leafs %>%
+  mutate(indicator = if_else((c[[4]](Sc) <= Kgp)&(Kgp <= c[[3]](Sc)),"in", "out"))
+
+test_wood_plot1 <- test_wood %>%
+  mutate(indicator = if_else((d[[4]](Sc) <= Kgp)&(Kgp <= d[[3]](Sc)),"in", "out"))
+
+ggplot(test_leafs_plot1, aes(x = Sc, y = Kgp)) +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = c[[1]], colour = "hotpink") +
-  geom_function(fun = c[[2]], colour = "darkolivegreen4") +
-  geom_function(fun = c[[3]], colour = "darkolivegreen4") +
-  labs(title = "Leafs")
+  geom_function(fun = c[[2]], colour = "hotpink4") +
+  geom_function(fun = c[[3]], colour = "hotpink") +
+  geom_function(fun = c[[4]], colour = "hotpink") +
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)
 
-ggplot(test_wood, aes(x = Sc, y = Kgp)) + 
-  geom_point() + 
+ggplot(test_wood_plot1, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  geom_function(fun = d[[1]], colour = "hotpink") +
-  geom_function(fun = d[[2]], colour = "darkolivegreen4") +
-  geom_function(fun = d[[3]], colour = "darkolivegreen4") +
-  labs(title = "Wood")
-
-z1 <- mean(c[[2]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= c[[3]](test_leafs$Sc))
-z2 <- mean(d[[2]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= d[[3]](test_wood$Sc))
-
-xtable(tibble(" " = c("Leafs", "Wood"), "Bias adj." = c(z1, z2)))
+  geom_function(fun = d[[2]], colour = "hotpink4") +
+  geom_function(fun = d[[3]], colour = "hotpink") +
+  geom_function(fun = d[[4]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
 
 #Distribution of coverage by resampling
 

@@ -42,7 +42,6 @@ lm_leafs_log <- lm(Kgp ~ Sc, data = train_leafs_log)
 lm_wood_log <- lm(Kgp ~ Sc, data = train_wood_log)
 lm_roots_log <- lm(Kgp ~ Sc, data = train_roots_log)
 
-
 #Estimater
 
 hat_beta <- c(lm_leafs_log$coefficients[[1]],
@@ -74,71 +73,47 @@ f_hat_roots_exp_adj <- function(x) exp(hat_beta[3] + hat_alpha[3]*x)*exp(var_hat
 
 alpha <- 0.1
 
-X_l <- model.matrix(lm_leafs_log)
-X_w <- model.matrix(lm_wood_log)
-X_r <- model.matrix(lm_roots_log)
-
-upper_leafs
+P_l <- solve((t(model.matrix(lm_leafs_log)) %*% model.matrix(lm_leafs_log)))
+P_w <- solve((t(model.matrix(lm_wood_log)) %*% model.matrix(lm_wood_log)))
+P_r <- solve((t(model.matrix(lm_roots_log)) %*% model.matrix(lm_roots_log)))
 
 upper_leafs <- function(x) {
   (f_hat_leafs(x) - qt(alpha/2, nrow(train_leafs_log)-2)*
-    sqrt(t(c(1,x))%*%solve((t(X_l) %*% X_l))%*%c(1,x) + 1)*sqrt(var_hat[1]))
+     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
 }
+
 lower_leafs <- function(x) {
-  f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*
-    sqrt(t(c(1,x)) %*% solve((t(X_l) %*% X_l))%*% c(1,x) + 1)*sqrt(var_hat[1])
+  (f_hat_leafs(x) - qt(1-alpha/2, nrow(train_leafs_log)-2)*
+     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
 }
+
 upper_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*
-    sqrt(t(c(1,x))%*%solve((t(X_w) %*% X_w))%*%c(1,x) + 1)*sqrt(var_hat[2])
+  (f_hat_wood(x) - qt(alpha/2, nrow(train_wood_log)-2)*
+     sqrt(P_w[1,1] + (P_w[2,1] + P_w[1,2])*x+ P_w[2,2]*x^2+ 1)*sqrt(var_hat[2]))
 }
 lower_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*
-    sqrt(t(c(1,x))%*%solve((t(X_w) %*% X_w))%*%c(1,x) + 1)*sqrt(var_hat[2])
+  (f_hat_wood(x) - qt(1-alpha/2, nrow(train_wood_log)-2)*
+     sqrt(P_w[1,1] + (P_w[2,1] + P_w[1,2])*x+ P_w[2,2]*x^2+ 1)*sqrt(var_hat[2]))
 }
 upper_roots <- function(x) {
-  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*
-    sqrt(t(c(1,x))%*%solve((t(X_r) %*% X_r))%*%c(1,x) + 1)*sqrt(var_hat[3])
+  (f_hat_roots(x) - qt(alpha/2, nrow(train_roots_log)-2)*
+     sqrt(P_r[1,1] + (P_r[2,1] + P_r[1,2])*x+ P_r[2,2]*x^2+ 1)*sqrt(var_hat[3]))
 }
 lower_roots <- function(x) {
-  f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*
-    sqrt(t(c(1,x))%*%solve((t(X_r) %*% X_r))%*%c(1,x) + 1)*sqrt(var_hat[3])
+  (f_hat_roots(x) - qt(1-alpha/2, nrow(train_roots_log)-2)*
+     sqrt(P_r[1,1] + (P_r[2,1] + P_r[1,2])*x+ P_r[2,2]*x^2+ 1)*sqrt(var_hat[3]))
 }
 
 #Plot with prediction intervals log scale
 
-low_l <- c()
-high_l <- c()
-
-for (i in (1:nrow(test_leafs_log))){
-  low_l[i] <- lower_leafs(test_leafs_log$Sc[i])
-  high_l[i] <- upper_leafs(test_leafs_log$Sc[i])
-}
-
-low_w <- c()
-high_w <- c()
-
-for (i in (1:nrow(test_wood_log))){
-  low_w[i] <- lower_wood(test_wood_log$Sc[i])
-  high_w[i] <- upper_wood(test_wood_log$Sc[i])
-}
-
-low_r <- c()
-high_r <- c()
-
-for (i in (1:nrow(test_roots_log))){
-  low_r[i] <- lower_roots(test_roots_log$Sc[i])
-  high_r[i] <- upper_roots(test_roots_log$Sc[i])
-}
-
 test_leafs_log_plot <- test_leafs_log %>%
-  mutate(Indicator = if_else((low_l <= test_leafs_log$Kgp)&(test_leafs_log$Kgp <= high_l),"in", "out"))
+  mutate(Indicator = if_else((lower_leafs(Sc) <= Kgp)&(Kgp <= upper_leafs(Sc)),"in", "out"))
 
 test_roots_log_plot <- test_roots_log %>%
-  mutate(Indicator = if_else((low_r <= test_roots_log$Kgp)&(test_roots_log$Kgp <= high_r),"in", "out"))
+  mutate(Indicator = if_else((lower_roots(Sc) <= Kgp)&(Kgp <= upper_roots(Sc)),"in", "out"))
 
 test_wood_log_plot <- test_wood_log %>%
-  mutate(Indicator = if_else((low_w <= test_wood_log$Kgp)&(test_wood_log$Kgp <= high_w,"in", "out"))
+  mutate(Indicator = if_else((lower_wood(Sc) <= Kgp)&(Kgp <= upper_wood(Sc)),"in", "out"))
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
@@ -312,7 +287,7 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
 a %>%
   ggplot() +
   geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", bins = 30)+
+                 fill = "darkolivegreen3", bins = 40)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
   xlim(0,1)+
   theme_bw()+
@@ -475,21 +450,21 @@ for (i in (1:4)){
   alpha <- alphas[i]
   upper_leafs <- upper_leafs
   lower_leafs <- lower_leafs
-  cov_alpha_l[i] <- coverage(leafs_log_test, upper_leafs, lower_leafs)
+  cov_alpha_l[i] <- coverage(test_leafs_log, upper_leafs, lower_leafs)
 }
 
 for (i in (1:4)){
   alpha <- alphas[i]
   upper_wood <- upper_wood
   lower_wood <- lower_wood
-  cov_alpha_w[i] <- coverage(wood_log_test, upper_wood, lower_wood)
+  cov_alpha_w[i] <- coverage(test_wood_log, upper_wood, lower_wood)
 }
 
 for (i in (1:4)){
   alpha <- alphas[i]
   upper_roots <- upper_roots
   lower_roots <- lower_roots
-  cov_alpha_r[i] <- coverage(roots_log_test, upper_roots, lower_roots)
+  cov_alpha_r[i] <- coverage(test_roots_log, upper_roots, lower_roots)
 }
 
 
@@ -609,38 +584,46 @@ f_hat_roots <- function(x) lm_roots$coefficients[1] + lm_roots$coefficients[2]*x
 
 alpha <- 0.1
 
+P_l <- solve((t(model.matrix(lm_leafs)) %*% model.matrix(lm_leafs)))
+P_w <- solve((t(model.matrix(lm_wood)) %*% model.matrix(lm_wood)))
+P_r <- solve((t(model.matrix(lm_roots)) %*% model.matrix(lm_roots)))
+
 upper_leafs <- function(x) {
-  f_hat_leafs(x) - qt(alpha/2, nrow(leafs_train)-2)*sqrt(x^2/sum(leafs_train$Sc^2)+1)*sqrt(var(lm_leafs$residuals))
+  (f_hat_leafs(x) - qt(alpha/2, nrow(leafs_train)-2)*
+     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
 }
+
 lower_leafs <- function(x) {
-  f_hat_leafs(x) - qt(1-alpha/2, nrow(leafs_train)-2)*sqrt(x^2/sum(leafs_train$Sc^2)+1)*sqrt(var(lm_leafs$residuals))
+  (f_hat_leafs(x) - qt(1-alpha/2, nrow(leafs_train)-2)*
+     sqrt(P_l[1,1] + (P_l[2,1] + P_l[1,2])*x+ P_l[2,2]*x^2+ 1)*sqrt(var_hat[1]))
 }
+
 upper_wood <- function(x) {
-  f_hat_wood(x) - qt(alpha/2, nrow(wood_train)-2)*sqrt(x^2/sum(wood_train$Sc^2)+1)*sqrt(var(lm_wood$residuals))
+  (f_hat_wood(x) - qt(alpha/2, nrow(wood_train)-2)*
+     sqrt(P_w[1,1] + (P_w[2,1] + P_w[1,2])*x+ P_w[2,2]*x^2+ 1)*sqrt(var_hat[2]))
 }
 lower_wood <- function(x) {
-  f_hat_wood(x) - qt(1-alpha/2, nrow(wood_train)-2)*sqrt(x^2/sum(wood_train$Sc^2)+1)*sqrt(var(lm_wood$residuals))
+  (f_hat_wood(x) - qt(1-alpha/2, nrow(wood_train)-2)*
+     sqrt(P_w[1,1] + (P_w[2,1] + P_w[1,2])*x+ P_w[2,2]*x^2+ 1)*sqrt(var_hat[2]))
 }
 upper_roots <- function(x) {
-  f_hat_roots(x) - qt(alpha/2, nrow(roots_train)-2)*sqrt(x^2/sum(roots_train$Sc^2)+1)*sqrt(var(lm_roots$residuals))
+  (f_hat_roots(x) - qt(alpha/2, nrow(roots_train)-2)*
+     sqrt(P_l[1,1] + (P_r[2,1] + P_r[1,2])*x+ P_r[2,2]*x^2+ 1)*sqrt(var_hat[3]))
 }
 lower_roots <- function(x) {
-  f_hat_roots(x) - qt(1-alpha/2, nrow(roots_train)-2)*sqrt(x^2/sum(roots_train$Sc^2)+1)*sqrt(var(lm_roots$residuals))
+  (f_hat_roots(x) - qt(1-alpha/2, nrow(roots_train)-2)*
+     sqrt(P_r[1,1] + (P_r[2,1] + P_r[1,2])*x+ P_r[2,2]*x^2+ 1)*sqrt(var_hat[3]))
 }
+#Plots
 
 test_leafs_plot <- test_leafs %>%
-  mutate(Indicator = if_else((lower_leafs(test_leafs$Sc) <= test_leafs$Kgp)&
-                               (test_leafs$Kgp <= upper_leafs(test_leafs$Sc)),"in", "out"))
+  mutate(Indicator = if_else((lower_leafs(Sc) <= Kgp)&(Kgp <= upper_leafs(Sc)),"in", "out"))
 
 test_roots_plot <- test_roots %>%
-  mutate(Indicator = if_else((lower_roots(test_roots$Sc) <= test_roots$Kgp)&
-                               (test_roots$Kgp <= upper_roots(test_roots$Sc)),"in", "out"))
+  mutate(Indicator = if_else((lower_roots(Sc) <= Kgp)&(Kgp <= upper_roots(Sc)),"in", "out"))
 
 test_wood_plot <- test_wood %>%
-  mutate(Indicator = if_else((lower_wood(test_wood$Sc) <= test_wood$Kgp)&
-                               (test_wood$Kgp <= upper_wood(test_wood$Sc)),"in", "out"))
-
-#Plots
+  mutate(Indicator = if_else((lower_wood(Sc) <= Kgp)&(Kgp <= upper_wood(Sc)),"in", "out"))
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
