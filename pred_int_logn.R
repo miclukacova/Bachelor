@@ -41,6 +41,10 @@ sd_hat <- c(sqrt(var(lm_leafs_log$residuals)),
 mean_l_log <- function(x) lm_leafs_log$coefficients[[1]]+ lm_leafs_log$coefficients[[2]]*log(x)
 mean_w_log <- function(x) lm_wood_log$coefficients[[1]]+ lm_wood_log$coefficients[[2]]*log(x)
 mean_r_log <- function(x) lm_roots_log$coefficients[[1]]+ lm_roots_log$coefficients[[2]]*log(x)
+
+#RETTES!!!!!!
+#!!!!!
+#Vi skal have den bias adjusted på
 mean_l <- function(x) exp(lm_leafs_log$coefficients[[1]])*x^lm_leafs_log$coefficients[[2]]
 mean_w <- function(x) exp(lm_wood_log$coefficients[[1]])*x^lm_wood_log$coefficients[[2]]
 mean_r <- function(x) exp(lm_roots_log$coefficients[[1]])*x^lm_roots_log$coefficients[[2]]
