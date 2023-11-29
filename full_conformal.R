@@ -362,12 +362,15 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 
 #----------------------------Distribution of coverage by resampling-----------------------------------------
 
-rs_cov <- function(data, k, alpha) {
+rs_cov <- function(data, k, alpha, reg_alg) {
   cov <- c()
   n <- nrow(data)
   sample_size <- floor(0.8*n)
   
   for (i in (1:k)){
+    if (i = 15){
+      print("Halfway!")
+    }
     # Test and train
     
     picked_rs <- sample(n,size = sample_size)
@@ -376,35 +379,18 @@ rs_cov <- function(data, k, alpha) {
     
     #Calibration
     
-    picked <- sample(seq(1, nrow(train_rs)), 0.8*nrow(train_rs))
-    cali_rs <- train_rs[-picked,]
-    train_rs <- train_rs[picked,] %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
-    
-    lm <- lm(Kgp ~ Sc, train_rs)
-    var_hat <- sum(lm$residuals^2)/(nrow(train_rs)-1)
-    f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
-    
-    # Heuristic notion of uncertainty
-    
-    score <- sort(abs(f_hat(cali_rs$Sc) - cali_rs$Kgp))
-    quanti <- ceiling((nrow(cali_rs)+1)*(1-0.1))
-    q_hat <- score[quanti]
-    
-    #Prediction interval functions
-    
-    upper <- function(x) f_hat(x) + q_hat
-    lower <- function(x) f_hat(x) - q_hat
+    full_conf <- full_conformal(train_rs, alpha, reg_alg, test_rs$Sc)
     
     #Definere
-    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
-                   &upper(test_rs$Sc) >= test_rs$Kgp)
+    cov[i] <- mean(full_conf$low <= test_rs$Kgp 
+                   & full_conf$high >= test_rs$Kgp)
   }
   return(tibble("Coverage" = cov))
 }
 
 set.seed(4)
-a <- rs_cov(leafs, 30, 0.1)
-b <- rs_cov(wood, 30, 0.1)
+a <- rs_cov(leafs, 30, 0.1, log_ols_alg)
+b <- rs_cov(wood, 30, 0.1, log_ols_alg)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
@@ -436,67 +422,36 @@ b %>%
 
 #----------------------------Rolling coverage---------------------------------------------
 
-#Leafs
-
 set.seed(7)
-a <- pred_int_making_1(train_leafs_log, alpha = 0.1)
+conf_int <- full_conformal(leafs_train, 0.1, log_ols_alg, test_leafs$Sc)
 
-bin_size <- 50
-roll_cov <- c()
-
-leafs_arr <- test_leafs %>%
-  arrange(Sc)
-
-for (i in seq(1,nrow(test_leafs)-bin_size)){
-  data_cov <- leafs_arr %>%
-    slice(i:(i+bin_size))
-  roll_cov[i] <- mean(a[[5]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[6]](data_cov$Sc))
+roll_cov <- function(bin_size = 50, test_data, conf_int){
+  roll_cov <- c()
+  data_arr <- test_data %>%
+    arrange(Sc)
+  for (i in seq(1,nrow(test_data)-bin_size)){
+    data_cov <- leafs_arr %>%
+      slice(i:(i+bin_size))
+    roll_cov[i] <- mean(conf_int$low <= data_cov$Kgp & data_cov$Kgp  <= conf_int$high)
+  }
+  my_tib <- tibble("Bin" = seq(1,nrow(test_leafs)-bin_size), "Roll_cov" = roll_cov)
+  return
+  
+  my_plot <- ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+    geom_point(size = 0.6, aes(color = Roll_cov)) + 
+    geom_hline(yintercept = 1-0.1, color = "purple")+
+    geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+    geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+    theme_bw() +
+    xlab('Sc') + 
+    ylab('Coverage')+
+    labs(title = "Leafs")+
+    scale_color_gradient(low = 'blue', high = 'red')
+  
+  return(my_plot)
 }
 
-my_tib <- tibble("Bin" = seq(1,nrow(test_leafs)-bin_size), "Roll_cov" = roll_cov)
 
-ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
-  geom_point(size = 0.6, aes(color = Roll_cov)) + 
-  geom_hline(yintercept = 1-0.1, color = "purple")+
-  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
-  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Coverage')+
-  labs(title = "Leafs")+
-  scale_color_gradient(low = 'blue', high = 'red')
-
-
-#Wood
-
-set.seed(7)
-a <- pred_int_making_1(train_wood_log, alpha = 0.1)
-
-bin_size <- 50
-roll_cov <- c()
-
-wood_arr <- test_wood %>%
-  arrange(Sc)
-
-for (i in seq(1,nrow(test_wood)-bin_size)){
-  data_cov <- wood_arr %>%
-    slice(i:(i+bin_size))
-  roll_cov[i] <- mean(a[[5]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[6]](data_cov$Sc))
-}
-
-my_tib <- tibble("Bin" = seq(1,nrow(test_wood)-bin_size), "Roll_cov" = roll_cov)
-
-
-ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
-  geom_point(size = 0.6, aes(color = Roll_cov)) + 
-  geom_hline(yintercept = 0.9, color = "purple")+
-  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
-  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
-  theme_bw() +
-  xlab('') + 
-  ylab('Coverage')+
-  labs(title = "Wood")+
-  scale_color_gradient(low = 'blue', high = 'red')
 
 
 
