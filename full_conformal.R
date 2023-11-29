@@ -189,21 +189,23 @@ model <- lm(log(Kgp) ~ log(Sc), wood_train)
 f_hat_w <- function(x) exp(model$coef[[1]])*x^model$coef[[2]]*exp(var(model$residuals)/2)
 
 ggplot(test_wood_plot) +
-  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
-  geom_point(aes(x = Sc, y = high, color = "hotpink")) + 
-  geom_point(aes(x = Sc, y = low, color = "hotpink")) +
-  geom_function(fun = f_hat_w, colour = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator), size = 0.8, alpha = 0.8) + 
+  geom_point(aes(x = Sc, y = high), color = "hotpink", size = 0.8, alpha = 0.8) + 
+  geom_point(aes(x = Sc, y = low), color = "hotpink", size = 0.8, alpha = 0.8) +
+  geom_function(fun = f_hat_w, colour = "hotpink4", linetype = "dashed") +
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  labs(title = "wood")+
+  labs(title = "Wood")+
   scale_color_manual(values = color)
 
 cov_w <- mean((pred_int_w$low <= test_wood$Kgp)&(test_wood$Kgp <= pred_int_w$high))
 
 #Roots
 
-pred_int_r <- full_conformal(roots_train, 0.1, ols_log_alg, test_roots$Sc)
+#Der går måske noget galt her
+
+pred_int_r <- full_conformal(roots_train, 0.1, log_ols_alg, test_roots$Sc)
 
 test_roots_plot <- test_roots %>%
   mutate(indicator = if_else((pred_int_r$low <= Kgp)&(Kgp <= pred_int_r$high),"in", "out"))%>%
@@ -213,14 +215,14 @@ model <- lm(log(Kgp) ~ log(Sc), roots_train)
 f_hat_r <- function(x) exp(model$coef[[1]])*x^model$coef[[2]]*exp(var(model$residuals)/2)
 
 ggplot(test_roots_plot) +
-  geom_point(aes(x = Sc, y = Kgp, color = indicator)) + 
-  geom_point(aes(x = Sc, y = high, color = "hotpink")) + 
-  geom_point(aes(x = Sc, y = low, color = "hotpink")) +
-  geom_function(fun = f_hat_r, colour = "hotpink4") +
+  geom_point(aes(x = Sc, y = Kgp, color = indicator), size = 0.8, alpha = 0.8) + 
+  geom_point(aes(x = Sc, y = high), color = "hotpink", size = 0.8, alpha = 0.8) + 
+  geom_point(aes(x = Sc, y = low), color = "hotpink", size = 0.8, alpha = 0.8) +
+  geom_function(fun = f_hat_r, colour = "hotpink4", linetype = "dashed") +
   theme_bw() +
   xlab('Sc') + 
   ylab('Kgp')+
-  labs(title = "roots")+
+  labs(title = "Roots")+
   scale_color_manual(values = color)
 
 cov_r <- mean((pred_int_r$low <= test_roots$Kgp)&(test_roots$Kgp <= pred_int_r$high))
@@ -320,6 +322,183 @@ ggplot(test_roots_plot) +
 cov_r <- mean((pred_int_r$low <= test_roots$Kgp)&(test_roots$Kgp <= pred_int_r$high))
 
 xtable(tibble(" " = c("Leafs", "Wood", "Roots"), "Coverage" = c(cov_l, cov_w, cov_r)))
+
+
+
+
+
+
+
+
+#------------------------------ Investigation of coverage ----------------------
+#------------------------------ For different alphas ---------------------------
+alphas <- c(0.01, 0.05, 0.1, 0.2)
+
+set.seed(2)
+conf_diff_alphas <- function(data_train, reg_alg, new_data){
+  cov_alpha <- c()
+  for (i in (1:4)){
+    a <- full_conformal(data_train, alpha = alphas[i], reg_alg, new_data$Sc)
+    cov_alpha[i] <- mean(a$low <= new_data$Kgp & new_data$Kgp  <= a$high)
+  }
+  return(cov_alpha)
+}
+
+
+cov_alpha_l <- conf_diff_alphas(leafs_train, log_ols_alg, test_leafs)
+cov_alpha_w <- conf_diff_alphas(wood_train, log_ols_alg, test_wood)
+cov_alpha_r <- conf_diff_alphas(roots_train, log_ols_alg, test_roots)
+
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
+
+
+
+
+
+
+
+#----------------------------Distribution of coverage by resampling-----------------------------------------
+
+rs_cov <- function(data, k, alpha) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    #Calibration
+    
+    picked <- sample(seq(1, nrow(train_rs)), 0.8*nrow(train_rs))
+    cali_rs <- train_rs[-picked,]
+    train_rs <- train_rs[picked,] %>% mutate(Sc = log(Sc), Kgp = log(Kgp))
+    
+    lm <- lm(Kgp ~ Sc, train_rs)
+    var_hat <- sum(lm$residuals^2)/(nrow(train_rs)-1)
+    f_hat <- function(x) exp(lm$coefficients[[1]])*x^lm$coefficients[[2]]*exp(var_hat/2)
+    
+    # Heuristic notion of uncertainty
+    
+    score <- sort(abs(f_hat(cali_rs$Sc) - cali_rs$Kgp))
+    quanti <- ceiling((nrow(cali_rs)+1)*(1-0.1))
+    q_hat <- score[quanti]
+    
+    #Prediction interval functions
+    
+    upper <- function(x) f_hat(x) + q_hat
+    lower <- function(x) f_hat(x) - q_hat
+    
+    #Definere
+    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                   &upper(test_rs$Sc) >= test_rs$Kgp)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1)
+b <- rs_cov(wood, 30, 0.1)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0.5,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+#Ret jævnt fordelt - plot evt. den teoretiske fordeling
+
+
+#----------------------------Rolling coverage---------------------------------------------
+
+#Leafs
+
+set.seed(7)
+a <- pred_int_making_1(train_leafs_log, alpha = 0.1)
+
+bin_size <- 50
+roll_cov <- c()
+
+leafs_arr <- test_leafs %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_leafs)-bin_size)){
+  data_cov <- leafs_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- mean(a[[5]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[6]](data_cov$Sc))
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_leafs)-bin_size), "Roll_cov" = roll_cov)
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-0.1, color = "purple")+
+  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
+#Wood
+
+set.seed(7)
+a <- pred_int_making_1(train_wood_log, alpha = 0.1)
+
+bin_size <- 50
+roll_cov <- c()
+
+wood_arr <- test_wood %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_wood)-bin_size)){
+  data_cov <- wood_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- mean(a[[5]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[6]](data_cov$Sc))
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_wood)-bin_size), "Roll_cov" = roll_cov)
+
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 0.9, color = "purple")+
+  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  theme_bw() +
+  xlab('') + 
+  ylab('Coverage')+
+  labs(title = "Wood")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
 
 
 
