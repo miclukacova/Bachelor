@@ -377,7 +377,7 @@ rs_cov <- function(data, k, alpha, reg_alg) {
     train_rs = data[picked_rs,]
     test_rs = data[-picked_rs,]
     
-    #Calibration
+    #Model fit
     
     full_conf <- full_conformal(train_rs, alpha, reg_alg, test_rs$Sc)
     
@@ -391,10 +391,12 @@ rs_cov <- function(data, k, alpha, reg_alg) {
 set.seed(4)
 a <- rs_cov(leafs, 30, 0.1, log_ols_alg)
 b <- rs_cov(wood, 30, 0.1, log_ols_alg)
+c <- rs_cov(roots, 30, 0.1, log_ols_alg)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
 mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage)
 
 xtable(tibble(Data = c("Leafs", "Wood"), 
               "Mean coverage" =c(mean_a, mean_b)), type = latex)
@@ -416,6 +418,15 @@ b %>%
   theme_bw()+
   xlim(c(0.5,1))+
   labs(title = "Wood")
+
+c %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 30)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1.1))+
+  labs(title = "Roots")
 
 #Ret jævnt fordelt - plot evt. den teoretiske fordeling
 
@@ -451,7 +462,7 @@ roll_cov <- function(bin_size = 50, test_data, conf_int){
   return(my_plot)
 }
 
-
+roll_cov(test_leafs, test_leafs, conf_int)
 
 
 

@@ -29,13 +29,17 @@ ggplot(test_roots_plot) +
   geom_function(fun = func_list[[6]], aes(color = "n =  1500"), linewidth = 1.1)+
   xlim(c(0.8,1.01))+
   theme_bw()+
-  scale_color_manual(values = colors)
+  scale_color_manual(values = colors, breaks=c("n =  10", "n =  308", "n =  606", "n =  904", "n =  1202", "n =  1500"))
 
+?scale_
 colors = c("n =  10" = "darkolivegreen1",
            "n =  308" ="darkolivegreen2",
            "n =  606" = "darkolivegreen3",
            "n =  904" = "darkolivegreen4",
            "n =  1202" = "green4", 
            "n =  1500" = "darkgreen")
+
+
+levels(colors)
   
   
