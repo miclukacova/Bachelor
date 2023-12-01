@@ -54,24 +54,24 @@ ggarrange(a1,b1,c1, ncol = 3, nrow = 1)
 leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote('Crown area'~(m^2/plant))) + 
-  ylab('Foliage dry mass (kg/plant)')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Foliage")
 
 roots_sc_plot <- ggplot(roots, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen4', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote('Crown area'~(m^2/plant))) + 
-  ylab('Root dry mass (kg/plant)')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Roots")
 
 wood_sc_plot <- ggplot(wood, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote('Crown area'~(m^2/plant))) + 
-  ylab('Wood dry mass (kg/plant)')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Wood")
 
@@ -380,42 +380,43 @@ residuals_roots <- data.frame(residual = lm_roots_log$residuals/sd(lm_roots_log$
 
 residuals_leafs %>%
   ggplot() +
-  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
-  geom_vline(xintercept = 0, color = "hotpink") +
-  stat_function(fun = dnorm, color = "darkolivegreen")+
+  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3", bins = 40) +
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
   labs(title = "Foliage")
+?geom_vline
 
 residuals_wood %>%
   ggplot() +
-  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
-  geom_vline(xintercept = 0, color = "hotpink") +
+  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3", bins = 40) +
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
-  stat_function(fun = dnorm, color = "darkolivegreen")+
   labs(title = "Wood")
 
 residuals_roots %>%
   ggplot() +
   geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
-  geom_vline(xintercept = 0, color = "hotpink") +
-  stat_function(fun = dnorm, color = "darkolivegreen")+
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
   labs(title = "Roots")
 
 ggplot(data = residuals_leafs, aes(sample = residual)) +
-  stat_qq() + stat_qq_line(color = "hotpink") + 
-  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
   labs(title = "Foliage")
 
 ggplot(data = residuals_wood, aes(sample = residual)) +
-  stat_qq() + stat_qq_line(color = "hotpink") + 
-  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
   labs(title = "Wood")
 
 ggplot(data = residuals_roots, aes(sample = residual)) +
-  stat_qq() + stat_qq_line(color = "hotpink") + 
-  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen")+
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
   labs(title = "Roots")
