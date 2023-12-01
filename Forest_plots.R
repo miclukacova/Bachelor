@@ -462,11 +462,12 @@ ggplot(plot_data, aes(x = Sc)) +
 #Den rigtige version af dette her:
 
 #Vi starter med at træne modellerne på træningssættet:
-leafs_qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, maxnodes = 1)
+leafs_qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 50000)
 wood_qrf <- quantregForest(x = train_wood_x, y =train_wood_y, nodesize = 70)
 roots_qrf <- quantregForest(x = train_roots_x, y =train_roots_y, nodesize = 5)
 
-?quantregForest
+nrow(train_leafs_x)
+?randomForest
 
 #Predicted quantiles
 leafs_pred <- predict(leafs_qrf, test_leafs_x, what = c(0.05,0.95))

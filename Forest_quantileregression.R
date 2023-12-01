@@ -296,10 +296,128 @@ ggplot(plot_data, aes(x = Sc)) +
   theme_bw()+
   scale_color_manual(values = colors)
 
+############################Forsøg med max- i stedet for min-nodesize:
+#10 fold cv to find optimal node size function and summary function:
+
+cv <- function(data, k, max_nodes) {
+  MSE_cv <- c()
+  n <- nrow(data)
+  group <- sample(rep(1:k, length.out = n))
+  for (i in (1:k)){
+    #Fit model
+    train_x <- data.frame(Sc = data[group != i,1])
+    train_y<- data[group != i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, maxnodes = max_nodes)
+    
+    #MSE
+    conditionalMean_cv <- predict(qrf_cv, data.frame(Sc = data[group == i,1]), what = mean)
+    MSE_cv[i] <- mean((conditionalMean_cv - data[group == i,2])^2)
+  }
+  return(tibble("MSE" = MSE_cv))
+}
+
+opt_node_size <- function(data, max_nodes){
+  hej <- TRUE
+  for (i in max_nodes){
+    if (hej){
+      result <- data.frame(cv(data, 10, i)$MSE)
+      colnames(result) <- paste("MSE_", i, sep = "")
+      k = 2
+      hej <- FALSE
+    }
+    else{
+      result <- result %>% add_column(cv(data, 10, i)$MSE)
+      colnames(result)[k] <- paste("MSE_", i, sep = "")
+      k = k + 1
+    }
+  }
+  return(result)
+}
+
+summ <- function(result) {
+  mean_cv <- c()
+  var_cv <- c()
+  for (i in (1:ncol(result))){
+    mean_cv[i] <- mean(result[,i])
+    var_cv[i] <- var(result[,i])
+  }
+  results <- tibble(names = colnames(result), mean_cv = mean_cv, var_cv = var_cv)
+  return(results)
+}
+
+# For leafs: 
+
+set.seed(41)
+results_leafs <- opt_node_size(leafs_train, c(1,2,5, seq(10, 100, 10), seq(120, 260, 20)))
+results_leafs <- summ(results_leafs)
+
+which.min(results_leafs$mean_cv)
+which.min(results_leafs$var_cv)
+
+which.min(results_wood$mean_cv)
+results_wood[9,4]
+
+which.min(results_wood$var_cv)
+results_wood[16,4]
+
+results_leafs <- results_leafs %>% add_column(index = c(1,2,5, seq(10, 100, 10), seq(120, 260, 20)))
+
+ggplot(results_leafs, aes(y = mean_cv, x = index)) +
+  geom_point(color = "hotpink")+
+  labs(title = "Leafs",
+       y = "Mean MSE",
+       x = "Nodesize")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
+  theme_bw()
 
 
+# For wood: 
+
+set.seed(41)
+results_wood <- opt_node_size(wood_train, c(1,2, seq(5, 95, 5), seq(100, 200, 20)))
+results_wood <- summ(results_wood)
+
+which.min(results_wood$mean_cv)
+results_wood[7,4]
+
+which.min(results_wood$var_cv)
+results_wood[11,4]
+
+results_wood <- results_wood %>% add_column(index = c(1,2, seq(5, 95, 5), seq(100, 200, 20)))
+
+ggplot(results_wood, aes(x = index, y = mean_cv)) +
+  geom_point(,  color = "hotpink")+
+  labs(title = "Wood",
+       y = "Mean MSE",
+       x = "Nodesize")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
+  theme_bw()
 
 
+# For roots: 
+set.seed(41)
+results_roots <- opt_node_size(roots_train, seq(1:10))
+results_roots <- summ(results_roots)
+
+which.min(results_roots$mean_cv)
+which.min(results_roots$var_cv)
+
+results_roots <- results_roots %>% add_column(index = seq(1:10))
+
+ggplot(results_roots, aes(x = index, y = mean_cv)) +
+  geom_point(color = "hotpink")+
+  geom_smooth(se = FALSE, color = "darkolivegreen4")+
+  labs(title = "Roots",
+       y = "Mean MSE",
+       x = "No. of nodes")+
+  theme_bw()
+
+
+#Into tex
+
+results_leafs[seq(1,nrow(results_leafs), by = 2),1:3] %>% xtable(type = "latex")
+results_wood[round(seq(1,nrow(results_wood), length.out = 11)),1:3] %>% xtable(type = "latex")
+results_roots[,1:3] %>% xtable(type = "latex")
 
 #Random
 

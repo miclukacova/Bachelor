@@ -30,7 +30,7 @@ library(infer)
 library(foreign)
 library(xtable)
 library(stargazer)
-
+library(randomForest)
 ###################################################################################################
 
 #Lineære modeller af log-log
@@ -71,7 +71,40 @@ nlr_w <- function(x) 6.9528858*x^0.9841403
 nlr_r <- function(x) 0.1206226*x^1.7372279
 
 #Random Forest
-                                 
+#Her er man nødt til at lave LOOV for at få en predicted value for alle punkter.
+
+cv <- function(data, k, nodesize) {
+  set.seed(777)
+  n <- nrow(data)
+  group <- sample(rep(1: k, length.out = n))
+  mean <- c()
+  for (i in (1:k)){
+    #Fit model
+    train_x <- data.frame(Sc = data[group != i,1])
+    train_y <- data[group != i,2]
+    test_x <- data.frame(Sc=data[group == i,1])
+    test_y <- data[group == i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
+    
+    #Getting quantiles
+    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.05,0.95))
+    
+    #Creating vectors with observations and quantiles
+    if (i == 1) {
+      pred <- c(data[group == i,1])
+      obs <- c(test_y)
+      q0.1 <- c(conditionalQuantiles_cv[,1])
+      q0.9 <- c(conditionalQuantiles_cv[,2])
+    }
+    else {
+      pred <- c(pred, data[group == i,1])
+      obs <- c(obs, test_y)
+      q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
+      q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
+    }
+  }
+  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred))
+}                                 
 
 ###################################################################################################
 
