@@ -549,9 +549,9 @@ cv_cov <- function(data, k, nodesize) {
     
   
       #Fit model
-      train_x <- data.frame(train_rs$Sc)
+      train_x <- data.frame(Sc=train_rs$Sc)
       train_y <- train_rs$Kgp
-      test_x <- data.frame(test_rs$Sc)
+      test_x <- data.frame(Sc=test_rs$Sc)
       test_y <- test_rs$Kgp
       qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
       
@@ -560,56 +560,52 @@ cv_cov <- function(data, k, nodesize) {
     
     #Creating vectors with observations and quantiles
     if (i == 1) {
-      pred <- c(data[group == i,1])
       obs <- c(test_y)
       q0.05 <- c(conditionalQuantiles_cv[,1])
       q0.95 <- c(conditionalQuantiles_cv[,2])
       cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
     }
     else {
-      pred <- c(pred, data[group == i,1])
       obs <- c(obs, test_y)
       q0.05 <- c(q0.05, conditionalQuantiles_cv[,1])
       q0.95 <- c(q0.95, conditionalQuantiles_cv[,2])
       cov[i] <- c(mean(q0.05 <= obs& obs <=q0.95))
     }
   }
-  return("cov" = data.frame(coverage = cov))
+  return("Coverage" = data.frame(coverage = cov))
 }
 
-cov_leafs <- cv_cov(leafs,10,100)
-cov_wood <- cv_cov(wood,10)
-cov_roots <- cv_cov(roots,10)
 
-
-
-
-
-
+a <- cv_cov(leafs,30,100)
+b <- cv_cov(wood,30,70)
+c <- cv_cov(roots,30,5)
 
 
 
 a %>%
   ggplot() +
   geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", bins=10)+
+                 fill = "darkolivegreen3", bins=100)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(c(0,1))+
   theme_bw()+
   labs(title = "Foliage")
 
 b %>%
   ggplot() +
   geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", bins=20)+
+                 fill = "darkolivegreen3", bins=50)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(c(0,1))+
   theme_bw()+
   labs(title = "Wood")
 
 c %>%
   ggplot() +
   geom_histogram(aes(x = coverage, y = ..density..), color = "white", 
-                 fill = "darkolivegreen3", binwidth = 0.01)+
+                 fill = "darkolivegreen3", bins=50)+
   geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(c(0,1))+
   theme_bw()+
   labs(title = "Roots")
 
