@@ -69,6 +69,8 @@ ols_r <- function(x) lm_r$coefficients[[1]] + lm_r$coefficients[[2]]*x
 nlr_l <- function(x) 0.5685498*x^0.7160795
 nlr_w <- function(x) 6.9528858*x^0.9841403
 nlr_r <- function(x) 0.1206226*x^1.7372279
+
+#Random Forest
                                  
 
 ###################################################################################################

@@ -82,24 +82,24 @@ ggarrange(leafs_sc_plot, roots_sc_plot, wood_sc_plot, ncol = 3, nrow = 1)
 ggplot(leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote(log('Crown area'~m^2/plant))) + 
-  ylab('log(Dry mass (kg/plant))')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Foliage")
 
 ggplot(roots_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen4', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote(log('Crown area'~m^2/plant))) + 
-  ylab('log(Dry mass (kg/plant))')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Roots")
 
 ggplot(wood_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab(bquote(log('Crown area'~m^2/plant))) + 
-  ylab('log(Dry mass (kg/plant))')+
+  xlab('Sc') + 
+  ylab('Kgp')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
   labs(title = "Wood")
 
