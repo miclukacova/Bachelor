@@ -5,6 +5,9 @@ loo_pred_int <- function(data, alpha = 0.2, pred_int) {
   high <- c()
   fitted <- c()
   for (i in (1:nrow(data))){
+    if (i == nrow(data)/2){
+      print("halfway!")
+    }
     pred <- pred_int(data = data[-i,], alpha = alpha)
     low[i] <- pred[[3]](data[i,]$Sc)
     high[i] <- pred[[2]](data[i,]$Sc)
@@ -24,9 +27,9 @@ plot_maker <- function(pred_int, title){
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
     geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.5) + 
-    geom_line(aes(x = Sc, y = High), color = "hotpink", linewidth = 0.9) + 
-    geom_line(aes(x = Sc, y = Low), color = "hotpink", linewidth = 0.9) +
-    geom_line(aes(x = Sc, y = Fitted), color = "hotpink4", linewidth = 0.9) +
+    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.6, alpha = 0.5) + 
+    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.6, alpha = 0.5) +
+    geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 0.6, alpha = 0.5) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -113,3 +116,4 @@ diff_alohas <- function(data, pred_int){
   }
   return(cov_alpha)
 }
+

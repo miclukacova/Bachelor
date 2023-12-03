@@ -1,25 +1,5 @@
 #################################--Indlæsning af pakker og data---##############
 
-train_leafs_log <- read.csv('Data/train_leafs_log.csv')
-train_roots_log <- read.csv('Data/train_roots_log.csv')
-train_wood_log<- read.csv('Data/train_wood_log.csv')
-
-test_leafs_log <- read.csv('Data/test_leafs_log.csv')
-test_roots_log <- read.csv('Data/test_roots_log.csv')
-test_wood_log<- read.csv('Data/test_wood_log.csv')
-
-leafs_log <- read.csv('Data/leafs_log.csv')
-roots_log <- read.csv('Data/roots_log.csv')
-wood_log<- read.csv('Data/wood_log.csv')
-
-leafs_train <- read.csv('Data/train_leafs.csv')
-roots_train <- read.csv('Data/train_roots.csv')
-wood_train<- read.csv('Data/train_wood.csv')
-
-test_leafs <- read.csv('Data/test_leafs.csv')
-test_roots <- read.csv('Data/test_roots.csv')
-test_wood <- read.csv('Data/test_wood.csv')
-
 leafs <- read.csv('Data/leafs.csv')
 roots <- read.csv('Data/roots.csv')
 wood <- read.csv('Data/wood.csv')
