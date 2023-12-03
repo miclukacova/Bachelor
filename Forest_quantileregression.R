@@ -421,8 +421,8 @@ results_roots[,1:3] %>% xtable(type = "latex")
 
 #Random
 
-#tree <- rpart(Kgp~., data=train_leafs)
-#rpart.plot(tree)
+tree <- rpart(Kgp~., data = leafs_train)
+rpart.plot(tree)
 #?rpart
 #summary(tree)
 #printcp(tree)

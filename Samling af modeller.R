@@ -54,9 +54,9 @@ ols_log_r <- function(x) exp(lm_log_r$coefficients[[1]] + lm_log_r$coefficients[
 ols_log_adj_l <- function(x) exp(lm_log_l$coefficients[[1]] + 
                                      lm_log_l$coefficients[[2]]*log(x))*exp(var(lm_log_l$residuals)/2)
 ols_log_adj_w <- function(x) exp(lm_log_w$coefficients[[1]] +
-                                  lm_log_w$coefficients[[2]]*log(x))*exp(var_hat[2]/2)
+                                  lm_log_w$coefficients[[2]]*log(x))*exp(var(lm_log_w$residuals)/2)
 ols_log_adj_r <- function(x) exp(lm_log_r$coefficients[[1]] + 
-                                     lm_log_r$coefficients[[2]]*log(x))*exp(var_hat[3]/2)
+                                     lm_log_r$coefficients[[2]]*log(x))*exp(var(lm_log_r$residuals)/2)
 
 #OLS 
 
@@ -70,82 +70,54 @@ nlr_l <- function(x) 0.5685498*x^0.7160795
 nlr_w <- function(x) 6.9528858*x^0.9841403
 nlr_r <- function(x) 0.1206226*x^1.7372279
 
-#Random Forest
-#Her er man nødt til at lave LOOV for at få en predicted value for alle punkter.
-
-cv <- function(data, k, nodesize) {
-  set.seed(777)
-  n <- nrow(data)
-  group <- sample(rep(1: k, length.out = n))
-  mean <- c()
-  for (i in (1:k)){
-    #Fit model
-    train_x <- data.frame(Sc = data[group != i,1])
-    train_y <- data[group != i,2]
-    test_x <- data.frame(Sc=data[group == i,1])
-    test_y <- data[group == i,2]
-    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
-    
-    #Getting quantiles
-    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.05,0.95))
-    
-    #Creating vectors with observations and quantiles
-    if (i == 1) {
-      pred <- c(data[group == i,1])
-      obs <- c(test_y)
-      q0.1 <- c(conditionalQuantiles_cv[,1])
-      q0.9 <- c(conditionalQuantiles_cv[,2])
-    }
-    else {
-      pred <- c(pred, data[group == i,1])
-      obs <- c(obs, test_y)
-      q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
-      q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
-    }
-  }
-  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred))
-}                                 
 
 ###################################################################################################
 
 
 #Plot på alt data real scale
 
-cols <- c("darkolivegreen1","darkolivegreen4", "hotpink1", "hotpink4")
+cols <- c("darkolivegreen","black", "hotpink2", "hotpink4")
 
 ggplot(leafs, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, size = 0.3, shape = 21) + 
+  geom_point(color = 'black', fill = 'darkolivegreen2', alpha = 0.6, size = 1.5, shape = 21) + 
   theme_bw() +
-  xlab(bquote('Crown area'~m^2/plant)) + 
-  geom_function(fun = ols_l, aes(col = "OLS"))+
-  geom_function(fun = nlr_l, aes(col = "NLR"))+
-  geom_function(fun = ols_log_l, aes(col = "OLS log Bias adj."))+
-  geom_function(fun = ols_log_adj_l, aes(col = "OLS log"))+
-  ylab('Dry mass (kg/plant)')+
-  labs(title = "Foliage")+
-  scale_colour_manual(values = cols)
+  xlab('Sc') + 
+  geom_function(fun = ols_l, aes(col = "OLS"), size = 1)+
+  geom_function(fun = nlr_l, aes(col = "NLR"), size = 1)+
+  geom_function(fun = ols_log_l, aes(col = "OLS log Bias adj."), size = 1)+
+  geom_function(fun = ols_log_adj_l, aes(col = "OLS log"), size = 1)+
+  ylab('Kgp')+
+  labs(title = "Leafs")+
+  scale_colour_manual(values = cols)+
+  theme(legend.position = c(0.165, 0.8), legend.background = element_rect(linetype = 'solid', color = 'black'))+
+  ylim(c(0,35))
 
 ggplot(wood, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6,  size = 0.3, shape = 21) + 
+  geom_point(color = 'black', fill = 'darkolivegreen2', alpha = 0.6, size = 1.5, shape = 21) + 
   theme_bw() +
-  xlab(bquote('Crown area'~m^2/plant)) + 
-  ylab('log(Dry mass (kg/plant))')+
-  geom_function(fun = ols_w, aes(col = "OLS"))+
-  geom_function(fun = nlr_w, aes(col = "NLR"))+
-  geom_function(fun = ols_log_w, aes(col = "OLS log Bias adj."))+
-  geom_function(fun = ols_log_adj_w, aes(col = "OLS log"))+
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = ols_w, aes(col = "OLS"), size = 1)+
+  geom_function(fun = nlr_w, aes(col = "NLR"), size = 0.7)+
+  geom_function(fun = ols_log_w, aes(col = "OLS log Bias adj."), size = 0.7)+
+  geom_function(fun = ols_log_adj_w, aes(col = "OLS log"), size = 1)+
   labs(title = "Wood")+
-  scale_colour_manual(values = cols)
+  scale_colour_manual(values = cols)+
+  theme(legend.position = c(0.165, 0.81), legend.background = element_rect(linetype = 'solid', color = 'black'))+
+  ylim(c(0,1000))
 
 ggplot(roots, aes(x = Sc, y = Kgp)) + 
-  geom_point(color = 'pink', fill = 'hotpink', alpha = 0.6, size = 0.3, shape = 21) + 
+  geom_point(color = 'black', fill = 'darkolivegreen', alpha = 0.6, size = 2., shape = 21) + 
   theme_bw() +
-  xlab(bquote(log('Crown area'~m^2/plant))) + 
-  ylab('Dry mass (kg/plant)')+
-  geom_function(fun = ols_r, aes(col = "OLS"))+
-  geom_function(fun = nlr_r, aes(col = "NLR"))+
-  geom_function(fun = ols_log_r, aes(col = "OLS log Bias adj."))+
-  geom_function(fun = ols_log_adj_r, aes(col = "OLS log"))+
-  labs(title = "Roots")+
-  scale_colour_manual(values = cols)
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = ols_r, aes(col = "OLS"), size = 0.7)+
+  geom_function(fun = nlr_r, aes(col = "NLR"), size = 0.7)+
+  geom_function(fun = ols_log_r, aes(col = "OLS log Bias adj."), size = 0.7)+
+  geom_function(fun = ols_log_adj_r, aes(col = "OLS log"), size = 0.7)+
+  ggtitle( "Roots")+
+  scale_colour_manual(values = cols)+
+  theme(legend.position = c(0.165, 0.8), legend.background = element_rect(linetype = 'solid', color = 'black'),
+       legend.title = element_text(size = 13), plot.title = element_text(size = 15),
+        axis.title = element_text(size = 13))
 
