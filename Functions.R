@@ -5,9 +5,7 @@ loo_pred_int <- function(data, alpha = 0.2, pred_int) {
   high <- c()
   fitted <- c()
   for (i in (1:nrow(data))){
-    if (i == nrow(data)/2){
-      print("halfway!")
-    }
+    print(i)
     pred <- pred_int(data = data[-i,], alpha = alpha)
     low[i] <- pred[[3]](data[i,]$Sc)
     high[i] <- pred[[2]](data[i,]$Sc)

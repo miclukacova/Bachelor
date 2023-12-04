@@ -1,4 +1,330 @@
+#Distribution of coverage by resampling
 
+rs_cov <- function(data, k, alpha, node_size = 100) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked <- sample(n,size = sample_size)
+    train_data = data[picked,]
+    test = data[-picked,]
+    
+    # Train and cali
+    picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
+    train <- train_data[picked,]
+    cali <- train_data[-picked,]
+    train_x <- data.frame(Sc = train[,1])
+    train_y <- train[,2]
+    qrf <- quantregForest(x = train_x, y = train_y, nodesize = node_size)
+    
+    #Functions
+    qrf_func <- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = mean))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+    }
+    t_05 <- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = 0.05))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = 0.05))
+    }
+    t_95<- function(x) {
+      if (is.atomic(x)){
+        return(predict(qrf, data.frame(Sc = x), what = 0.95))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = 0.95))
+      
+      score <- sort(abs(model(cali_rs$Sc) - cali_rs$Kgp))
+      quanti <- ceiling((nrow(cali_rs)+1)*(1-0.1))
+      q_hat <- score[quanti] 
+      
+      upper <- function(x) model(x) + q_hat
+      lower <- function(x) model(x) - q_hat
+      
+      #Definere
+      cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                     &upper(test_rs$Sc) >= test_rs$Kgp)
+    }
+    
+    #Scores
+    score <- c()
+    for (i in (1:nrow(cali))){
+      score[i] <- max((t_05(cali[i,]) - cali[i,]$Kgp), (cali[i,]$Kgp- t_95(cali[i,])))
+    }
+    score <- sort(score)
+    quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+    q_hat <- score[quanti]
+    cov[i] <- mean(t_05(test$Sc) - q_hat <= test$Kgp &
+                     test$Kgp <= t_95(test$Sc) + q_hat)
+  }
+  return(tibble("Coverage" = cov))
+}s
+
+set.seed(4)
+a <- rs_cov(leafs, 1, 0.1, 100)
+b <- rs_cov(wood, 30, 0.1, 70)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 50)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0.5,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 40)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+
+
+xtable(tibble(" " = c("Leafs", "Wood"), "Covergae" = c(z1, z2)), type = latex)
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((a[[1]](test_leafs) <= Kgp) &
+                               (Kgp <= a[[2]](test_leafs)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((b[[1]](test_wood) <= Kgp)&
+                               (Kgp <= b[[2]](test_wood)),"in", "out"))
+
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = a[[1]], colour = "hotpink4") +
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = a[[3]], colour = "hotpink") +
+  scale_color_manual(values = color) +
+  labs(title = "Leafs")
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = b[[1]], colour = "hotpink4") +
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = b[[3]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
+
+
+#----------------------------Checking coverage for different alphas-------------
+
+alphas <- c(0.01, 0.05, 0.1, 0.2)
+cov_alpha_l <- c()
+cov_alpha_w <- c()
+
+set.seed(2)
+for (i in (1:4)){
+  a <- pred_int_making(leafs_train, node_size = 100, alpha = alphas[i])
+  cov_alpha_l[i] <- mean(a[[1]](test_leafs$Sc) <= test_leafs$Kgp & test_leafs$Kgp  <= a[[2]](test_leafs$Sc))
+}
+
+for (i in (1:4)){
+  b <- pred_int_making(wood_train, alpha = alphas[i])
+  cov_alpha_w[i] <- mean(b[[1]](test_wood$Sc) <= test_wood$Kgp & test_wood$Kgp  <= b[[2]](test_wood$Sc))
+}
+
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w))
+
+#----------------------------Rolling coverage---------------------------------------------
+
+#Leafs
+
+set.seed(7)
+a <- pred_int_making(leafs_train, node_size = 100)
+
+bin_size <- 50
+roll_cov <- c()
+
+leafs_arr <- test_leafs %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_leafs)-bin_size)){
+  data_cov <- leafs_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- mean(a[[1]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[2]](data_cov$Sc))
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_leafs)-bin_size), "Roll_cov" = roll_cov)
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 1-0.1, color = "purple")+
+  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Coverage')+
+  labs(title = "Leafs")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
+#Wood
+
+set.seed(7)
+a <- pred_int_making(wood_train, node_size = 70)
+
+bin_size <- 50
+roll_cov <- c()
+
+wood_arr <- test_wood %>%
+  arrange(Sc)
+
+for (i in seq(1,nrow(test_wood)-bin_size)){
+  data_cov <- wood_arr %>%
+    slice(i:(i+bin_size))
+  roll_cov[i] <- mean(a[[1]](data_cov$Sc) <= data_cov$Kgp & data_cov$Kgp  <= a[[2]](data_cov$Sc))
+}
+
+my_tib <- tibble("Bin" = seq(1,nrow(test_wood)-bin_size), "Roll_cov" = roll_cov)
+
+
+ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+  geom_point(size = 0.6, aes(color = Roll_cov)) + 
+  geom_hline(yintercept = 0.9, color = "purple")+
+  geom_hline(yintercept = qbinom(0.05,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  geom_hline(yintercept = qbinom(0.95,50,0.9)/50, color = "purple", linetype = "dashed", size = 0.3)+
+  theme_bw() +
+  xlab('') + 
+  ylab('Coverage')+
+  labs(title = "Wood")+
+  scale_color_gradient(low = 'blue', high = 'red')
+
+
+
+rs_cov <- function(data, k, alpha, node_size = 100) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    picked <- sample(n,size = sample_size)
+    train_data = data[picked,]
+    test_rs = data[-picked,]
+    
+    # Train and cali
+    picked <- sample(seq(1, nrow(train_data)), 0.5*nrow(train_data))
+    train <- train_data[picked,]
+    cali <- train_data[-picked,]
+    train_x <- data.frame(Sc = train[,1])
+    train_y <- train[,2]
+    qrf <- quantregForest(x = train_x, y = train_y, nodesize = node_size)
+    
+    #Functions
+    qrf_func <- function(x) {
+      if (is.atomic(x)){
+        x <- data.frame(Sc = x)
+        return(predict(qrf, x, what = mean))
+      }
+      return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+    }
+    score <- sort(abs(qrf_func(cali) - cali$Kgp))
+    quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+    q_hat <- score[quanti]
+    
+    upper <- function(x) qrf_func(x) + q_hat
+    lower <- function(x) qrf_func(x) - q_hat
+    
+    #Definere
+    cov[i] <- mean(lower(test_rs$Sc) <= test_rs$Kgp 
+                   &upper(test_rs$Sc) >= test_rs$Kgp)
+  }
+  return(tibble("Coverage" = cov))
+}
+
+
+set.seed(4)
+a <- rs_cov(leafs, 30, 0.1, 100)
+b <- rs_cov(wood, 30, 0.1, 70)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
+
+a %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 40)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  xlim(0.5,1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+b %>%
+  ggplot() +
+  geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
+                 fill = "darkolivegreen3", bins = 40)+
+  geom_vline(xintercept = 0.9, color = "hotpink") +
+  theme_bw()+
+  xlim(c(0.5,1))+
+  labs(title = "Wood")
+
+#Ret jævnt fordelt
+
+
+
+test_leafs_plot <- test_leafs %>%
+  mutate(Indicator = if_else((a[[1]](test_leafs) <= Kgp) &
+                               (Kgp <= a[[2]](test_leafs)),"in", "out"))
+
+test_wood_plot <- test_wood %>%
+  mutate(Indicator = if_else((b[[1]](test_wood) <= Kgp)&
+                               (Kgp <= b[[2]](test_wood)),"in", "out"))
+
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(test_leafs_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = a[[1]], colour = "hotpink4") +
+  geom_function(fun = a[[2]], colour = "hotpink4") +
+  geom_function(fun = a[[3]], colour = "hotpink") +
+  scale_color_manual(values = color) +
+  labs(title = "Leafs")
+
+ggplot(test_wood_plot, aes(x = Sc, y = Kgp)) + 
+  geom_point(aes(color = Indicator)) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_function(fun = b[[1]], colour = "hotpink4") +
+  geom_function(fun = b[[2]], colour = "hotpink4") +
+  geom_function(fun = b[[3]], colour = "hotpink") +
+  labs(title = "Wood")+
+  scale_color_manual(values = color)
 
 #Evt. optimer train cali split, og også måske noget med et usikkerhedsmål
 pred_int_making <- function(train_data, model, alpha = 0.1) {
