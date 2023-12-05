@@ -24,10 +24,10 @@ plot_maker <- function(pred_int, title){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.5) + 
-    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.6, alpha = 0.5) + 
-    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.6, alpha = 0.5) +
-    geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 0.6, alpha = 0.5) +
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.6, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.6, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 0.6, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -60,16 +60,24 @@ rs_cov <- function(data, k, alpha, pred_int_maker) {
   return(tibble("Coverage" = cov))
 }
 
-rs_plot_maker <- function(rs_cov, title, alpha){
-  rs_cov %>%
+rs_plot_maker <- function(rs_cov, title, alpha, conformal = FALSE, n=0){
+  plot <- rs_cov %>%
     ggplot() +
     geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
                    fill = "darkolivegreen3", bins = 40)+
-    geom_vline(xintercept = 1-alpha, color = "hotpink") +
+    geom_vline(xintercept = 1-alpha, color = "hotpink4") +
     xlim(0,1.1)+
     theme_bw()+
     labs(title = title)
+  if (conformal == TRUE){
+    n_b <- n*0.4
+    beta <- function(x) dbeta(x, n_b+1-floor((n_b+1)*alpha),
+                                  floor((n_b+1)*alpha))
+    plot <- plot + geom_function(fun = beta , colour = "darkolivegreen", alpha = 0.8)
+  }
+  return(plot)
 }
+
 
 #Rolling coverage
 

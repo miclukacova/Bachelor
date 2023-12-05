@@ -192,8 +192,8 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
-b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
+a <- rs_cov(data = leafs, k = 500, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
+b <- rs_cov(data = wood, k = 500, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
 c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
 
 #Mean coverage:
@@ -206,8 +206,8 @@ median(b$Coverage)
 xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
               "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
 
-rs_plot_maker(a, "Leafs", 0.2)
-rs_plot_maker(b, "Wood", 0.2)
+rs_plot_maker(a, "Leafs", 0.2, conformal = TRUE, n = nrow(leafs))
+rs_plot_maker(b, "Wood", 0.2, conformal = TRUE, n = nrow(wood))
 rs_plot_maker(c, "Roots", 0.2)
 
 
@@ -393,14 +393,13 @@ median(b$Coverage)
 xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
               "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
 
-beta_l <- function(x) dbeta(x, nrow(leafs)+1-floor((nrow(leafs)+1)*0.2),
-                            floor((nrow(leafs)+1)*0.2))
-beta_w <- function(x) dbeta(x, nrow(wood)+1-floor((nrow(wood)+1)*0.2),
-                            floor((nrow(wood)+1)*0.2))
+n_l <- nrow(leafs)*0.4
+n_w <- nrow(wood)*0.4
 
-rs_plot_maker(a, "Leafs", 0.2) + geom_function(fun = beta_l)
-rs_plot_maker(b, "Wood", 0.2) + geom_function(fun = beta_l)
+rs_plot_maker(a, "Leafs", 0.2) 
+rs_plot_maker(b, "Wood", 0.2) 
 rs_plot_maker(c, "Roots", 0.2)
+?geom_function
  
 
 #----------------------------Rolling coverage---------------------------------------------
@@ -429,32 +428,32 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
     }
     return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
   }
-  t_05 <- function(x) {
+  t_down <- function(x) {
     if (is.atomic(x)){
-      return(predict(qrf, data.frame(Sc = x), what = 0.05))
+      return(predict(qrf, data.frame(Sc = x), what = alpha/2))
     }
-    return(predict(qrf, data.frame(Sc = x$Sc), what = 0.05))
+    return(predict(qrf, data.frame(Sc = x$Sc), what = alpha/2))
   }
-  t_95<- function(x) {
+  t_up<- function(x) {
     if (is.atomic(x)){
-      return(predict(qrf, data.frame(Sc = x), what = 0.95))
+      return(predict(qrf, data.frame(Sc = x), what = 1-alpha/2))
     }
-    return(predict(qrf, data.frame(Sc = x$Sc), what = 0.95))
+    return(predict(qrf, data.frame(Sc = x$Sc), what = 1-alpha/2))
   }
   
   # Heuristic notion of uncertainty
   score <- c()
   for (i in (1:nrow(cali))){
-    score[i] <- max((t_05(cali[i,]) - cali[i,]$Kgp), (cali[i,]$Kgp- t_95(cali[i,])))
+    score[i] <- max((t_down(cali[i,]) - cali[i,]$Kgp), (cali[i,]$Kgp- t_up(cali[i,])))
   }
   score <- sort(score)
-  quanti <- ceiling((nrow(cali)+1)*(1-0.1))
+  quanti <- ceiling((nrow(cali)+1)*(1-alpha))
   q_hat <- score[quanti]
   
   #Prediction interval functions
   
-  upper <- function(x) t_95(x) + q_hat
-  lower <- function(x) t_05(x) - q_hat
+  upper <- function(x) t_up(x) + q_hat
+  lower <- function(x) t_down(x) - q_hat
   
   return(list(f_hat, upper, lower ))
 }
@@ -472,8 +471,8 @@ xtable(tibble(" " = c("Leafs", "Wood", "Roots"),
               "Covergae" = c(loo_l[[2]], loo_w[[2]], loo_r[[2]])), type = latex)
 
 plot_maker(loo_l[[1]],"Leafs")
-plot_maker(loo_w[[1]],"Leafs")
-plot_maker(loo_r[[1]],"Leafs")
+plot_maker(loo_w[[1]],"Wood")
+plot_maker(loo_r[[1]],"Roots")
 
 #----------------------------Checking coverage for different alphas-----------------------------------------
 alphas <- c(0.05, 0.1, 0.2, 0.3)
