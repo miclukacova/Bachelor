@@ -128,6 +128,7 @@ ggplot(grid_search_leafs[[2]], aes(x = b, y = MSE)) +
 
 NLE_leafs <- optim(par = starting_point_leafs, fn = MSE_NLR, data = leafs)
 NLE_wood <- optim(par = starting_point_wood, fn = MSE_NLR, data = wood)
+starting_point_roots = c(3.66,0.1)
 NLE_roots <- optim(par = starting_point_roots, fn = MSE_NLR, data = roots)
 
 hat_beta <- c(NLE_leafs$par[[1]],
@@ -177,32 +178,59 @@ ggplot(roots, aes(x = Sc, y = Kgp)) +
   geom_function(fun = f_hat_roots, colour = "hotpink")+
   labs(title = "Roots")
 
+#Naiv MSE and Bias:
+
+nlr_l <- function(x) 0.5685498*x^0.7160795
+nlr_w <- function(x) 6.9528858*x^0.9841403
+nlr_r <- function(x) 0.1206226*x^1.7372279
+
+MSE <- c(mean((nlr_l(leafs$Sc)-leafs$Kgp)^2),
+         mean((nlr_w(wood$Sc)-wood$Kgp)^2),
+         mean((nlr_r(roots$Sc)-roots$Kgp)^2))
+
+Bias <-  c(mean((nlr_l(leafs$Sc)-leafs$Kgp)),
+           mean((nlr_w(wood$Sc)-wood$Kgp)),
+           mean((nlr_r(roots$Sc)-roots$Kgp)))
+
 # k-fold cv MSE and bias
 
 MSE_NLR <- function(par, data){
   with(data, sum((Kgp-par[1]*Sc^par[2])^2))
 }
-cv <- function(data, k) {
+
+index <- c(seq(1:nrow(roots)))
+roots <- data.frame(roots, index = index)
+roots[roots$index != 1,1:2]
+
+cv <- function(data, starting_points) {
   MSE <- c()
   Bias <- c()
   n <- nrow(data)
-  group <- sample(rep(1:k, length.out = n))
-  for (i in (1:k)){
+  index <- c(seq(1:n))
+  data <- data.frame(data, index = index)
+  for (i in (1:n)){
     #Fit model
-    NLE_cv <- optim(par = c(1,1), fn = MSE_NLR, data = data)
+    data_train <- data[data$index != i,1:2]
+    data_test_x <- data[data$index == i,1]
+    data_test_y <- data[data$index == i,2]
+    NLE_cv <- optim(par = starting_points, fn = MSE_NLR, data = data_train)
     f_model <- function(x) NLE_cv$par[[1]]*x^NLE_cv$par[[2]]
     
     #MSE
-    MSE[i] <- mean((f_model(data$Sc)-data$Kgp)^2)
-    Bias[i] <-  mean((f_model(data$Sc)-data$Kgp))
+    MSE[i] <- mean((f_model(data_test_x)-data_test_y)^2)
+    Bias[i] <-  mean((f_model(data_test_x)-data_test_y))
   }
   return(tibble("MSE" = MSE, "Bias" = Bias))
 }
 
+starting_point_leafs <- c(0.61, 0.81)
+starting_point_wood <- c(5.51, 0.73)
+starting_point_roots <- c(3.66, 0.1)
+
 set.seed(1)
-a <- cv(leafs, nrow(leafs_log))
-b <- cv(wood, nrow(wood_log))
-c <- cv(roots, nrow(roots_log))
+a <- cv(leafs, starting_point_leafs)
+b <- cv(wood, starting_point_wood)
+c <- cv(roots, starting_point_roots)
 
 cv_mse <- tibble("Model" = c("Leafs", "Wood", "Roots"),
                  "Mean of CV-MSE" = c(mean(a$MSE), mean(b$MSE), mean(c$MSE)),

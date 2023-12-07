@@ -30,11 +30,16 @@ train_roots_y = roots_train[,2]
 test_roots_x = data.frame(Sc=test_roots[,1])
 test_roots_y = test_roots[,2]
 
-#Quantile regression forest for leafs
+leafs <- read.csv('Data/leafs.csv')
+roots <- read.csv('Data/roots.csv')
+wood <- read.csv('Data/wood.csv')
+
+##########Quantile regression forest for leafs########################
 
 set.seed(4)
 qrf <- quantregForest(x = train_leafs_x, y =train_leafs_y, nodesize = 100)
 plot(qrf)
+
 
 conditionalQuantiles <- predict(qrf, test_leafs_x)
 conditionalMean <-  predict(qrf, test_leafs_x, what = mean)
@@ -123,8 +128,10 @@ ggplot(plot_data, aes(x = Sc)) +
   scale_color_manual(values = colors)
 
 
-#Cross-validation to get a plot for all observed values:
-cv <- function(data, k) {
+##############CV###############################################
+##Cross-validation to get a plot for all observed values:
+
+cv <- function(data, k, nodesize) {
   set.seed(777)
   n <- nrow(data)
   group <- sample(rep(1: k, length.out = n))
@@ -138,10 +145,11 @@ cv <- function(data, k) {
     train_y <- data[group != i,2]
     test_x <- data.frame(Sc=data[group == i,1])
     test_y <- data[group == i,2]
-    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = 76)
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
     
     #Getting quantiles
-    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.05,0.95))
+    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.1,0.9))
+    conditionalMean_cv <- predict(qrf_cv, test_x, what = mean)
     
     #Creating vectors with observations and quantiles
     if (i == 1) {
@@ -149,20 +157,22 @@ cv <- function(data, k) {
       obs <- c(test_y)
       q0.1 <- c(conditionalQuantiles_cv[,1])
       q0.9 <- c(conditionalQuantiles_cv[,2])
+      mean_cv <- c(conditionalMean_cv)
     }
     else {
     pred <- c(pred, data[group == i,1])
     obs <- c(obs, test_y)
     q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
     q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
+    mean_cv <- c(mean_cv, conditionalMean_cv)
     }
     }
-  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred))
+  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred, mean_cv = mean_cv))
 }
 
-cv_intervals_leafs <- cv(leafs,10)
-cv_intervals_wood <- cv(wood, 10)
-cv_intervals_roots <- cv(roots, 10)
+cv_intervals_leafs <- cv(leafs,nrow(leafs), 70)
+cv_intervals_wood <- cv(wood, nrow(wood), 70)
+cv_intervals_roots <- cv(roots, nrow(roots), 5)
 
 cv_int <- function(x){
   cv_intervals <- data.frame(x, 
@@ -348,30 +358,11 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
               "Mean coverage" =c(mean(a$coverage), mean(b$coverage), mean(c$coverage))), type = latex)
 
 
-#Plots with smoothed intervals. Probably not really relevant or what?:
-Sc_plot_smoothed <- function(data,title, y){
-  plot_data <- data.frame(data)
-  plot_data <- plot_data %>%
-    mutate(indicator = if_else((quantile..0.1 <= observed)&(observed <= quantile..0.9),"in", "out"))
-  #Plot
-  ggplot(plot_data, aes(x = pred)) +
-    geom_point(aes(y=observed), color = "hotpink", alpha=0.5, fill = "hotpink3") +
-    geom_smooth(aes(y=quantile..0.9), color = 'darkolivegreen', se=F) +
-    geom_smooth(aes(y=quantile..0.1), color = 'darkolivegreen', se=F) +
-    labs(title = title)+
-    xlab(bquote('Crown area'~(m^2/plant)))+
-    ylab(y)+
-    theme_bw()
-}
-Sc_plot_smoothed(cv_intervals_leafs,"Foliage",'Foliage dry mass (kg/plant)')
-Sc_plot_smoothed(cv_intervals_wood,"Wood",'Wood dry mass (kg/plant)')
-Sc_plot_smoothed(cv_intervals_roots,"Roots",'Root dry mass (kg/plant)')
 
 
 
 
-
-#Quantile regression forest for wood
+###########Quantile regression forest for wood3#####
 
 set.seed(4)
 qrf <- quantregForest(x = train_wood_x, y =train_wood_y, nodesize = 70)
