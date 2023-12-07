@@ -21,6 +21,7 @@ set.seed(5)
 #Score funktion Absolute error
 pred_int_log_ols_conf_adj <- function(data, alpha = 0.2) {
   #Test and calibration
+  set.seed(1)
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
   cali <- data[-picked,]
@@ -43,6 +44,7 @@ pred_int_log_ols_conf_adj <- function(data, alpha = 0.2) {
   return(list(f_hat_adj, upper,lower))
 }
 pred_int_log_ols_conf <- function(data, alpha = 0.2) {
+  set.seed(1)
   #Test and calibration
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
@@ -68,6 +70,7 @@ pred_int_log_ols_conf <- function(data, alpha = 0.2) {
 
 #Score funktion Absolute error / sd hat(Y) (VIRKER IKKE SÅ GODT)
 pred_int_log_ols_conf_2_adj <- function(data, alpha = 0.2) {
+  set.seed(1)
   #Test and calibration
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
@@ -92,6 +95,7 @@ pred_int_log_ols_conf_2_adj <- function(data, alpha = 0.2) {
   return(list(f_hat_adj, upper_adj, lower_adj))
 }
 pred_int_log_ols_conf_2 <- function(data, alpha = 0.2) {
+  set.seed(1)
   #Test and calibration
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
