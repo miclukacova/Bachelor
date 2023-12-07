@@ -74,38 +74,62 @@ leafs<- data.frame(index = seq(1:nrow(leafs)), leafs)
 index <- c(seq(1:nrow(leafs)))
 leafs$Sc[3]
 
+node_size_choose <- function(data, k = 3, node_grid) {
+  MSE_ns <- c()
+  for (i in nodegrid){
+    node_size <- nodegrid[i]
+    group <- sample(rep(1:k, length.out = nrow(data)))
+    MSE <- c()
+    for (i in (1:k)){
+      #Fit model
+      train_x <- data.frame(Sc = data[group != i,1])
+      train_y<- data[group != i,2]
+      qrf_ns <- quantregForest(x = train_x, y =train_y, nodesize = node_size)
+      
+      #MSE
+      conditionalMean_ns <- predict(qrf_cv, data.frame(Sc = data[group == i,1]), what = mean)
+      MSE[i] <- mean((conditionalMean_cv - data[group == i,2])^2)
+    }
+    MSE_ns[i] <- mean(MSE)  
+  }
+  return(tibble("MSE" = MSE_cv))
+}
 
-
-cv <- function(data, nodesize) {
+cv <- function(data) {
   set.seed(777)
-  n <- nrow(data)
-  index <- c(seq(1:n))
-  mean <- c()
-  for (i in (1:n)){
+  for (i in (1:nrow(data))){
+    #choose nodesize
+    nodesize <- node_size_choose(data)
+    
     #Fit model
-    train_x <- data.frame(Sc = data[index != i,1])
-    train_y <- data[index != i,2]
-    test_x <- data.frame(Sc=data[index == i,1])
-    test_y <- data[index == i,2]
-    rf_cv <- randomForest(x = train_x, y =train_y, nodesize = nodesize)
+    train_x <- data.frame(Sc = data[-i,1])
+    train_y <- data[-i,2]
+    test_x <- data.frame(Sc=data[i,1])
+    test_y <- data[i,2]
+    qrf_cv <- quantregForest(x = train_x, y =train_y, nodesize = nodesize)
     
     #Getting quantiles
-    pred_cv <- predict(rf_cv, test_x)
+    conditionalQuantiles_cv <- predict(qrf_cv, test_x, what = c(0.1,0.9))
+    conditionalMean_cv <- predict(qrf_cv, test_x, what = mean)
     
     #Creating vectors with observations and quantiles
     if (i == 1) {
-      Sc <- c(data$Sc[index == i,1])
+      pred <- c(data[i,1])
       obs <- c(test_y)
-      mean_pred <- c(pred_cv)
+      q0.1 <- c(conditionalQuantiles_cv[,1])
+      q0.9 <- c(conditionalQuantiles_cv[,2])
+      mean_cv <- c(conditionalMean_cv)
     }
     else {
-      Sc <- c(Sc, data$Sc[index == i])
+      pred <- c(pred, data[group == i,1])
       obs <- c(obs, test_y)
-      mean_pred <- c(mean_pred, pred_cv)
+      q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
+      q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
+      mean_cv <- c(mean_cv, conditionalMean_cv)
     }
   }
-  return("rf_predictions" = data.frame(Sc = Sc, obs = obs, mean_pred=mean_pred))
-}                                 
+  return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred, mean_cv = mean_cv))
+}
 
 leafs_pred <- cv(leafs, 100)
 wood_pred <- cv(wood, 70)
