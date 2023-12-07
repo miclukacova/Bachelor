@@ -110,7 +110,7 @@ Sc_plot <- function(data,title){
   #Plot
   ggplot(plot_data, aes(x = Sc)) +
     geom_point(aes(y=Kgp), color = "darkolivegreen", alpha=0.5, fill = "darkolivegreen3") +
-    geom_point(aes(y=mean_cv), color = 'hotpink3', fill = "hotpink2") +
+    geom_point(aes(y=predicted_value), color = 'hotpink3', fill = "hotpink2") +
     labs(title = title)+
     xlab("Sc")+
     ylab('Kgp')+
