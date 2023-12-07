@@ -123,7 +123,39 @@ Sc_plot(roots_pred, "Roots")
 
 
 #Calculating MSE and bias:
+#Naive - where we fit on all data:
 
+MSE_bias_naive <- function(data, nodesize){
+  set.seed(4)
+  rf <- quantregForest(x = data.frame(data$Sc), y = data$Kgp, nodesize = nodesize)
+  predicted <- predict(rf, data.frame(data$Sc), what = mean)
+  MSE <- mean((predicted - data$Kgp)^2)
+  bias <- mean(predicted - data$Kgp)
+  return(tibble("MSE" = MSE, "Bias" = bias))
+}
+
+MSE_bias <- tibble("Leafs" = MSE_bias_naive(leafs, 5),"Wood" = MSE_bias_naive(wood, 5),"Roots" = MSE_bias_naive(roots, 5) )
+
+
+#And here on the LOOCV:
+MSE_l <- mean((leafs_pred$Kgp-leafs_pred$predicted_value)^2)
+Bias_l <-  mean((leafs_pred$Kgp-leafs_pred$predicted_value))
+
+MSE_w <- mean((wood_pred$Kgp-wood_pred$predicted_value)^2)
+Bias_w <-  mean((wood_pred$Kgp-wood_pred$predicted_value))
+
+MSE_r <- mean((roots_pred$Kgp-roots_pred$predicted_value)^2)
+Bias_r <-  mean((roots_pred$Kgp-roots_pred$predicted_value))
+
+#MSE
+MSE_l
+MSE_w
+MSE_r
+
+#Bias
+Bias_l
+Bias_w
+Bias_r
 
 #--------------PREDICTION INTERVALS------------------------------
 
