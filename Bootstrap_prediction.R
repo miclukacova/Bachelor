@@ -80,12 +80,26 @@ boot <- function(model, data_train, data_test, B) {
       ep[j,i] <- rep_e_n1(model, my_s_res, data_test[i,1])
     }
   }
-  return(list(ep, Y_p))
+  return(list("error" = ep, "Pred" = Y_p))
 }
 
 #Performing the bootstrap
 
-leafs_boot <- boot(lm_leafs_log, train_leafs_log, test_leafs_log, 100)
+loo_boot <- function(data){
+  error <- c()
+  pred <- c()
+  for (i in (1:nrow(data))){
+    lm <- lm(Kgp ~ Sc, data = data[-i,])
+    boot <- boot(lm, data[-i,], data[i,], 100)
+    append(error, boot[[1]])
+    append(pred, boot[[2]])
+  }
+}
+
+
+
+
+
 wood_boot <- boot(lm_wood_log, train_wood_log, test_wood_log, 100)
 roots_boot <- boot(lm_roots_log, train_roots_log, test_roots_log, 100)
 
@@ -110,29 +124,31 @@ pred_int <- function(boot, data,alpha) {
 
 #Plot
 
-pred_leafs <- function(x) exp(coef(lm_leafs_log)["(Intercept)"])*
-  x^coef(lm_leafs_log)["Sc"]*exp(var(lm_leafs_log$residuals)/2)
-pred_wood <- function(x) exp(coef(lm_wood_log)["(Intercept)"])*
-  x^coef(lm_wood_log)["Sc"]*exp(var(lm_wood_log$residuals)/2)
-pred_roots <- function(x) exp(coef(lm_roots_log)["(Intercept)"])*
-  x^coef(lm_roots_log)["Sc"]*exp(var(lm_roots_log$residuals)/2)
+plot_func <- function(lm, pred_int, title){
+  color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+  
+  pred_func <- function(x) exp(coef(lm)["(Intercept)"])*
+    x^coef(lm)["Sc"]*exp(var(lm$residuals)/2)
+  
+  ggplot(pred_int) + 
+    geom_point(aes(x = Sc, y = down), color = 'hotpink') +
+    geom_point(aes(x = Sc, y = up), color = 'hotpink') +
+    geom_function(fun = pred_leafs, color = "hotpink4") +
+    geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
+    theme_bw() +
+    xlab('Sc') + 
+    ylab('Kgp')+
+    labs(title = title)+
+    scale_color_manual(values = color)
+}
 
-pred_int_leafs <- pred_int(leafs_boot, leafs_log_test, 0.1) 
-pred_int_wood <- pred_int(wood_boot, wood_log_test, 0.1)
-pred_int_roots <- pred_int(roots_boot, roots_log_test, 0.1)
 
-color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+pred_int_leafs <- pred_int(leafs_boot, leafs_log_test, 0.2) 
+pred_int_wood <- pred_int(wood_boot, wood_log_test, 0.2)
+pred_int_roots <- pred_int(roots_boot, roots_log_test, 0.2)
 
-ggplot(pred_int_leafs) + 
-  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
-  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
-  geom_function(fun = pred_leafs, color = "hotpink4") +
-  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
-  labs(title = "Leafs")+
-  scale_color_manual(values = color)
+
+
 
 
 ggplot(pred_int_wood) + 
