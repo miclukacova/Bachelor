@@ -78,13 +78,13 @@ nlr_alg_r <- function(data) nlr_alg(data, c(3.66,0.1))
 
 color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
-pred_int_l <- full_conformal_loo(leafs, 0.2, nlr_alg_l)
-pred_int_l <-pred_int_l %>% mutate("Fitted" = ols_alg(leafs)(leafs$Sc))
+pred_int_l <- full_conformal_loo(leafs, 0.2, log_ols_alg)
+pred_int_l[[1]] <-pred_int_l[[1]] %>% mutate("Fitted" = log_ols_alg(leafs)(leafs$Sc))
 
-pred_int_w <- full_conformal_loo(wood, 0.2, nlr_alg_w)
-pred_int_w <-pred_int_l %>% mutate("Fitted" = ols_alg(wood)(wood$Sc))
+pred_int_w <- full_conformal_loo(wood, 0.2, log_ols_alg)
+pred_int_w[[1]] <-pred_int_w[[1]] %>% mutate("Fitted" = log_ols_alg(wood)(wood$Sc))
 
-plot_maker(pred_int_l, "Leafs")
+plot_maker(pred_int_l[[1]], "Leafs")
 plot_maker(pred_int_w[[1]], "Wood")
 
 #Rolling coverage
@@ -100,8 +100,8 @@ rs_cov <- function(data, k, alpha, reg_alg) {
   sample_size <- floor(0.8*n)
   
   for (i in (1:k)){
-    if (i = 15){
-      print("Halfway!")
+    if (i == 1){
+      print(i)
     }
     # Test and train
     
@@ -121,7 +121,7 @@ rs_cov <- function(data, k, alpha, reg_alg) {
 }
 
 set.seed(4)
-a <- rs_cov(leafs, 30, 0.1, log_ols_alg)
+a <- rs_cov(leafs, 30, 0.2, log_ols_alg)
 b <- rs_cov(wood, 30, 0.1, log_ols_alg)
 c <- rs_cov(roots, 30, 0.1, log_ols_alg)
 
