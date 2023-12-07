@@ -38,25 +38,25 @@ bootstrap_loo <- function(model, data, B, alpha) {
 #Snak med Dina
 bootstrap <- function(model, train_data, B, alpha, test_data) {
   up <- c() ; down <- c() ; pred <- c()
-  for (i in 1:nrow(data)) {
-    print(i)
-    #Fitting model on training-data:
-    fit_mod <- model(data[-i,])
     
-    #Computing residuals:
-    log_e <- log(data$Kgp[-i]) - fit_mod$beta - log(data$Sc[-i])*fit_mod$alpha
-    pred <- append(pred, exp(fit_mod$beta + log(data$Sc[i])*fit_mod$alpha)*exp(var(log_e)/2))
+  #Fitting model on training-data:
+  fit_mod <- model(train_data)
     
-    #Bootstrapping:
-    y_star_n1 <- c()
-    for (b in 1:B) {
-      y.star <- exp(fit_mod$beta)*data$Sc[-i]^fit_mod$alpha*exp(sample(log_e))
-      boot_data <- data.frame(Sc = data$Sc[-i], Kgp = y.star)
-      boot_mod <- model(boot_data)
-      e_boot <- log(y.star) - boot_mod$beta - log(data$Sc[-i])*boot_mod$alpha
-      y_star_n1 <- append(y_star_n1, exp(boot_mod$beta)*data$Sc[i]^boot_mod$alpha*exp(sample(e_boot,1)))
-    }
-    up <- append(up, quantile(y_star_n1,1-alpha/2)) ; down <- append(down, quantile(y_star_n1,alpha/2))
+  #Computing residuals:
+  log_e <- log(test_data$Kgp) - fit_mod$beta - log(data$Sc)*fit_mod$alpha
+  pred <-  exp(fit_mod$beta + log(test_data$Sc[i])*fit_mod$alpha)*exp(var(log_e)/2)
+    
+  #Bootstrapping:
+  y_star_n1 <- c()
+  for (b in 1:B) {
+    print(b)
+    y.star <- exp(fit_mod$beta)*train_data$Sc^fit_mod$alpha*exp(sample(log_e))
+    boot_data <- data.frame(Sc = train_data$Sc, Kgp = y.star)
+    boot_mod <- model(boot_data)
+    e_boot <- log(y.star) - boot_mod$beta - log(train_data)*boot_mod$alpha
+    y_boot <- append(y_boot,exp(boot_mod$beta)*test_data$Sc[i]^boot_mod$alpha*exp(sample(e_boot,nrow(test_data))))
+  }
+  up <- append(up, quantile(y_star_n1,1-alpha/2)) ; down <- append(down, quantile(y_star_n1,alpha/2))
   }
   return(tibble(High = up, Low = down, Kgp = data$Kgp, Sc = data$Sc, Fitted = pred))
 }
