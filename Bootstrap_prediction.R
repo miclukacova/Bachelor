@@ -85,27 +85,7 @@ boot <- function(model, data_train, data_test, B) {
 
 #Performing the bootstrap
 
-loo_boot <- function(data){
-  error <- c()
-  pred <- c()
-  for (i in (1:nrow(data))){
-    lm <- lm(Kgp ~ Sc, data = data[-i,])
-    boot <- boot(lm, data[-i,], data[i,], 100)
-    append(error, boot[[1]])
-    append(pred, boot[[2]])
-  }
-}
-
-
-
-
-
-wood_boot <- boot(lm_wood_log, train_wood_log, test_wood_log, 100)
-roots_boot <- boot(lm_roots_log, train_roots_log, test_roots_log, 100)
-
-#Creating the prediction intervals
-
-pred_int <- function(boot, data,alpha) {
+pred_int <- function(boot, data, alpha) {
   down <- c()
   up <- c()
   
@@ -115,16 +95,35 @@ pred_int <- function(boot, data,alpha) {
   } 
   
   plot_data <- tibble("Sc" = data$Sc, "Kgp" = data$Kgp,
-                            "Pred" = boot[[2]], "down" = down, "up" = up) %>%
+                      "Pred" = boot[[2]], "down" = down, "up" = up) %>%
     mutate(Sc = exp(Sc), Kgp = exp(Kgp), down = exp(down), up = exp(up))%>%
     mutate(indicator = if_else((down <= Kgp)&(Kgp <= up),"in", "out"))
   
   return(plot_data)
 }
 
+loo_boot <- function(data, alpha, B=100){
+  error <- c()
+  pred <- c()
+  for (i in (1:nrow(data))){
+    lm <- lm(Kgp ~ Sc, data = data[-i,])
+    boot <- boot(lm, data[-i,], data[i,], B)
+    error <- append(error, boot[[1]])
+    pred <- append(pred, boot[[2]])
+  }
+  pred_int <- pred_int(boot = list(error, pred), data = data, alpha = alpha)
+  return(pred_int)
+}
+
+wood_boot <- loo_boot(leafs, 10)
+wood_boot <- boot(wood, 10)
+roots_boot <- boot(roots, 10)
+
 #Plot
 
 plot_func <- function(lm, pred_int, title){
+  
+  
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   pred_func <- function(x) exp(coef(lm)["(Intercept)"])*
@@ -142,36 +141,6 @@ plot_func <- function(lm, pred_int, title){
     scale_color_manual(values = color)
 }
 
-
-pred_int_leafs <- pred_int(leafs_boot, leafs_log_test, 0.2) 
-pred_int_wood <- pred_int(wood_boot, wood_log_test, 0.2)
-pred_int_roots <- pred_int(roots_boot, roots_log_test, 0.2)
-
-
-
-
-
-ggplot(pred_int_wood) + 
-  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
-  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
-  geom_function(fun = pred_wood, color = "hotpink4") +
-  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
-  labs(title = "Wood")+
-  scale_color_manual(values = color)
-
-ggplot(pred_int_roots)+ 
-  geom_point(aes(x = Sc, y = down), color = 'hotpink') +
-  geom_point(aes(x = Sc, y = up), color = 'hotpink') +
-  geom_function(fun = pred_roots, color = "hotpink4") +
-  geom_point(aes(x = Sc, y = Kgp, color = indicator)) +
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
-  labs(title = "Roots")+
-  scale_color_manual(values = color)
 
 #Coverage of test sets
 

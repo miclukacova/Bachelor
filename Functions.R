@@ -1,3 +1,89 @@
+#Bootstrap functions
+
+coverage <- function(pred_int) {
+  mean((pred_int$Low <= pred_int$Kgp) & (pred_int$Kgp <= pred_int$High))
+}
+
+model_logolsB <- function(data){
+  model <- lm(log(Kgp) ~ log(Sc), data)
+  return(list(beta = model$coef[[1]], alpha = model$coef[[2]]))
+}
+
+bootstrap_loo <- function(model, data, B, alpha) {
+  up <- c() ; down <- c() ; pred <- c()
+  for (i in 1:nrow(data)) {
+    print(i)
+    #Fitting model on training-data:
+    fit_mod <- model(data[-i,])
+    
+    #Computing residuals:
+    log_e <- log(data$Kgp[-i]) - fit_mod$beta - log(data$Sc[-i])*fit_mod$alpha
+    pred <- append(pred, exp(fit_mod$beta + log(data$Sc[i])*fit_mod$alpha)*exp(var(log_e)/2))
+    
+    #Bootstrapping:
+    y_star_n1 <- c()
+    for (b in 1:B) {
+      y.star <- exp(fit_mod$beta)*data$Sc[-i]^fit_mod$alpha*exp(sample(log_e))
+      boot_data <- data.frame(Sc = data$Sc[-i], Kgp = y.star)
+      boot_mod <- model(boot_data)
+      e_boot <- log(y.star) - boot_mod$beta - log(data$Sc[-i])*boot_mod$alpha
+      y_star_n1 <- append(y_star_n1, exp(boot_mod$beta)*data$Sc[i]^boot_mod$alpha*exp(sample(e_boot,1)))
+    }
+    up <- append(up, quantile(y_star_n1,1-alpha/2)) ; down <- append(down, quantile(y_star_n1,alpha/2))
+  }
+  return(tibble(High = up, Low = down, Kgp = data$Kgp, Sc = data$Sc, Fitted = pred))
+}
+
+
+#Snak med Dina
+bootstrap <- function(model, train_data, B, alpha, test_data) {
+  up <- c() ; down <- c() ; pred <- c()
+  for (i in 1:nrow(data)) {
+    print(i)
+    #Fitting model on training-data:
+    fit_mod <- model(data[-i,])
+    
+    #Computing residuals:
+    log_e <- log(data$Kgp[-i]) - fit_mod$beta - log(data$Sc[-i])*fit_mod$alpha
+    pred <- append(pred, exp(fit_mod$beta + log(data$Sc[i])*fit_mod$alpha)*exp(var(log_e)/2))
+    
+    #Bootstrapping:
+    y_star_n1 <- c()
+    for (b in 1:B) {
+      y.star <- exp(fit_mod$beta)*data$Sc[-i]^fit_mod$alpha*exp(sample(log_e))
+      boot_data <- data.frame(Sc = data$Sc[-i], Kgp = y.star)
+      boot_mod <- model(boot_data)
+      e_boot <- log(y.star) - boot_mod$beta - log(data$Sc[-i])*boot_mod$alpha
+      y_star_n1 <- append(y_star_n1, exp(boot_mod$beta)*data$Sc[i]^boot_mod$alpha*exp(sample(e_boot,1)))
+    }
+    up <- append(up, quantile(y_star_n1,1-alpha/2)) ; down <- append(down, quantile(y_star_n1,alpha/2))
+  }
+  return(tibble(High = up, Low = down, Kgp = data$Kgp, Sc = data$Sc, Fitted = pred))
+}
+
+rs_cov_boot <- function(data, k, alpha, pred_int_maker, model, B = 100) {
+  cov <- c()
+  n <- nrow(data)
+  sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    # Test and train
+    set.seed(7)
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    # Fit model
+    model_rs <- pred_int_maker(model, data = train_rs, alpha = alpha, B = B)
+    low <- model_rs[[3]](test_rs$Sc)
+    high <- model_rs[[2]](test_rs$Sc)
+    
+    #Definere
+    cov[i] <- mean(low <= test_rs$Kgp & high >= test_rs$Kgp)
+  }
+  return(tibble("Coverage" = cov))
+}
+
 #Creation of prediction intervals
 
 loo_pred_int <- function(data, alpha = 0.2, pred_int) {
@@ -24,10 +110,10 @@ plot_maker <- function(pred_int, title){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.6, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.6, alpha = 0.7) +
-    geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 0.6, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 2, alpha = 1) + 
+    geom_line(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 1) + 
+    geom_line(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 1) +
+    geom_line(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 1) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
