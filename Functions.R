@@ -45,6 +45,7 @@ rs_cov <- function(data, k, alpha, pred_int_maker) {
   
   for (i in (1:k)){
     # Test and train
+    set.seed(7)
     picked_rs <- sample(n,size = sample_size)
     train_rs = data[picked_rs,]
     test_rs = data[-picked_rs,]

@@ -9,28 +9,10 @@ library(rpart.plot)
 library(xtable)
 
 set.seed(777)
-leafs_train <- read.csv('Data/train_leafs.csv')
-roots_train <- read.csv('Data/train_roots.csv')
-wood_train<- read.csv('Data/train_wood.csv')
+leafs <- read.csv('Data/leafs.csv')
+wood<- read.csv('Data/wood.csv')
+roots <- read.csv('Data/roots.csv')
 
-test_leafs <- read.csv('Data/test_leafs.csv')
-test_roots <- read.csv('Data/test_roots.csv')
-test_wood <- read.csv('Data/test_wood.csv')
-
-train_leafs_x = data.frame(Sc = leafs_train[,1])
-train_leafs_y = leafs_train[,2]
-test_leafs_x = data.frame(Sc=test_leafs[,1])
-test_leafs_y = test_leafs[,2]
-
-train_wood_x = data.frame(Sc = wood_train[,1])
-train_wood_y = wood_train[,2]
-test_wood_x = data.frame(Sc=test_wood[,1])
-test_wood_y = test_wood[,2]
-
-train_roots_x = data.frame(Sc = roots_train[,1])
-train_roots_y = roots_train[,2]
-test_roots_x = data.frame(Sc=test_roots[,1])
-test_roots_y = test_roots[,2]
 
 
 ##############################################################
@@ -67,39 +49,39 @@ ggplot(plot_leafs) +
   labs(title = "Leafs")
 
 #Random Forest
-#Her er man nødt til at lave LOOV for at få en predicted value for alle punkter.
 
-head(leafs)
-leafs<- data.frame(index = seq(1:nrow(leafs)), leafs)
-index <- c(seq(1:nrow(leafs)))
-leafs$Sc[3]
+node_grid <-c(5,100,150)
 
 node_size_choose <- function(data, k = 3, node_grid) {
+  set.seed(4)
   MSE_ns <- c()
-  for (i in nodegrid){
-    node_size <- nodegrid[i]
-    group <- sample(rep(1:k, length.out = nrow(data)))
+  group <- sample(rep(1:k, length.out = nrow(data)))
+  for (j in node_grid){
     MSE <- c()
     for (i in (1:k)){
       #Fit model
       train_x <- data.frame(Sc = data[group != i,1])
       train_y<- data[group != i,2]
-      qrf_ns <- quantregForest(x = train_x, y =train_y, nodesize = node_size)
+      qrf_ns <- quantregForest(x = train_x, y = train_y, nodesize = j)
       
       #MSE
-      conditionalMean_ns <- predict(qrf_cv, data.frame(Sc = data[group == i,1]), what = mean)
-      MSE[i] <- mean((conditionalMean_cv - data[group == i,2])^2)
+      conditionalMean_ns <- predict(qrf_ns, data.frame(Sc = data[group == i,1]), what = mean)
+      MSE[i] <- mean((conditionalMean_ns - data[group == i,2])^2)
     }
-    MSE_ns[i] <- mean(MSE)  
+    MSE_ns <- append(MSE_ns, mean(MSE)) 
   }
-  return(tibble("MSE" = MSE_cv))
+  node_size <- node_grid[which.min(MSE_ns)]
+  return(node_size)
 }
 
-cv <- function(data) {
+
+loo_rf <- function(data) {
   set.seed(777)
+  pred <- c() ; obs <- c() ; q0.1 <- c() ; q0.9 <- c() ;mean_cv <- c()
   for (i in (1:nrow(data))){
+    print(i)
     #choose nodesize
-    nodesize <- node_size_choose(data)
+    nodesize <- node_size_choose(data = data, node_grid = node_grid)
     
     #Fit model
     train_x <- data.frame(Sc = data[-i,1])
@@ -113,27 +95,18 @@ cv <- function(data) {
     conditionalMean_cv <- predict(qrf_cv, test_x, what = mean)
     
     #Creating vectors with observations and quantiles
-    if (i == 1) {
-      pred <- c(data[i,1])
-      obs <- c(test_y)
-      q0.1 <- c(conditionalQuantiles_cv[,1])
-      q0.9 <- c(conditionalQuantiles_cv[,2])
-      mean_cv <- c(conditionalMean_cv)
-    }
-    else {
-      pred <- c(pred, data[group == i,1])
-      obs <- c(obs, test_y)
-      q0.1 <- c(q0.1, conditionalQuantiles_cv[,1])
-      q0.9 <- c(q0.9, conditionalQuantiles_cv[,2])
-      mean_cv <- c(mean_cv, conditionalMean_cv)
-    }
+    pred    <- append(pred, data[i,1])
+    obs     <- append(obs, test_y)
+    q0.1    <- append(q0.1, conditionalQuantiles_cv[,1])
+    q0.9    <- append(q0.9, conditionalQuantiles_cv[,2])
+    mean_cv <- append(mean_cv, conditionalMean_cv)
   }
   return("obs_int" = data.frame(observed = obs, quantile..0.1 = q0.1,quantile..0.9 = q0.9, pred=pred, mean_cv = mean_cv))
 }
 
-leafs_pred <- cv(leafs, 100)
-wood_pred <- cv(wood, 70)
-roots_pred <- cv(roots,5)
+leafs_pred <- loo_rf(leafs)
+wood_pred <- loo_rf(wood)
+roots_pred <- loo_rf(roots)
 
 #Constructing data to be plotted:
 
