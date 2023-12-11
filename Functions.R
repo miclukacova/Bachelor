@@ -22,10 +22,8 @@ MSE_NLR <- function(par, data){
 
 model_NLR <- function(data, starting_point){
   model <- optim(par = starting_point, fn = MSE_NLR, data = data)
-  return(list(beta = log(model$par[1]), alpha = model$par[2]))
+  return(list(beta = model$par[1], alpha = model$par[2]))
 }
-
-#Issue i at den her funktion bruger bias adjusted model
 
 bootstrap_loo <- function(model, data, B, alpha) {
   up <- c() ; down <- c() ; pred <- c()
@@ -36,6 +34,7 @@ bootstrap_loo <- function(model, data, B, alpha) {
     
     #Computing residuals:
     e <- data$Kgp[-i] / (fit_mod$beta * data$Sc[-i]^fit_mod$alpha)
+    print(e)
     pred <- append(pred, fit_mod$beta * data$Sc[i]^fit_mod$alpha)
     
     #Bootstrapping:
@@ -56,18 +55,15 @@ coverage <- function(pred_int) {
   mean((pred_int$Low <= pred_int$Kgp) & (pred_int$Kgp <= pred_int$High))
 }
 
-#Der er et eller andet som går galt... tænk også på om det er nok at fitte 
-#for hele test i stedet for for hver enkel obs.
+#Der er et eller andet som går galt... 
 
-rs_cov_boot <- function(data, k, alpha, model, B = 100) {
-  cov <- c()
-  n <- nrow(data)
+#rs_cov_boot <- function(data, k, alpha, model, B = 300) {
+  cov <- c(); n <- nrow(data)
   sample_size <- floor(0.8*n)
   
   for (i in (1:k)){
     print(i)
     # Test and train
-    set.seed(7)
     picked_rs <- sample(n,size = sample_size)
     train_rs = data[picked_rs,]
     test_rs = data[-picked_rs,]
@@ -93,6 +89,50 @@ rs_cov_boot <- function(data, k, alpha, model, B = 100) {
     
     #Definere
     cov[i] <- mean((down <= test_rs$Kgp) & (up >= test_rs$Kgp))
+  }
+  return(tibble("Coverage" = cov))
+}
+
+rs_cov_boot <- function(data, k, alpha, model, B = 300) {
+  cov <- c(); n <- nrow(data) ; sample_size <- floor(0.8*n)
+  
+  for (i in (1:k)){
+    print(i)
+    # Test and train
+    picked_rs <- sample(n,size = sample_size)
+    train_rs = data[picked_rs,]
+    test_rs = data[-picked_rs,]
+    
+    #Model fit
+    model_rs <- model(train_rs)
+    e <- train_rs$Kgp / (model_rs$beta * train_rs$Sc^model_rs$alpha)
+    pred <- model_rs$beta * test_rs$Sc^model_rs$alpha
+    
+    #Bootstrapping:
+    for (b in 1:B) {
+      y.star <- model_rs$beta*train_rs$Sc^model_rs$alpha*sample(e, replace = TRUE)
+      boot_data <- data.frame(Sc = train_rs$Sc, Kgp = y.star)
+      boot_mod <- model(boot_data)
+      e_boot <- y.star / (boot_mod$beta * train_rs$Sc^boot_mod$alpha)
+      if (b == 1){
+        y_star_n1 <- tibble(obs = c(1:nrow(test_rs)), 
+                            y_star_n1 = boot_mod$beta*test_rs$Sc^boot_mod$alpha*
+                              sample(e_boot, nrow(test_rs), replace = TRUE))
+      }
+      else {
+        y_star_n1 <- y_star_n1 %>% add_row(obs = c(1:nrow(test_rs)), 
+                                           y_star_n1 = boot_mod$beta*test_rs$Sc^boot_mod$alpha*
+                                             sample(e_boot, nrow(test_rs), replace = TRUE))
+      }
+    }
+    up <- c() ; down <- c()
+    for (j in (1:nrow(test_rs))){
+      obs_i <- y_star_n1 %>% filter(obs == j)
+      up <- append(up, quantile(obs_i$y_star_n1,1-alpha/2)) ; down <- append(down, quantile(obs_i$y_star_n1, alpha/2))
+    }
+    
+    #Definere
+    cov[i] <- mean((down <= test_rs$Kgp) & (test_rs$Kgp <= up))
   }
   return(tibble("Coverage" = cov))
 }
@@ -178,7 +218,6 @@ rs_cov <- function(data, k, alpha, pred_int_maker) {
   
   for (i in (1:k)){
     # Test and train
-    set.seed(7)
     picked_rs <- sample(n,size = sample_size)
     train_rs = data[picked_rs,]
     test_rs = data[-picked_rs,]
