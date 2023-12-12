@@ -9,6 +9,11 @@ model_logols <- function(data){
   return(list(beta = exp(model$coef[[1]]), alpha = model$coef[[2]]))
 }
 
+model_ols <- function(data){
+  model <- lm(Kgp ~ Sc, data)
+  return(list(beta = model$coef[[1]], alpha = model$coef[[2]]))
+}
+
 model_logolsB <- function(data){
   model <- lm(log(Kgp) ~ log(Sc), data)
   bias_term <- exp(var(model$residuals)/2)
@@ -34,13 +39,12 @@ bootstrap_loo <- function(model, data, B, alpha) {
     
     #Computing residuals:
     e <- data$Kgp[-i] / (fit_mod$beta * data$Sc[-i]^fit_mod$alpha)
-    print(e)
     pred <- append(pred, fit_mod$beta * data$Sc[i]^fit_mod$alpha)
     
     #Bootstrapping:
     y_star_n1 <- c()
     for (b in 1:B) {
-      y.star <- fit_mod$beta*data$Sc[-i]^fit_mod$alpha*sample(e)
+      y.star <- fit_mod$beta*data$Sc[-i]^fit_mod$alpha*sample(e, replace = TRUE)
       boot_data <- data.frame(Sc = data$Sc[-i], Kgp = y.star)
       boot_mod <- model(boot_data)
       e_boot <- y.star / (boot_mod$beta * data$Sc[-i]^boot_mod$alpha)
@@ -54,8 +58,6 @@ bootstrap_loo <- function(model, data, B, alpha) {
 coverage <- function(pred_int) {
   mean((pred_int$Low <= pred_int$Kgp) & (pred_int$Kgp <= pred_int$High))
 }
-
-#Der er et eller andet som går galt... 
 
 #rs_cov_boot <- function(data, k, alpha, model, B = 300) {
   cov <- c(); n <- nrow(data)
@@ -93,7 +95,7 @@ coverage <- function(pred_int) {
   return(tibble("Coverage" = cov))
 }
 
-rs_cov_boot <- function(data, k, alpha, model, B = 300) {
+rs_cov_boot <- function(data, k, alpha, model, B = 1000) {
   cov <- c(); n <- nrow(data) ; sample_size <- floor(0.8*n)
   
   for (i in (1:k)){
@@ -164,6 +166,17 @@ roll_cov_boot <- function(pred_int, alpha = 0.2, bin_size = 50, title){
     ylab('Coverage')+
     labs(title = title)+
     scale_color_gradient(low = 'blue', high = 'red')
+}
+
+diff_alohas <- function(data, model, B = 150, alpha = 0.2){
+  alphas <- c(0.05, 0.1, 0.2, 0.3)
+  cov_alpha <- c()
+  for (i in (1:4)){
+    alpha <- alphas[i]
+    pred <- bootstrap_loo(data = data, model = model, alpha = alpha, B = B)
+    cov_alpha[i] <- coverage(pred)
+  }
+  return(cov_alpha)
 }
 
 ################################################################################
