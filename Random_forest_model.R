@@ -166,12 +166,14 @@ plot_maker <- function(pred_int, title){
   
   pred_plot <- pred_int %>%
     mutate(Indicator = if_else((quantile..0.1 <= Kgp)&(Kgp <= quantile..0.9),"in", "out"))
-  color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+  color <- c("in" = "darkolivegreen", "out" = "darkolivegreen2")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
+    #geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
+                 #color = "hotpink3", alpha = 0.2, lwd = 0.1)+
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.5, alpha = 0.7, fill) + 
     geom_point(aes(x = Sc, y = quantile..0.9), color = "hotpink", size = 1, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 1, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 1,, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -181,17 +183,113 @@ plot_maker <- function(pred_int, title){
                   axis.title = element_text(size = 13))
 }
 
-wood_test <- wood[wood$Sc <= 40,]
-wood_test[wood_test$Kgp >= 400,]
-which.max(wood_test$Kgp)
-wood_test[320,]
-
 plot_maker(leafs_pred, "Leafs")
 plot_maker(wood_pred, "Wood")
-plot_maker(roots_pred, "Roots")
+plot_maker(roots_pred, "Roots") + geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
+                                            color = "hotpink3", alpha = 0.5, lwd = 0.1)
+
+head(leafs_pred)
+
+centered_plot <- function(data, title){
+  cv_intervals <- data.frame(data, 
+                             interval = data$quantile..0.9-data$quantile..0.1)
+  cv_intervals <- arrange(cv_intervals, interval)
+  q_mean <- apply(data[2:3], MARGIN = 1, FUN = mean)
+  
+  cv_intervals_cent <- cv_intervals-q_mean
+  
+  cv_intervals_cent$indx <- as.numeric(row.names(cv_intervals_cent))
+  
+  cv_intervals_cent <- cv_intervals_cent %>%
+    mutate(indicator = if_else((quantile..0.1 <= Kgp)&(Kgp<= quantile..0.9),"in", "out"))
+  
+  colors <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+  
+  ggplot(data = cv_intervals_cent, aes(x = indx)) +
+    geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+                 color = "hotpink", alpha = 0.2, lwd = 0.4) +
+    geom_point(aes(y=quantile..0.1), color = 'hotpink',
+               fill = 'hotpink', size = 0.8, shape = 24, alpha = 0.4) +
+    geom_point(aes(y=quantile..0.9), color = 'hotpink', 
+               fill = 'hotpink', size = 0.8, shape = 25, alpha = 0.4)+
+    geom_point(aes(y=Kgp, color = indicator), size = 0.7)+
+    scale_color_manual(values = colors)+
+    ylab('Kgp')+ ggtitle(title)+
+    xlab('Ordered Samples')+
+    theme_bw()
+}
+
+cv_int <- function(x){
+  cv_intervals <- data.frame(x, 
+                             interval = x$quantile..0.9-x$quantile..0.1)
+  cv_intervals <- arrange(cv_intervals, interval)
+  return(cv_intervals)
+}
+
+cv_intervals_leafs <- cv_int(leafs_pred)
+cv_intervals_wood <- cv_int(wood_pred)
+cv_intervals_roots <- cv_int(roots_pred)
 
 
 
+centered_plot <- function(data, title){
+  q_mean <- apply(data[2:3], MARGIN = 1, FUN = mean)
+  cv_intervals_cent <- data-q_mean
+  cv_intervals_cent$indx <- as.numeric(row.names(cv_intervals_cent))
+  cv_intervals_cent <- cv_intervals_cent %>%
+    mutate(indicator = if_else((quantile..0.1 <= Kgp)&(Kgp <= quantile..0.9),"in", "out"))
+  colors <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+  ggplot(data = cv_intervals_cent, aes(x = indx)) +
+    geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+                 color = "hotpink", alpha = 0.1, lwd = 0.4) +
+    geom_point(aes(y=quantile..0.1), color = 'hotpink',
+               fill = 'hotpink', size = 0.8, shape = 24, alpha = 0.2) +
+    geom_point(aes(y=quantile..0.9), color = 'hotpink', 
+               fill = 'hotpink', size = 0.8, shape = 25, alpha = 0.2)+
+    geom_point(aes(y=Kgp, color = indicator), size = 0.7)+
+    scale_color_manual(values = colors)+
+    ylab("Kgp")+ ggtitle(title)+
+    xlab('Ordered Samples')+
+    theme_bw()+
+    theme(legend.position = "none")
+}
+
+centered_plot(cv_intervals_leafs, "Leafs")
+centered_plot(cv_intervals_wood, "Wood")
+
+
+centered_plot_roots <- function(data){
+  q_mean <- apply(data[2:3], MARGIN = 1, FUN = mean)
+  cv_intervals_cent <- data-q_mean
+  cv_intervals_cent$indx <- as.numeric(row.names(cv_intervals_cent))
+  cv_intervals_cent <- cv_intervals_cent %>%
+    mutate(indicator = if_else((quantile..0.1 <= Kgp)&(Kgp <= quantile..0.9),"in", "out"))
+  colors <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+  ggplot(data = cv_intervals_cent, aes(x = indx)) +
+    geom_segment(aes(x = indx, y = quantile..0.1, xend = indx, yend = quantile..0.9),
+                 color = "hotpink", alpha = 0.5, lwd = 0.9) +
+    geom_point(aes(y=quantile..0.1), color = 'hotpink',
+               fill = 'hotpink', size = 0.9, shape = 24, alpha = 0.9) +
+    geom_point(aes(y=quantile..0.9), color = 'hotpink', 
+               fill = 'hotpink', size = 0.9, shape = 25, alpha = 0.9)+
+    geom_point(aes(y=Kgp, color = indicator))+
+    scale_color_manual(values = colors)+
+    ylab('Kgp')+ ggtitle('Roots')+
+    xlab('Ordered Samples')+
+    theme_bw()+
+    theme(legend.position = "none")
+}
+
+centered_plot_roots(cv_intervals_roots)
+
+#Calculating coverage:
+ cov_l <- mean(leafs_pred$quantile..0.1 <= leafs_pred$Kgp & leafs_pred$quantile..0.9 >= leafs_pred$Kgp)
+ cov_w <- mean(wood_pred$quantile..0.1 <= wood_pred$Kgp & wood_pred$quantile..0.9 >= wood_pred$Kgp)
+ cov_r <- mean(roots_pred$quantile..0.1 <= roots_pred$Kgp & roots_pred$quantile..0.9 >= roots_pred$Kgp)
+ 
+ xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+               "Coverage" =c(cov_l, cov_w, cov_r )), type = latex)
+ 
 
 #----------------------------Distribution of coverage by resampling-----------------------------------------
 
@@ -250,7 +348,48 @@ rs_plot_maker(a, "Leafs", 0.2)
 rs_plot_maker(b, "Wood", 0.2)
 rs_plot_maker(c, "Roots", 0.2)
 
+head(leafs_pred)
 
+#Rolling coverage:
+roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
+  roll_cov <- c()
+  
+  data_arr <- pred_int %>%
+    arrange(Sc)
+  
+  for (i in seq(1,nrow(data_arr)-bin_size)){
+    data_cov <- data_arr %>%
+      slice(i:(i+bin_size))
+    roll_cov[i] <-mean((data_cov$quantile..0.1 <= data_cov$Kgp) & (data_cov$quantile..0.9 >= data_cov$Kgp))
+  }
+  
+  my_tib <- tibble("Bin" = seq(1,nrow(data_arr)-bin_size), "Roll_cov" = roll_cov)
+  
+  up_binom <- qbinom(alpha/2, bin_size, 1-alpha)/bin_size 
+  down_binom <- qbinom(1-alpha/2,bin_size,1-alpha)/bin_size
+  
+  ggplot(my_tib, aes(x = Bin, y = Roll_cov)) + 
+    geom_line(linewidth = 0.6, aes(color = Roll_cov)) + 
+    geom_hline(yintercept = 1-alpha, color = "purple")+
+    geom_hline(yintercept = up_binom, color = "purple", linetype = "dashed", linewidth = 0.3)+
+    geom_hline(yintercept = down_binom, color = "purple", linetype = "dashed", linewidth = 0.3)+
+    theme_bw() +
+    xlab('Bin') + 
+    ylab('Coverage')+
+    ylim(c(0,1))+
+    labs(title = title)+
+    scale_color_gradient2(low = 'blue', mid = 'purple', high = 'red', midpoint = 0.8, limits = c(0.6,1),
+                          na.value = "blue")+
+    theme(legend.position = "none", plot.title = element_text(size = 17),
+          axis.title = element_text(size = 13))
+  
+}
+
+
+
+roll_cov(leafs_pred, alpha = 0.2, bin_size = 50, "Leafs")
+roll_cov(wood_pred, alpha = 0.2, bin_size = 50, "Wood")
+roll_cov(roots_pred, alpha = 0.2, bin_size = 5, "Roots")
 
 #.------------------------------Initial investigation.----------------
 #Implementering af random forest modellen, i sammenligning med QRF for at se hvad der foregår:
