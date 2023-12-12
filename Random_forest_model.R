@@ -14,7 +14,7 @@ wood<- read.csv('Data/wood.csv')
 roots <- read.csv('Data/roots.csv')
 
 
-#---------------Fitting the QRF and calculating predictions + intervals:
+#---------------Fitting the QRF and calculating predictions + intervals:------
 
 #Defining the nodegrids to be searched:
 node_grid_l <-c(5,70,100,150)
@@ -108,13 +108,15 @@ roots_pred <- read.csv("Data/QRF_intervals_roots.csv")
 Sc_plot <- function(data,title){
   plot_data <- data.frame(data)
   #Plot
-  ggplot(plot_data, aes(x = Sc)) +
-    geom_point(aes(y=Kgp), color = "darkolivegreen", alpha=0.5, fill = "darkolivegreen3") +
-    geom_point(aes(y=predicted_value), color = 'hotpink3', fill = "hotpink2") +
-    labs(title = title)+
+  ggplot(plot_data, aes(x = Sc, y = Kgp)) +
+    geom_point(color = 'darkolivegreen', fill = 'darkolivegreen2', alpha = 0.8, size = 1.5, shape = 21) +
+    geom_point(aes(y=predicted_value), color = 'hotpink4', fill = 'hotpink' ,size = 1.5, shape = 23, alpha = 0.8) +
+    ggtitle(title)+
     xlab("Sc")+
     ylab('Kgp')+
-    theme_bw()
+    theme_bw()+
+    theme(plot.title = element_text(size = 17),
+          axis.title = element_text(size = 13))
 }
 
 Sc_plot(leafs_pred, "Leafs")
@@ -167,20 +169,88 @@ plot_maker <- function(pred_int, title){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = quantile..0.9), color = "hotpink", size = 0.6, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 0.6, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = quantile..0.9), color = "hotpink", size = 1, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 1, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
     labs(title = title)+
     scale_color_manual(values = color)+ 
-    theme(legend.position = "none")
+    theme(legend.position = "none", plot.title = element_text(size = 17),
+                  axis.title = element_text(size = 13))
 }
+
+wood_test <- wood[wood$Sc <= 40,]
+wood_test[wood_test$Kgp >= 400,]
+which.max(wood_test$Kgp)
+wood_test[320,]
 
 plot_maker(leafs_pred, "Leafs")
 plot_maker(wood_pred, "Wood")
 plot_maker(roots_pred, "Roots")
+
+
+
+
+#----------------------------Distribution of coverage by resampling-----------------------------------------
+
+pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
+  #Formatting data
+  train_x <- data.frame(Sc = data[,1])
+  train_y <- data[,2]
+  qrf <- quantregForest(x = train_x, y = train_y, nodesize = node_size)
+  
+  f_hat <- function(x) {
+    if (is.atomic(x)){
+      x <- data.frame(Sc = x)
+      return(predict(qrf, x, what = mean))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = mean))
+  }
+  lower <- function(x) {
+    if (is.atomic(x)){
+      return(predict(qrf, data.frame(Sc = x), what = c(alpha/2)))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = c(alpha/2)))
+  }
+  upper<- function(x) {
+    if (is.atomic(x)){
+      return(predict(qrf, data.frame(Sc = x), what = c(1-alpha/2)))
+    }
+    return(predict(qrf, data.frame(Sc = x$Sc), what = c(1-alpha/2)))
+  }
+  
+  return(list(f_hat, upper, lower))
+}
+
+pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
+pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
+pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 5)
+
+
+#Checking for correct coverage
+
+set.seed(4)
+a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
+b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
+c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage) 
+
+median(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+rs_plot_maker(a, "Leafs", 0.2)
+rs_plot_maker(b, "Wood", 0.2)
+rs_plot_maker(c, "Roots", 0.2)
+
+
 
 #.------------------------------Initial investigation.----------------
 #Implementering af random forest modellen, i sammenligning med QRF for at se hvad der foregår:
