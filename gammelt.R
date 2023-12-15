@@ -1,3 +1,40 @@
+#rs_cov_boot <- function(data, k, alpha, model, B = 300) {
+cov <- c(); n <- nrow(data)
+sample_size <- floor(0.8*n)
+
+for (i in (1:k)){
+  print(i)
+  # Test and train
+  picked_rs <- sample(n,size = sample_size)
+  train_rs = data[picked_rs,]
+  test_rs = data[-picked_rs,]
+  
+  #Model fit
+  model_rs <- model(train_rs)
+  e <- train_rs$Kgp / (model_rs$beta * train_rs$Sc^model_rs$alpha)
+  pred <- model_rs$beta * test_rs$Sc^model_rs$alpha
+  
+  #Bootstrapping:
+  for (j in 1:nrow(test_rs)) {
+    up <- c() ; down <- c()
+    y_star_n1 <- c()
+    for (b in 1:B) {
+      y.star <- model_rs$beta*train_rs$Sc^model_rs$alpha*sample(e)
+      boot_data <- data.frame(Sc = train_rs$Sc, Kgp = y.star)
+      boot_mod <- model(boot_data)
+      e_boot <- y.star / (boot_mod$beta * train_rs$Sc^boot_mod$alpha)
+      y_star_n1 <- append(y_star_n1, boot_mod$beta*test_rs$Sc[j]^boot_mod$alpha*sample(e_boot,1))
+    }
+    up <- append(up, quantile(y_star_n1,1-alpha/2)) ; down <- append(down, quantile(y_star_n1, alpha/2))
+  }
+  
+  #Definere
+  cov[i] <- mean((down <= test_rs$Kgp) & (up >= test_rs$Kgp))
+}
+return(tibble("Coverage" = cov))
+}
+
+
 ##Bootstrap som i matstat - konfidensintervaller
 
 B <- 100
