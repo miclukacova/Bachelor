@@ -142,6 +142,65 @@ hat_alpha <- c(NLE_leafs$par[[2]],
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, 
               "beta" = hat_beta), type = "latex")
 
+#------------Heatmap + testing different optimizers----------------
+#Funktion
+
+MSE_NLR <- function(par, data){
+  with(data, sqrt(sum((Kgp-par[1]*Sc^par[2])^2)))
+}
+
+grid_search <- function(data, par_ols) {
+  mse <- c()
+  hej <- TRUE
+  for (i in seq(0, par_ols[1]+1, length.out = 50)){
+    if (hej){
+      grid <- tibble(b = rep(i,50), a = seq(0, par_ols[2]+1, length.out = 50))
+      hej <- FALSE
+    }
+    else {
+      for (j in seq(0, par_ols[2]+1, length.out = 50)){
+        grid <- add_row(grid, b = i, a = j)
+      }
+    }
+  }
+  for (i in (1:nrow(grid))){
+    c <- c(grid[i,1], grid[i,2])
+    mse <- append(mse, MSE_NLR(data = data, par = c(c$a, c$b)))
+  }
+  return(list(grid, mse))
+}
+
+grid_search_leafs <- grid_search(leafs, par_leafs)
+grid_search_wood <- grid_search(wood, par_wood)
+grid_search_roots <- grid_search(roots, par_leafs)
+
+
+plot_data_l <- data.frame(a = grid_search_leafs[[1]]$a, b = grid_search_leafs[[1]]$b, mse = grid_search_leafs[[2]])
+plot_data_w <- data.frame(a = grid_search_wood[[1]]$a, b = grid_search_wood[[1]]$b, mse = grid_search_wood[[2]])
+plot_data_r <- data.frame(a = grid_search_roots[[1]]$a, b = grid_search_roots[[1]]$b, mse = grid_search_roots[[2]])
+
+min(plot_data_w$mse)
+
+
+
+ggplot(data = plot_data_l, aes(x = a, y = b, z = mse)) +
+  stat_contour_filled(breaks = c(59,60,60.5, 61,61.5,63,65,70,80,100,5000,20000)) +
+  theme_bw()
+
+?stat_contour_filled
+
+ggplot(data = plot_data_w, aes(x = a, y = b, z = mse)) +
+  stat_contour_filled(breaks = c(2200,2300,2400,3000,3500,5000,1000000000000000)) +
+  geom_point(aes(x=par_wood[2], y = par_wood[1]), color = "red", size = 3)+
+  theme_bw()
+
+  ggplot(data = plot_data_r, aes(x = a, y = b, z = mse)) +
+  geom_point(aes(x=par_roots[2], y = par_roots[1]), color = "red", size = 3)+
+  stat_contour_filled() +
+  theme_bw()
+
+
+?after_stat
 
 #Evaluering af de to modeller---------------------------------------------------
 
