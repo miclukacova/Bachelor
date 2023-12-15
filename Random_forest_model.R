@@ -19,7 +19,7 @@ roots <- read.csv('Data/roots.csv')
 #Defining the nodegrids to be searched:
 node_grid_l <-c(5,70,100,150)
 node_grid_w <-c(5,70,130)
-node_grid_r <-c(5)
+node_grid_r <-c(26)
 
 #Function performing CV to choose minimal nodesize
 node_size_choose <- function(data, k = 3, node_grid) {
@@ -136,7 +136,7 @@ MSE_bias_naive <- function(data, nodesize){
   return(tibble("MSE" = MSE, "Bias" = bias))
 }
 
-MSE_bias <- tibble("Leafs" = MSE_bias_naive(leafs, 5),"Wood" = MSE_bias_naive(wood, 5),"Roots" = MSE_bias_naive(roots, 5) )
+MSE_bias <- tibble("Leafs" = MSE_bias_naive(leafs, 100),"Wood" = MSE_bias_naive(wood, 70),"Roots" = MSE_bias_naive(roots, 26) )
 
 
 #And here on the LOOCV:
@@ -185,8 +185,7 @@ plot_maker <- function(pred_int, title){
 
 plot_maker(leafs_pred, "Leafs")
 plot_maker(wood_pred, "Wood")
-plot_maker(roots_pred, "Roots") + geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
-                                            color = "hotpink3", alpha = 0.5, lwd = 0.1)
+plot_maker(roots_pred, "Roots")
 
 head(leafs_pred)
 
@@ -324,15 +323,15 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
 
 pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
 pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
-pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 5)
+pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 26)
 
 
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
-b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
-c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
+a <- rs_cov(data = leafs, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
+b <- rs_cov(data = wood, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
+c <- rs_cov(data = roots, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
@@ -391,38 +390,7 @@ roll_cov(leafs_pred, alpha = 0.2, bin_size = 50, "Leafs")
 roll_cov(wood_pred, alpha = 0.2, bin_size = 50, "Wood")
 roll_cov(roots_pred, alpha = 0.2, bin_size = 5, "Roots")
 
-#.------------------------------Initial investigation.----------------
-#Implementering af random forest modellen, i sammenligning med QRF for at se hvad der foregår:
 
-#Fitting the model
-rf_leafs_model <- randomForest(x = train_leafs_x, y = train_leafs_y, nodesize = 100)
-
-#Checking number of splits
-for (i in 1:500){
-  tree = data.frame(getTree(rf_leafs_model, k = i))
-  endnodes = tree[tree$status == -1,]
-  leng <- nrow(endnodes)
-  size <- 900/leng
-  print(leng)
-}
-
-#Using it to predict:
-rf_leafs_pred <- predict(rf_leafs_model, newdata = test_leafs_x)
-
-#Function for creating the dataframe to be plotted:
-plot_data <- function(pred, obs, Sc){
-  plot_data <- data.frame(pred, observed = obs, Sc = Sc)
-}
-
-plot_leafs <- plot_data(rf_leafs_pred, test_leafs_y, test_leafs_x)
-
-ggplot(plot_leafs) + 
-  geom_point(aes(x = Sc, y = observed), color = 'darkolivegreen4', size = 1.5) +
-  geom_point(aes(x = Sc, y = pred), color = 'hotpink4', size = 1.5) +
-  theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
-  labs(title = "Leafs")
 
 
 ##-------------------FAKE MODEL--------------------------------
@@ -471,3 +439,23 @@ ggplot(plot_fake) +
 
 
 
+
+
+#-----------------Lidt RMSE
+leafs_n <- c(4.12 , 4.27 , 5.80 , 3.99 , 3.63)
+wood_n <- c(6576.57 , 6835.36 , 7663.16 , 6587.67 , 5210.00)
+roots_n <- c(2617.58 , 5105.20 , 2780.65 , 1411.15 , 3251.00)
+
+leafs_cv <- c(4.15 , 4.28 , 5.83 , 4.03 , 4.13)
+wood_cv <- c(6650.10 , 6868.05 , 7717.64 , 6698.82 , 6545.69)
+roots_cv <- c(5761.43 , 5105.20 , 3481.70 , 2208.37 , 9084.12)
+
+#Calculating RMSE:
+
+sqrt(leafs_n)
+sqrt(wood_n)
+sqrt(roots_n)
+
+sqrt(leafs_cv)
+sqrt(wood_cv)
+sqrt(roots_cv)

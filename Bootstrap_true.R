@@ -128,6 +128,7 @@ boot_leafs <- bootstrap_loo(model_NLR_leafs, leafs, 1000, alpha = 0.2)
 boot_wood <- bootstrap_loo(model_NLR_wood, wood, 1000, alpha = 0.2)
 boot_roots <- bootstrap_loo(model_NLR_roots, roots, 1000, alpha = 0.2)
 
+
 write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_NLR.csv", row.names=F)
 write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_NLR.csv", row.names=F)
 write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_NLR.csv", row.names=F)
@@ -163,7 +164,7 @@ roll_cov(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
 
 boot_leafs <- bootstrap_loo(model_ols, leafs, 1000, alpha = 0.2)
 boot_wood <- bootstrap_loo(model_ols, wood, 1000, alpha = 0.2)
-boot_roots <- bootstrap_loo(model_ols, roots, 1000, alpha = 0.2)
+boot_roots <- bootstrap_loo(model_ols, roots, 10, alpha = 0.2)
 
 write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_NLR.csv", row.names=F)
 write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_NLR.csv", row.names=F)
