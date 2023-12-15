@@ -5,7 +5,7 @@ library(infer)
 library(foreign)
 library(xtable)
 library(stargazer)
-
+library(mapplots)
 
 #Getting data
 leafs <- read.csv('Data/leafs.csv')
@@ -296,3 +296,10 @@ cv_mse <- tibble("Model" = c("Leafs", "Wood", "Roots"),
                  "Mean of CV-Bias" = c(mean(a$Bias), mean(b$Bias), mean(c$Bias)))
 
 xtable(cv_mse, type = latex)
+
+
+#Different types of optimizers:--------------------------------------------
+
+my_grid <- expand.grid(x = seq(from = 0, to = 5, by = 0.1), y = seq(from = 0,to = 5, by = 0.1))
+
+
