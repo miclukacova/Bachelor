@@ -420,3 +420,54 @@ ggplot(data = residuals_roots, aes(sample = residual)) +
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
   labs(title = "Roots")
+
+
+
+##------------QQ-PLots on the regular scale:
+residuals_leafs <- data.frame(residual = lm_leafs$residuals/sd(lm_leafs$residuals))
+residuals_wood <- data.frame(residual = lm_wood$residuals/sd(lm_wood$residuals))
+residuals_roots <- data.frame(residual = lm_roots$residuals/sd(lm_roots$residuals))
+
+residuals_leafs %>%
+  ggplot() +
+  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3", bins = 40) +
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+
+residuals_wood %>%
+  ggplot() +
+  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3", bins = 40) +
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
+  theme_bw()+
+  labs(title = "Wood")
+
+residuals_roots %>%
+  ggplot() +
+  geom_histogram(aes(x = residual, y = ..density..), color = "white", fill = "darkolivegreen3") +
+  geom_vline(xintercept = 0, color = "hotpink", size = 1) +
+  stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
+  theme_bw()+
+  labs(title = "Roots")
+
+ggplot(data = residuals_leafs, aes(sample = residual)) +
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
+  theme_bw()+
+  labs(title = "Foliage")
+
+ggplot(data = residuals_wood, aes(sample = residual)) +
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
+  theme_bw()+
+  labs(title = "Wood")
+
+ggplot(data = residuals_roots, aes(sample = residual)) +
+  stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
+  geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
+  theme_bw()+
+  labs(title = "Roots")
+
