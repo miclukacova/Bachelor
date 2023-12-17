@@ -126,13 +126,17 @@ roll_cov_boot <- function(pred_int, alpha = 0.2, bin_size = 50, title){
     geom_hline(yintercept = up_binom, color = "purple", linetype = "dashed", linewidth = 0.3)+
     geom_hline(yintercept = down_binom, color = "purple", linetype = "dashed", linewidth = 0.3)+
     theme_bw() +
-    xlab('Sc') + 
+    xlab('Bin') + 
     ylab('Coverage')+
+    ylim(c(0,1))+
     labs(title = title)+
-    scale_color_gradient(low = 'blue', high = 'red')
+    scale_color_gradient2(low = 'blue', mid = 'purple', high = 'red', midpoint = 0.8, limits = c(0.6,1),
+                          na.value = "blue")+
+    theme(legend.position = "none", plot.title = element_text(size = 17),
+          axis.title = element_text(size = 13))
 }
 
-diff_alohas <- function(data, model, B = 150){
+diff_alohas_boot <- function(data, model, B = 150){
   alphas <- c(0.05, 0.1, 0.2, 0.3)
   cov_alpha <- c()
   for (i in (1:4)){

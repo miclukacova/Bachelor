@@ -370,7 +370,7 @@ plot_maker(loo_r[[1]],"Roots")
 alphas <- c(0.05, 0.1, 0.2, 0.3)
 
 set.seed(4)
-cov_alpha_l <- diff_alohas(leafs[1:30,], pred_int_rf_l)
+cov_alpha_l <- diff_alohas(leafs, pred_int_rf_l)
 cov_alpha_w <- diff_alohas(wood, pred_int_rf_w)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
@@ -456,7 +456,7 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
 
 pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
 pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
-pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 5)
+pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 26)
 
 set.seed(4)
 loo_l <- loo_pred_int(leafs, pred_int = pred_int_qrf_l)
@@ -488,20 +488,18 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 set.seed(4)
 a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
 b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
-b <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
 mean_b <- mean(b$Coverage)
-mean_c <- mean(c$Coverage) 
 
 median(b$Coverage)
 
-xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
-              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
 
-rs_plot_maker(a, "Leafs", 0.2)
-rs_plot_maker(b, "Wood", 0.2)
+rs_plot_maker(a, "Leafs", 0.2, conformal = TRUE, n = nrow(leafs))
+rs_plot_maker(b, "Wood", 0.2, conformal = TRUE, n = nrow(wood))
 rs_plot_maker(c, "Roots", 0.2)
 
 #----------------------------Rolling coverage---------------------------------------------
