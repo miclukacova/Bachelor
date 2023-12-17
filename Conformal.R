@@ -16,12 +16,11 @@ wood <- read.csv('Data/wood.csv')
 
 #Log-log ols--------------------------------------------------------
 
-set.seed(5)
+set.seed(4)
 
 #Score funktion Absolute error
 pred_int_log_ols_conf_adj <- function(data, alpha = 0.2) {
   #Test and calibration
-  set.seed(1)
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
   cali <- data[-picked,]
@@ -44,7 +43,6 @@ pred_int_log_ols_conf_adj <- function(data, alpha = 0.2) {
   return(list(f_hat_adj, upper,lower))
 }
 pred_int_log_ols_conf <- function(data, alpha = 0.2) {
-  set.seed(1)
   #Test and calibration
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
@@ -124,6 +122,8 @@ pred_int_log_ols_conf_2 <- function(data, alpha = 0.2) {
 
 #Abs error
 
+set.seed(4)
+
 loo_adj <- loo_pred_int(leafs, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo <- loo_pred_int(leafs, alpha = 0.2, pred_int_log_ols_conf)
 
@@ -142,6 +142,8 @@ plot_maker(loo2[[1]], "Leafs")
 #Wood
 
 #Abs error
+
+set.seed(4)
 
 loo_adj_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf)
@@ -198,12 +200,10 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 set.seed(4)
 a <- rs_cov(data = leafs, k = 500, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
 b <- rs_cov(data = wood, k = 500, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
-c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_adj)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
 mean_b <- mean(b$Coverage)
-mean_c <- mean(c$Coverage) 
 
 median(b$Coverage)
 
@@ -212,7 +212,6 @@ xtable(tibble(Data = c("Leafs", "Wood", "Roots"),
 
 rs_plot_maker(a, "Leafs", 0.2, conformal = TRUE, n = nrow(leafs))
 rs_plot_maker(b, "Wood", 0.2, conformal = TRUE, n = nrow(wood))
-rs_plot_maker(c, "Roots", 0.2)
 
 
 #----------------------------Rolling coverage---------------------------------------------
@@ -351,9 +350,9 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
   return(list(f_hat, upper, lower ))
 }
 
-pred_int_rf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
-pred_int_rf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
-pred_int_rf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 5)
+pred_int_rf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = alpha)
+pred_int_rf_w <- function(data, alpha = 0.2) pred_int_making(data, node_size = 70, alpha = alpha)
+#pred_int_rf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = alpha, node_size = 26)
 
 set.seed(4)
 loo_l <- loo_pred_int(leafs, pred_int = pred_int_rf_l)
@@ -370,8 +369,8 @@ plot_maker(loo_r[[1]],"Roots")
 #----------------------------Checking coverage for different alphas-----------------------------------------
 alphas <- c(0.05, 0.1, 0.2, 0.3)
 
-set.seed(2)
-cov_alpha_l <- diff_alohas(leafs, pred_int_rf_l)
+set.seed(4)
+cov_alpha_l <- diff_alohas(leafs[1:30,], pred_int_rf_l)
 cov_alpha_w <- diff_alohas(wood, pred_int_rf_w)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
@@ -383,27 +382,20 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_rf_l)
-b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_rf_w)
-c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_rf_r)
+a <- rs_cov(data = leafs, k = 100, alpha = 0.2, pred_int_maker = pred_int_rf_l)
+b <- rs_cov(data = wood, k = 100, alpha = 0.2, pred_int_maker = pred_int_rf_w)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
 mean_b <- mean(b$Coverage)
-mean_c <- mean(c$Coverage) 
 
 median(b$Coverage)
 
-xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
-              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+xtable(tibble(Data = c("Leafs", "Wood"), 
+              "Mean coverage" =c(mean_a, mean_b)), type = latex)
 
-n_l <- nrow(leafs)*0.4
-n_w <- nrow(wood)*0.4
-
-rs_plot_maker(a, "Leafs", 0.2) 
-rs_plot_maker(b, "Wood", 0.2) 
-rs_plot_maker(c, "Roots", 0.2)
-?geom_function
+rs_plot_maker(a, "Leafs", 0.2, conformal = TRUE, n = nrow(leafs)) 
+rs_plot_maker(b, "Wood", 0.2, conformal = TRUE, n = nrow(wood)) 
  
 
 #----------------------------Rolling coverage---------------------------------------------
