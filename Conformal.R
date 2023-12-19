@@ -459,9 +459,20 @@ pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
 pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 26)
 
 set.seed(4)
-loo_l <- loo_pred_int(leafs, pred_int = pred_int_qrf_l)
+#loo_l <- loo_pred_int(leafs, pred_int = pred_int_qrf_l)
+#De her to mangler at køre
 loo_w <- loo_pred_int(wood, pred_int = pred_int_qrf_w)
 loo_r <- loo_pred_int(roots, pred_int = pred_int_qrf_r)
+
+
+#write.csv(loo_l, "/Users/michaelalukacova/Bachelor1/Data/loo_l_conf.csv", row.names=F)
+write.csv(loo_w, "/Users/michaelalukacova/Bachelor1/Data/loo_w_conf.csv", row.names=F)
+write.csv(loo_r, "/Users/michaelalukacova/Bachelor1/Data/loo_r_conf.csv", row.names=F)
+
+loo_l <- read.csv('Data//loo_l_conf.csv')
+loo_w <- read.csv('Data/loo_w_conf.csv')
+loo_r <- read.csv('Data/loo_r_conf.csv')
+
 
 xtable(tibble(" " = c("Leafs", "Wood", "Roots"), 
               "Covergae" = c(loo_l[[2]], loo_w[[2]], loo_r[[2]])), type = latex)
