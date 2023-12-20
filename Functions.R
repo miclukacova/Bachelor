@@ -179,9 +179,9 @@ plot_maker <- function(pred_int, title){
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
     geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
-    geom_line(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.8, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.8, alpha = 0.7) +
+    #geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+

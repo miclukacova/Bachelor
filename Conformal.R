@@ -117,7 +117,6 @@ pred_int_log_ols_conf_2 <- function(data, alpha = 0.2) {
   return(list(f_hat, upper, lower))
 }
 
-
 #Leafs
 
 #Abs error
@@ -229,7 +228,7 @@ roll_cov(pred_int = roots_pred_int, title = "Roots", bin_size = 5)
 #NLR----------------------------------------------------------------------------
 
 MSE_NLR <- function(par, data){
-  with(data, sum((Kgp-par[1]*Sc^par[2])^2))
+  with(data, sqrt(sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data)))
 }
 
 nlr_alg <- function(data, start_point){
@@ -260,9 +259,9 @@ pred_int_nlr <- function(data, alpha = 0.2, starting_points) {
   return(list(f_hat, upper,lower))
 }
 
-pred_int_nlr_l <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(0.61,0.81))
-pred_int_nlr_w <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(5.51,0.73))
-pred_int_nlr_r <- function(data, alpha = 0.2) pred_int_nl(data, alpha = 0.2, c(3.66,0.1))
+pred_int_nlr_l <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(0.2693082, 0.9441130))
+pred_int_nlr_w <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(3.944818, 1.106841))
+pred_int_nlr_r <- function(data, alpha = 0.2) pred_int_nl(data, alpha = 0.2, c(0.8339087, 1.1730237))
 
 #----------------------------Pred intervaller###################################
 
@@ -460,26 +459,26 @@ pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2,
 
 set.seed(4)
 #loo_l <- loo_pred_int(leafs, pred_int = pred_int_qrf_l)
-#De her to mangler at køre
-loo_w <- loo_pred_int(wood, pred_int = pred_int_qrf_w)
-loo_r <- loo_pred_int(roots, pred_int = pred_int_qrf_r)
+#loo_w <- loo_pred_int(wood, pred_int = pred_int_qrf_w)
+#Den her mangler at køre
+#loo_r <- loo_pred_int(roots, pred_int = pred_int_qrf_r)
 
 
-#write.csv(loo_l, "/Users/michaelalukacova/Bachelor1/Data/loo_l_conf.csv", row.names=F)
-write.csv(loo_w, "/Users/michaelalukacova/Bachelor1/Data/loo_w_conf.csv", row.names=F)
-write.csv(loo_r, "/Users/michaelalukacova/Bachelor1/Data/loo_r_conf.csv", row.names=F)
+#write.csv(loo_l, "/Users/michaelalukacova/Bachelor1/Data/loo_l_conf_qr.csv", row.names=F)
+#write.csv(loo_w, "/Users/michaelalukacova/Bachelor1/Data/loo_w_conf_qr.csv", row.names=F)
+#write.csv(loo_r, "/Users/michaelalukacova/Bachelor1/Data/loo_r_conf_qr.csv", row.names=F)
 
 loo_l <- read.csv('Data//loo_l_conf.csv')
 loo_w <- read.csv('Data/loo_w_conf.csv')
-loo_r <- read.csv('Data/loo_r_conf.csv')
+#loo_r <- read.csv('Data/loo_r_conf.csv')
 
 
-xtable(tibble(" " = c("Leafs", "Wood", "Roots"), 
-              "Covergae" = c(loo_l[[2]], loo_w[[2]], loo_r[[2]])), type = latex)
+xtable(tibble(" " = c("Leafs", "Wood"), 
+              "Covergae" = c(loo_l[[2]], loo_w[[1]])), type = latex)
 
-plot_maker(loo_l[[1]],"Leafs")
-plot_maker(loo_w[[1]],"Wood")
-plot_maker(loo_r[[1]],"Roots")
+plot_maker(loo_l,"Leafs")
+mean(loo_l$Low <= loo_l$Kgp & loo_l$High >= loo_l$Kgp)
+plot_maker(loo_w[[1]], "Wood")
 
 #----------------------------Checking coverage for different alphas-----------------------------------------
 alphas <- c(0.05, 0.1, 0.2, 0.3)
@@ -517,5 +516,4 @@ rs_plot_maker(c, "Roots", 0.2)
 
 roll_cov(pred_int = loo_l, title = "Leafs")
 roll_cov(pred_int = loo_w, title = "Wood")
-roll_cov(pred_int = loo_r, title = "Roots", bin_size = 5)
 
