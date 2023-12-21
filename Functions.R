@@ -22,7 +22,7 @@ model_logolsB <- function(data){
 }
 
 MSE_NLR <- function(par, data){
-  with(data, sum((Kgp-par[1]*Sc^par[2])^2))
+  with(data, sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data))
 }
 
 model_NLR <- function(data, starting_point){

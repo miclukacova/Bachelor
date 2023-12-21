@@ -19,12 +19,9 @@ par_ols_r <- c(0.8339087, 1.1730237)
 
 #Loss function
 MSE_NLR <- function(par, data){
-  with(data, sqrt(sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data)))
+  with(data, sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data))
 }
 
-optim(par = par_ols_l, fn = MSE_NLR, data = leafs)
-optim(par = par_ols_w, fn = MSE_NLR, data = wood)
-optim(par = par_ols_r, fn = MSE_NLR, data = roots)
 
 
 #c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent")
@@ -88,7 +85,21 @@ grid_l <- creating_grid(leafs, par_ols_l)
 grid_w <- creating_grid(wood, par_ols_w)
 grid_r <- creating_grid(roots, par_ols_r)
 
-grid_values <- function(data, grid, title) {
+ggplot(grid_r, aes(x = a, y = b)) +
+  geom_point(size = 0.9)+
+  geom_point(aes(x=par_ols_r[2], y = par_ols_r[1]), color = "red", size = 4)+
+  geom_text(aes(x=par_ols_r[2], y = par_ols_r[1]), label = "OLS", hjust = -.5, color = "red", size = 5)+
+  theme_bw()+
+  labs(title = "Roots")
+
+ggplot(grid_w, aes(x = a, y = b)) +
+  geom_point(size = 0.9)+
+  geom_point(aes(x=par_ols_w[2], y = par_ols_w[1]), color = "red", size = 4)+
+  geom_text(aes(x=par_ols_w[2], y = par_ols_w[1]), label = "OLS", hjust = -.5, color = "red", size = 5)+
+  theme_bw()
+
+
+grid_values <- function(data, grid) {
   hej <- TRUE
   for (i in (1:nrow(grid))){
     c <- c(grid[i,1], grid[i,2])
@@ -107,31 +118,29 @@ grid_values <- function(data, grid, title) {
     }
   }
   
-  #Finding breaks
-  breaks_data <- sort(par_grid$MSE)[c(seq(1,nrow(par_grid)*999/1000, length.out = 2), 
-                                      seq(nrow(par_grid)*999/1000, nrow(par_grid), length.out = 5))]
-  
-  #Plot
-  p <- ggplot(data = par_grid, aes(x = a, y = b, z = MSE)) +
-    stat_contour_filled(breaks = breaks_data) +
-    theme_bw()+
-    labs(title = title)
-  return(p)
+  return(par_grid)
 }
 
-a <- grid_values(leafs, grid_l, "Leafs")
-b <- grid_values(wood, grid_w, "Wood")
-c <- grid_values(roots, grid_r, "Roots")
+a <- grid_values(leafs, grid_l)
+breaks_leaf <- c(min(a$MSE), 4, 4.1, 4.2, 4.3, max(a$MSE))
+ggplot(data = a, aes(x = a, y = b, z = MSE)) +
+  stat_contour_filled(breaks = breaks_leaf) +
+  theme_bw()+
+  labs(title = "Leafs")
+  
+b <- grid_values(wood, grid_w)
+breaks_wood <- c(min(b$MSE), 6589, 6595, 7000, 7300, max(b$MSE))
+ggplot(data = b, aes(x = a, y = b, z = MSE)) +
+  stat_contour_filled(breaks = breaks_wood) +
+  theme_bw()+
+  labs(title = "Wood")
 
-
-a
-b
-c
-
-
-
-
-
+c <- grid_values(roots, grid_r)
+breaks_roots <- c(min(c$MSE), 1412, 1420, 1500, 1600, 1700, max(c$MSE))
+ggplot(data = c, aes(x = a, y = b, z = MSE)) +
+  stat_contour_filled(breaks = breaks_roots) +
+  theme_bw()+
+  labs(title = "Roots")
 
 
 #Usuccesfuldt forsøg med sejere heat maps
