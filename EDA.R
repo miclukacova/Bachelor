@@ -471,3 +471,38 @@ ggplot(data = residuals_roots, aes(sample = residual)) +
   theme_bw()+
   labs(title = "Roots")
 
+
+#Model diagnostics
+
+
+res_vs_fit <- function(data, bias = TRUE) {
+  #Model fit
+  lm_log <- lm(log(Kgp) ~ log(Sc), data)
+  if (bias == TRUE){
+    f_hat <- function(x) {
+      exp(lm_log$coefficients[[1]])*x^(lm_log$coefficients[[2]])*exp(var(lm_log$residuals)/2)}
+  }
+  else {
+    f_hat <- function(x) exp(lm_log$coefficients[[1]])*x^(lm_log$coefficients[[2]])
+  }
+  
+  #Residuals
+  res_fit <- tibble(res = f_hat(data$Sc) - data$Kgp, fit = f_hat(data$Sc))
+  
+  #Plot
+  ggplot(res_fit, aes(x = fit, y = res)) + 
+    geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+    theme_bw() +
+    xlab('Fitted values') + 
+    ylab('Residuals')+
+    labs(title = "Residual plot")
+}
+
+res_vs_fit(leafs)
+res_vs_fit(leafs, bias = FALSE)
+res_vs_fit(wood, bias = FALSE)
+res_vs_fit(wood)
+res_vs_fit(roots)
+res_vs_fit(roots, bias = FALSE)
+
+

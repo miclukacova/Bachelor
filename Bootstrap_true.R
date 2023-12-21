@@ -20,8 +20,6 @@ roots <- read.csv('Data/roots.csv')
 
 #----------------------logOLS---------------------------
   
-#Skal evt. køres igen med et seed. 
-#
 #set.seed(4)
 #
 #boot_leafs <- bootstrap_loo(model_logols, leafs, 1000, alpha = 0.2)
@@ -65,9 +63,9 @@ roll_cov_boot(boot_roots, alpha = 0.2, bin_size = 5, "Roots")
 #Diff alphas
 
 set.seed(4)
-diff_alohas(data = leafs, model = model_logols)
-diff_alohas(data = wood, model = model_logols)
-diff_alohas(data = roots, model = model_logols)
+diff_alohas_boot(data = leafs, model = model_logols)
+diff_alohas_boot(data = wood, model = model_logols)
+diff_alohas_boot(data = roots, model = model_logols)
 
 
 #----------------------logOLSB---------------------------
@@ -166,13 +164,13 @@ boot_leafs <- bootstrap_loo(model_ols, leafs, 1000, alpha = 0.2)
 boot_wood <- bootstrap_loo(model_ols, wood, 1000, alpha = 0.2)
 boot_roots <- bootstrap_loo(model_ols, roots, 10, alpha = 0.2)
 
-write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_NLR.csv", row.names=F)
-write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_NLR.csv", row.names=F)
-write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_NLR.csv", row.names=F)
+write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_OLS.csv", row.names=F)
+write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_OLS.csv", row.names=F)
+write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_OLS.csv", row.names=F)
 
-boot_leafs <- read.csv('Data/boot_leafs_NLR.csv')
-boot_wood <- read.csv('Data/boot_wood_NLR.csv')
-boot_roots <- read.csv('Data/boot_roots_NLR.csv')
+boot_leafs <- read.csv('Data/boot_leafs_OLS.csv')
+boot_wood <- read.csv('Data/boot_wood_OLS.csv')
+boot_roots <- read.csv('Data/boot_roots_OLS.csv')
 
 plot_maker(boot_leafs, "Leafs")
 plot_maker(boot_wood, "Wood")
@@ -194,5 +192,5 @@ rs_plot_maker(boot_roots_rs, "Roots", alpha = 0.2)
 
 #Conditional coverage
 
-roll_cov(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
-roll_cov(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
+roll_cov_boot(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
+roll_cov_boot(boot_wood, alpha = 0.2, bin_size = 50, "Wood")

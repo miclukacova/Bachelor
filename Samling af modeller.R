@@ -1,24 +1,8 @@
 #################################--Indlæsning af pakker og data---###############################
 
-leafs_log_train <- read.csv('Data/train_leafs_log.csv')
-roots_log_train <- read.csv('Data/train_roots_log.csv')
-wood_log_train<- read.csv('Data/train_wood_log.csv')
-
-leafs_log_test <- read.csv('Data/test_leafs_log.csv')
-roots_log_test <- read.csv('Data/test_roots_log.csv')
-wood_log_test<- read.csv('Data/test_wood_log.csv')
-
 leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log<- read.csv('Data/wood_log.csv')
-
-leafs_train <- read.csv('Data/train_leafs_log.csv')
-roots_train <- read.csv('Data/train_roots_log.csv')
-wood_train<- read.csv('Data/train_wood_log.csv')
-
-leafs_test <- read.csv('Data/test_leafs.csv')
-roots_test <- read.csv('Data/test_roots.csv')
-wood_test <- read.csv('Data/test_wood.csv')
 
 leafs <- read.csv('Data/leafs.csv')
 roots <- read.csv('Data/roots.csv')
@@ -66,9 +50,9 @@ ols_r <- function(x) lm_r$coefficients[[1]] + lm_r$coefficients[[2]]*x
 
 #NLR
 
-nlr_l <- function(x) 0.5685498*x^0.7160795
-nlr_w <- function(x) 6.9528858*x^0.9841403
-nlr_r <- function(x) 0.1206226*x^1.7372279
+nlr_l <- function(x) 0.5687030*x^0.7160185
+nlr_w <- function(x) 6.9505933*x^0.9842457
+nlr_r <- function(x) 0.1206275*x^1.7372176
 
 
 ###################################################################################################
@@ -84,8 +68,8 @@ ggplot(leafs, aes(x = Sc, y = Kgp)) +
   xlab('Sc') + 
   geom_function(fun = ols_l, aes(col = "OLS"), size = 1)+
   geom_function(fun = nlr_l, aes(col = "NLR"), size = 1)+
-  geom_function(fun = ols_log_l, aes(col = "OLS log Bias adj."), size = 1)+
-  geom_function(fun = ols_log_adj_l, aes(col = "OLS log"), size = 1)+
+  geom_function(fun = ols_log_l, aes(col = "OLS log"), size = 1)+
+  geom_function(fun = ols_log_adj_l, aes(col = "OLS log Bias adj."), size = 1)+
   ylab('Kgp')+
   labs(title = "Leafs")+
   scale_colour_manual(values = cols)+
@@ -99,8 +83,8 @@ ggplot(wood, aes(x = Sc, y = Kgp)) +
   ylab('Kgp')+
   geom_function(fun = ols_w, aes(col = "OLS"), size = 1)+
   geom_function(fun = nlr_w, aes(col = "NLR"), size = 0.7)+
-  geom_function(fun = ols_log_w, aes(col = "OLS log Bias adj."), size = 0.7)+
-  geom_function(fun = ols_log_adj_w, aes(col = "OLS log"), size = 1)+
+  geom_function(fun = ols_log_w, aes(col = "OLS log"), size = 0.7)+
+  geom_function(fun = ols_log_adj_w, aes(col = "OLS log Bias adj."), size = 1)+
   labs(title = "Wood")+
   scale_colour_manual(values = cols)+
   theme(legend.position = c(0.165, 0.81), legend.background = element_rect(linetype = 'solid', color = 'black'))+
@@ -113,8 +97,8 @@ ggplot(roots, aes(x = Sc, y = Kgp)) +
   ylab('Kgp')+
   geom_function(fun = ols_r, aes(col = "OLS"), size = 0.7)+
   geom_function(fun = nlr_r, aes(col = "NLR"), size = 0.7)+
-  geom_function(fun = ols_log_r, aes(col = "OLS log Bias adj."), size = 0.7)+
-  geom_function(fun = ols_log_adj_r, aes(col = "OLS log"), size = 0.7)+
+  geom_function(fun = ols_log_r, aes(col = "OLS log"), size = 0.7)+
+  geom_function(fun = ols_log_adj_r, aes(col = "OLS log Bias adj."), size = 0.7)+
   ggtitle( "Roots")+
   scale_colour_manual(values = cols)+
   theme(legend.position = c(0.165, 0.8), legend.background = element_rect(linetype = 'solid', color = 'black'),

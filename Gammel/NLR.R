@@ -17,7 +17,7 @@ roots_log <- read.csv("Data/roots_log.csv")
 
 #Creating function to be minimized
 MSE_NLR <- function(par, data){
-  with(data, sum((Kgp-par[1]*Sc^par[2])^2))
+  with(data, sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data))
 }
 
 #Grid search
@@ -70,6 +70,12 @@ grid_search <- function(data, par_ols) {
 grid_search_leafs <- grid_search(leafs, par_leafs)
 grid_search_wood <- grid_search(wood, par_wood)
 grid_search_roots <- grid_search(roots, par_leafs)
+
+plot(grid_search_leafs[[2]]$a)
+
+which.min(grid_search_leafs[[2]]$MSE)
+
+grid_search_leafs[[2]][359,]
 
 # Grid plot
 
@@ -146,7 +152,7 @@ xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha,
 #Funktion
 
 MSE_NLR <- function(par, data){
-  with(data, sqrt(sum((Kgp-par[1]*Sc^par[2])^2)))
+  with(data, sqrt(sum((Kgp-par[1]*Sc^par[2])^2)/nrow(data)))
 }
 
 grid_search <- function(data, par_ols) {
@@ -170,6 +176,11 @@ grid_search <- function(data, par_ols) {
   return(list(grid, mse))
 }
 
+which.min(grid_search_leafs[[2]])
+
+(grid_search_leafs[[2]][1415])^2
+grid_search_leafs[[1]][1415,]
+
 grid_search_leafs <- grid_search(leafs, par_leafs)
 grid_search_wood <- grid_search(wood, par_wood)
 grid_search_roots <- grid_search(roots, par_leafs)
@@ -179,22 +190,17 @@ plot_data_l <- data.frame(a = grid_search_leafs[[1]]$a, b = grid_search_leafs[[1
 plot_data_w <- data.frame(a = grid_search_wood[[1]]$a, b = grid_search_wood[[1]]$b, mse = grid_search_wood[[2]])
 plot_data_r <- data.frame(a = grid_search_roots[[1]]$a, b = grid_search_roots[[1]]$b, mse = grid_search_roots[[2]])
 
-min(plot_data_w$mse)
-
-
-
 ggplot(data = plot_data_l, aes(x = a, y = b, z = mse)) +
-  stat_contour_filled(breaks = c(59,60,60.5, 61,61.5,63,65,70,80,100,5000,20000)) +
+  geom_point(aes(x=par_leafs[2], y = par_leafs[1]), color = "red", size = 3)+
+  stat_contour_filled() +
   theme_bw()
 
-?stat_contour_filled
-
 ggplot(data = plot_data_w, aes(x = a, y = b, z = mse)) +
-  stat_contour_filled(breaks = c(2200,2300,2400,3000,3500,5000,1000000000000000)) +
+  stat_contour_filled() +
   geom_point(aes(x=par_wood[2], y = par_wood[1]), color = "red", size = 3)+
   theme_bw()
 
-  ggplot(data = plot_data_r, aes(x = a, y = b, z = mse)) +
+ggplot(data = plot_data_r, aes(x = a, y = b, z = mse)) +
   geom_point(aes(x=par_roots[2], y = par_roots[1]), color = "red", size = 3)+
   stat_contour_filled() +
   theme_bw()
