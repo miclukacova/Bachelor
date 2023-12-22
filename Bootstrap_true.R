@@ -68,6 +68,9 @@ diff_alohas_boot(data = wood, model = model_logols)
 diff_alohas_boot(data = roots, model = model_logols)
 
 
+
+
+
 #----------------------logOLSB---------------------------
 
 #set.seed(4)
@@ -147,16 +150,34 @@ coverage(boot_roots)
 
 boot_leafs_rs <- rs_cov_boot(data = leafs, k = 50, alpha = 0.2, model = model_NLR_leafs)
 boot_wood_rs <- rs_cov_boot(data = wood, k = 50, alpha = 0.2, model = model_NLR_wood)
-boot_roots_rs <- rs_cov_boot(data = roots, k = 5+, alpha = 0.2, model = model_NLR_roots)
+boot_roots_rs <- rs_cov_boot(data = roots, k = 50, alpha = 0.2, model = model_NLR_roots)
 
 rs_plot_maker(boot_leafs_rs, "Leafs", alpha = 0.2)
 rs_plot_maker(boot_wood_rs, "Wood", alpha = 0.2)
 rs_plot_maker(boot_roots_rs, "Roots", alpha = 0.2)
 
+mean(boot_leafs_rs$Coverage)
+mean(boot_wood_rs$Coverage)
+mean(boot_roots_rs$Coverage)
+
 #Conditional coverage
 
-roll_cov(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
-roll_cov(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
+head(boot_leafs)
+
+roll_cov_boot(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
+roll_cov_boot(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
+roll_cov_boot(boot_roots, alpha = 0.2, bin_size = 5, "Roots")
+
+
+#Different alphas with k-fold cv instead og loocv:
+cov_alpha_l <- diff_alohas_boot(data = leafs, model = model_NLR_leafs, B = 150, k = 5)
+cov_alpha_w <- diff_alohas_boot(data = wood, model = model_NLR_wood, B = 150, k = 5)
+cov_alpha_r <- diff_alohas_boot(data = roots, model = model_NLR_roots, B = 150, k = 5)
+
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
 
 #----------------------OLS---------------------------
 

@@ -282,3 +282,66 @@ diff_alohas <- function(data, pred_int){
   return(cov_alpha)
 }
 
+
+
+
+#--------K-fold for bootstrap----------------------------------------------------------:
+bootstrap_kfold <- function(model, data, B, alpha,k) {
+  up <- c() ; down <- c() ; pred <- c()
+  group <- sample(rep(1:k, length.out = nrow(data)))
+  for (i in 1:k) {
+    print(i)
+    #Fitting model on training-data:
+    fit_mod <- model(data[group != i,])
+    length <- nrow(data[group == i,])
+    
+    #Computing residuals:
+    e <- data[group != i,]$Kgp / (fit_mod$beta * data[group != i,]$Sc^fit_mod$alpha)
+    pred <- append(pred, fit_mod$beta * data[group == i,]$Sc^fit_mod$alpha)
+    
+    #Bootstrapping:
+    y_star_n1 <- list()
+    for (b in 1:B) {
+      if(b == 1){
+        y.star <- fit_mod$beta*data[group != i,]$Sc^fit_mod$alpha*sample(e, replace = TRUE)
+        boot_data <- data.frame(Sc = data[group != i,]$Sc, Kgp = y.star)
+        boot_mod <- model(boot_data)
+        e_boot <- y.star / (boot_mod$beta * data[group != i,]$Sc^boot_mod$alpha)
+        y_star_n1 <- data.frame(boot_mod$beta*data[group == i,]$Sc^boot_mod$alpha*sample(e_boot,length))
+      }
+      else{
+        y.star <- fit_mod$beta*data[group != i,]$Sc^fit_mod$alpha*sample(e, replace = TRUE)
+        boot_data <- data.frame(Sc = data[group != i,]$Sc, Kgp = y.star)
+        boot_mod <- model(boot_data)
+        e_boot <- y.star / (boot_mod$beta * data[group != i,]$Sc^boot_mod$alpha)
+        y_star_n1 <- add_column(y_star_n1, boot_mod$beta*data[group == i,]$Sc^boot_mod$alpha*sample(e_boot,length))
+      }
+    }
+    if(i==1){
+      up <- data.frame(lapply(y_star_n1, function(x){quantile(x,1-alpha/2)}))
+      down <- data.frame(lapply(y_star_n1, function(x){quantile(x,alpha/2)}))
+      kgp <- data.frame(data[group == i,]$Kgp)
+      sc <- data.frame(data[group == i,]$Sc)
+    }
+
+    else{
+      up <- rbind(up,data.frame(lapply(y_star_n1, function(x){quantile(x,1-alpha/2)})))
+      down <- rbind(down,data.frame(lapply(y_star_n1, function(x){quantile(x,alpha/2)})))
+      kgp <- data.frame(data[group == i,]$Kgp)
+      sc <- data.frame(data[group == i,]$Sc)
+    }
+  }
+  return(tibble(High = up, Low = down, Kgp = kgp, Sc = sc, Fitted = pred))
+}
+
+
+diff_alohas_boot <- function(data, model, B = 150, k = 5){
+  alphas <- c(0.05, 0.1, 0.2, 0.3)
+  cov_alpha <- c()
+  for (i in (1:4)){
+    alpha <- alphas[i]
+    pred <- bootstrap_kfold(data = data, model = model, alpha = alpha, B = B, k = k)
+    cov_alpha[i] <- coverage(pred)
+  }
+  return(cov_alpha)
+}
