@@ -136,17 +136,6 @@ roll_cov_boot <- function(pred_int, alpha = 0.2, bin_size = 50, title){
           axis.title = element_text(size = 13))
 }
 
-diff_alohas_boot <- function(data, model, B = 150){
-  alphas <- c(0.05, 0.1, 0.2, 0.3)
-  cov_alpha <- c()
-  for (i in (1:4)){
-    alpha <- alphas[i]
-    pred <- bootstrap_loo(data = data, model = model, alpha = alpha, B = B)
-    cov_alpha[i] <- coverage(pred)
-  }
-  return(cov_alpha)
-}
-
 ################################################################################
 # Til Gaussiske og lognormale kvantiler
 ################################################################################

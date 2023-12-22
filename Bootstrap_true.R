@@ -169,9 +169,10 @@ roll_cov_boot(boot_roots, alpha = 0.2, bin_size = 5, "Roots")
 
 
 #Different alphas with k-fold cv instead og loocv:
-cov_alpha_l <- diff_alohas_boot(data = leafs, model = model_NLR_leafs, B = 150, k = 5)
-cov_alpha_w <- diff_alohas_boot(data = wood, model = model_NLR_wood, B = 150, k = 5)
-cov_alpha_r <- diff_alohas_boot(data = roots, model = model_NLR_roots, B = 150, k = 5)
+set.seed(4)
+cov_alpha_l <- diff_alohas_boot(data = leafs, model = model_NLR_leafs, B = 300, k = 5)
+cov_alpha_w <- diff_alohas_boot(data = wood, model = model_NLR_wood, B = 300, k = 5)
+cov_alpha_r <- diff_alohas_boot(data = roots, model = model_NLR_roots, B = 300, k = 5)
 
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
