@@ -79,6 +79,96 @@ heat_map(leafs, par_ols_l, "Leafs")
 heat_map(wood, par_ols_w, "Wood")
 heat_map(roots, par_ols_r, "Roots")
 
+
+#-------------------Residual plots needed for bootstrap:
+
+par_NLR_l <- model_NLR(leafs, starting_point_leafs)
+par_NLR_w <- model_NLR(wood, starting_point_wood)
+par_NLR_r <- model_NLR(roots, starting_point_roots)
+
+fitted_NLR_l <- par_NLR_l$beta*leafs$Sc^par_NLR_l$alpha
+fitted_NLR_w <- par_NLR_w$beta*wood$Sc^par_NLR_w$alpha
+fitted_NLR_r <- par_NLR_r$beta*roots$Sc^par_NLR_r$alpha
+
+res_NLR_l <- log(leafs$Kgp)-log(fitted_NLR_l)
+res_NLR_w <- log(wood$Kgp/fitted_NLR_w)
+res_NLR_r <- log(roots$Kgp/fitted_NLR_r)
+
+res_plot_NLR_l <- data.frame(fitted = log(fitted_NLR_l), res = res_NLR_l)
+res_plot_NLR_w <- data.frame(fitted = log(fitted_NLR_w), res = res_NLR_w)
+res_plot_NLR_r <- data.frame(fitted = log(fitted_NLR_r), res = res_NLR_r)
+
+
+#Residual plots
+
+ggplot(res_plot_NLR_l, aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Leafs")+
+      theme(legend.position = "none", plot.title = element_text(size = 17),
+          axis.title = element_text(size = 13))
+
+ggplot(res_plot_NLR_w,aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Wood")+
+  theme(legend.position = "none", plot.title = element_text(size = 17),
+        axis.title = element_text(size = 13))
+
+ggplot(res_plot_NLR_r, aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Roots")+
+  theme(legend.position = "none", plot.title = element_text(size = 17),
+        axis.title = element_text(size = 13))
+
+
+#------------Standardized residual plots:
+#Residual plots
+
+sd_res_NLR_l <- res_NLR_l/sd(res_NLR_l)
+sd_res_NLR_w <- res_NLR_w/sd(res_NLR_w)
+sd_res_NLR_r <- res_NLR_r/sd(res_NLR_r)
+
+sd_res_plot_NLR_l <- data.frame(fitted = log(fitted_NLR_l), res = sd_res_NLR_l)
+sd_res_plot_NLR_w <- data.frame(fitted = fitted_NLR_w, res = sd_res_NLR_w)
+sd_res_plot_NLR_r <- data.frame(fitted = fitted_NLR_r, res = sd_res_NLR_r)
+
+
+ggplot(sd_res_plot_NLR_l, aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Standardized Residual plot")
+
+ggplot(res_plot_NLR_w,aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Residual plot")
+
+ggplot(res_plot_NLR_r, aes(x = fitted, y = res)) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Residual plot")
+
+
 #------------------------------------Nelson-Mead optimizer----------------------
 
 grid_l <- creating_grid(leafs, par_ols_l)
