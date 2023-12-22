@@ -70,7 +70,6 @@ diff_alohas_boot(data = roots, model = model_logols)
 
 
 
-
 #----------------------logOLSB---------------------------
 
 #set.seed(4)
