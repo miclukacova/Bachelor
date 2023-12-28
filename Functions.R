@@ -170,7 +170,7 @@ plot_maker <- function(pred_int, title){
     geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.8, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.8, alpha = 0.7) +
-    #geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 0.7) +
+    geom_line(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -317,6 +317,7 @@ kfold_boot <- function(data, k, alpha, model, B = 1000) {
   }
   return(mean(cov))
 }
+alphas <- c(0.05, 0.1, 0.2, 0.3)
 
 diff_alohas_boot <- function(data, model, B = 300, k = 5){
   alphas <- c(0.05, 0.1, 0.2, 0.3)
@@ -375,3 +376,4 @@ bootstrap_kfold <- function(model, data, B, alpha,k) {
   }
   return(tibble(High = up, Low = down, Kgp = kgp, Sc = sc, Fitted = pred))
 }
+

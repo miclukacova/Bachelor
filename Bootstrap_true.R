@@ -9,6 +9,7 @@ library(rpart.plot)
 library(xtable)
 library(infer)
 
+
 set.seed(777)
 leafs <- read.csv('Data/leafs.csv')
 wood<- read.csv('Data/wood.csv')
@@ -20,12 +21,12 @@ roots <- read.csv('Data/roots.csv')
 
 #----------------------logOLS---------------------------
   
-#set.seed(4)
-#
+set.seed(4)
+
 #boot_leafs <- bootstrap_loo(model_logols, leafs, 1000, alpha = 0.2)
 #boot_wood <- bootstrap_loo(model_logols, wood, 1000, alpha = 0.2)
 #boot_roots <- bootstrap_loo(model_logols, roots, 1000, alpha = 0.2) 
-#
+
 #write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_logols.csv", row.names=F)
 #write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_logols.csv", row.names=F)
 #write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_logols.csv", row.names=F)
@@ -67,51 +68,6 @@ diff_alohas_boot(data = leafs, model = model_logols)
 diff_alohas_boot(data = wood, model = model_logols)
 diff_alohas_boot(data = roots, model = model_logols)
 
-
-
-
-#----------------------logOLSB---------------------------
-
-#set.seed(4)
-#
-#boot_leafs <- bootstrap_loo(model_logolsB, leafs, 1000, alpha = 0.2)
-#boot_wood <- bootstrap_loo(model_logolsB, wood, 1000, alpha = 0.2)
-#boot_roots <- bootstrap_loo(model_logolsB, roots, 1000, alpha = 0.2) 
-#
-#write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_logolsB.csv", row.names=F)
-#write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_logolsB.csv", row.names=F)
-#write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_logolsB.csv", row.names=F)
-
-boot_leafs <- read.csv('Data/boot_leafs_logolsB.csv')
-boot_wood <- read.csv('Data/boot_wood_logolsB.csv')
-boot_roots <- read.csv('Data/boot_roots_logolsB.csv')
-
-plot_maker(boot_leafs, "Leafs")
-plot_maker(boot_wood, "Wood")
-plot_maker(boot_roots, "Roots")
-
-coverage(boot_leafs)
-coverage(boot_wood)
-coverage(boot_roots)
-
-#Distribution of coverage
-
-set.seed(4)
-
-boot_leafs_rs <- rs_cov_boot(data = leafs, k = 50, alpha = 0.2, model = model_logolsB)
-boot_wood_rs <- rs_cov_boot(data = wood, k = 50, alpha = 0.2, model = model_logolsB)
-boot_roots_rs <- rs_cov_boot(data = roots, k = 50, alpha = 0.2, model = model_logolsB)
-
-rs_plot_maker(boot_leafs_rs, "Leafs", alpha = 0.2)
-rs_plot_maker(boot_wood_rs, "Wood", alpha = 0.2)
-rs_plot_maker(boot_roots_rs, "Roots", alpha = 0.2)
-
-#Conditional coverage
-
-roll_cov(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
-roll_cov(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
-
-
 #----------------------NLR---------------------------
 
 set.seed(4)
@@ -147,6 +103,8 @@ coverage(boot_roots)
 
 #Distribution of coverage
 
+set.seed(4)
+
 boot_leafs_rs <- rs_cov_boot(data = leafs, k = 50, alpha = 0.2, model = model_NLR_leafs)
 boot_wood_rs <- rs_cov_boot(data = wood, k = 50, alpha = 0.2, model = model_NLR_wood)
 boot_roots_rs <- rs_cov_boot(data = roots, k = 50, alpha = 0.2, model = model_NLR_roots)
@@ -160,8 +118,6 @@ mean(boot_wood_rs$Coverage)
 mean(boot_roots_rs$Coverage)
 
 #Conditional coverage
-
-head(boot_leafs)
 
 roll_cov_boot(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
 roll_cov_boot(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
@@ -177,41 +133,3 @@ cov_alpha_r <- diff_alohas_boot(data = roots, model = model_NLR_roots, B = 300, 
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
-
-
-#----------------------OLS---------------------------
-
-boot_leafs <- bootstrap_loo(model_ols, leafs, 1000, alpha = 0.2)
-boot_wood <- bootstrap_loo(model_ols, wood, 1000, alpha = 0.2)
-boot_roots <- bootstrap_loo(model_ols, roots, 10, alpha = 0.2)
-
-write.csv(boot_leafs, "/Users/michaelalukacova/Bachelor1/Data/boot_leafs_OLS.csv", row.names=F)
-write.csv(boot_wood, "/Users/michaelalukacova/Bachelor1/Data/boot_wood_OLS.csv", row.names=F)
-write.csv(boot_roots, "/Users/michaelalukacova/Bachelor1/Data/boot_roots_OLS.csv", row.names=F)
-
-boot_leafs <- read.csv('Data/boot_leafs_OLS.csv')
-boot_wood <- read.csv('Data/boot_wood_OLS.csv')
-boot_roots <- read.csv('Data/boot_roots_OLS.csv')
-
-plot_maker(boot_leafs, "Leafs")
-plot_maker(boot_wood, "Wood")
-plot_maker(boot_roots, "Roots")
-
-coverage(boot_leafs)
-coverage(boot_wood)
-coverage(boot_roots)
-
-#Distribution of coverage
-
-boot_leafs_rs <- rs_cov_boot(data = leafs, k = 50, alpha = 0.2, model = model_ols)
-boot_wood_rs <- rs_cov_boot(data = wood, k = 50, alpha = 0.2, model = model_ols)
-boot_roots_rs <- rs_cov_boot(data = roots, k = 50, alpha = 0.2, model = model_ols)
-
-rs_plot_maker(boot_leafs_rs, "Leafs", alpha = 0.2)
-rs_plot_maker(boot_wood_rs, "Wood", alpha = 0.2)
-rs_plot_maker(boot_roots_rs, "Roots", alpha = 0.2)
-
-#Conditional coverage
-
-roll_cov_boot(boot_leafs, alpha = 0.2, bin_size = 50, "Leafs")
-roll_cov_boot(boot_wood, alpha = 0.2, bin_size = 50, "Wood")
