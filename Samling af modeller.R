@@ -73,10 +73,12 @@ ggplot(leafs, aes(x = Sc, y = Kgp)) +
   ylab('Kgp')+
   labs(title = "Leafs")+
   scale_colour_manual(values = cols)+
-  theme(legend.position = c(0.165, 0.8), legend.background = element_rect(linetype = 'solid', color = 'black'),
-        legend.title = element_text(size = 13), plot.title = element_text(size = 15),
-        axis.title = element_text(size = 13))+
+  theme(legend.title = element_blank(),
+               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+               plot.title = element_text(size = 17),
+               axis.title = element_text(size = 13))+
   ylim(c(0,35))
+
 
 ggplot(wood, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'black', fill = 'darkolivegreen2', alpha = 0.6, size = 1.5, shape = 21) + 
@@ -89,9 +91,10 @@ ggplot(wood, aes(x = Sc, y = Kgp)) +
   geom_function(fun = ols_log_adj_w, aes(col = "OLS log Bias adj."), size = 1)+
   labs(title = "Wood")+
   scale_colour_manual(values = cols)+
-  theme(legend.position = c(0.165, 0.81), legend.background = element_rect(linetype = 'solid', color = 'black'),
-        legend.title = element_text(size = 13), plot.title = element_text(size = 15),
-        axis.title = element_text(size = 13))+
+  theme( legend.title = element_blank(),
+               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+               plot.title = element_text(size = 17),
+               axis.title = element_text(size = 13))+
   ylim(c(0,1000))
 
 ggplot(roots, aes(x = Sc, y = Kgp)) + 
@@ -105,7 +108,8 @@ ggplot(roots, aes(x = Sc, y = Kgp)) +
   geom_function(fun = ols_log_adj_r, aes(col = "OLS log Bias adj."), size = 0.7)+
   ggtitle( "Roots")+
   scale_colour_manual(values = cols)+
-  theme(legend.position = c(0.165, 0.8), legend.background = element_rect(linetype = 'solid', color = 'black'),
-       legend.title = element_text(size = 13), plot.title = element_text(size = 15),
-        axis.title = element_text(size = 13))
+  theme( legend.title = element_blank(),
+               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+               plot.title = element_text(size = 17),
+               axis.title = element_text(size = 13))
 
