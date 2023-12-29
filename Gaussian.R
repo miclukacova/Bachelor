@@ -106,14 +106,14 @@ xtable(tibble("Data" = c("Leafs", "Wood", "Roots"),
                              roots_pred_int[[2]])), type = latex)
 
 
-#---------------------Random split to assess coverage---------------------------
+#---------------------Subsampling to assess coverage---------------------------
 
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 100, alpha = 0.2, pred_int_maker = pred_int_log_ols)
-b <- rs_cov(data = wood, k = 100, alpha = 0.2, pred_int_maker = pred_int_log_ols)
-c <- rs_cov(data = roots, k = 100, alpha = 0.2, pred_int_maker = pred_int_log_ols)
+a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols)
+b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols)
+c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
@@ -140,16 +140,12 @@ roll_cov(pred_int = roots_pred_int, title = "Roots", bin_size = 5)
 
 #-------------------Checking coverage for different alphas----------------------
 set.seed(4)
-cov_alpha_l <- diff_alohas(data = leafs, pred_int = pred_int_log_ols)
-cov_alpha_w <- diff_alohas(data = wood, pred_int = pred_int_log_ols)
-cov_alpha_r <- diff_alohas(data = roots, pred_int = pred_int_log_ols)
+cov_alpha_l <- diff_alohas(data = leafs, pred_int = pred_int_log_ols, k = 5)
+cov_alpha_w <- diff_alohas(data = wood, pred_int = pred_int_log_ols, k = 5)
+cov_alpha_r <- diff_alohas(data = roots, pred_int = pred_int_log_ols, k = 5)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
-
-
-
-
 
 
 
@@ -223,9 +219,9 @@ roll_cov(pred_int = roots_pred_int, title = "Roots", bin_size = 5)
 #-------------------Checking coverage for different alphas----------------------
 
 
-cov_alpha_l <- diff_alohas(data = leafs, pred_int = pred_int_ols)
-cov_alpha_w <- diff_alohas(data = wood, pred_int = pred_int_ols)
-cov_alpha_r <- diff_alohas(data = roots, pred_int = pred_int_ols)
+cov_alpha_l <- diff_alohas(data = leafs, pred_int = pred_int_ols, k = 5)
+cov_alpha_w <- diff_alohas(data = wood, pred_int = pred_int_ols, k = 5)
+cov_alpha_r <- diff_alohas(data = roots, pred_int = pred_int_ols, k = 5)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
