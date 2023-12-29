@@ -133,6 +133,8 @@ plot_maker(loo2_adj_w[[1]], "Wood")
 
 #Abs error
 
+set.seed(4)
+
 loo_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf)
 
@@ -149,9 +151,9 @@ plot_maker(loo2_adj_r[[1]], "Roots")
 alphas <- c(0.05, 0.1, 0.2, 0.3)
 
 set.seed(4)
-cov_alpha_l <- diff_alohas(leafs, pred_int_log_ols_conf_adj)
-cov_alpha_w <- diff_alohas(wood, pred_int_log_ols_conf_adj)
-cov_alpha_r <- diff_alohas(roots, pred_int_log_ols_conf_adj)
+cov_alpha_l <- diff_alohas(leafs, pred_int_log_ols_conf_adj, k = 5)
+cov_alpha_w <- diff_alohas(wood, pred_int_log_ols_conf_adj, k = 5)
+cov_alpha_r <- diff_alohas(roots, pred_int_log_ols_conf_adj, k = 5)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
@@ -233,6 +235,7 @@ pred_int_nlr_l <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(
 pred_int_nlr_w <- function(data, alpha = 0.2) pred_int_nlr(data, alpha = 0.2, c(3.944818, 1.106841))
 pred_int_nlr_r <- function(data, alpha = 0.2) pred_int_nl(data, alpha = 0.2, c(0.8339087, 1.1730237))
 
+
 #----------------------------Pred intervaller###################################
 
 set.seed(6)
@@ -281,7 +284,7 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
 
 pred_int_rf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = alpha)
 pred_int_rf_w <- function(data, alpha = 0.2) pred_int_making(data, node_size = 70, alpha = alpha)
-#pred_int_rf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = alpha, node_size = 26)
+pred_int_rf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = alpha, node_size = 26)
 
 set.seed(4)
 loo_l <- loo_pred_int(leafs, pred_int = pred_int_rf_l)
@@ -299,8 +302,9 @@ plot_maker(loo_r[[1]],"Roots")
 alphas <- c(0.05, 0.1, 0.2, 0.3)
 
 set.seed(4)
-cov_alpha_l <- diff_alohas(leafs, pred_int_rf_l)
-cov_alpha_w <- diff_alohas(wood, pred_int_rf_w)
+cov_alpha_l <- diff_alohas(leafs, pred_int_rf_l, k = 5)
+cov_alpha_w <- diff_alohas(wood, pred_int_rf_w, k = 5)
+cov_alpha_r <- diff_alohas(wood, pred_int_rf_r, k = 5)
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w))
@@ -311,8 +315,8 @@ xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l,
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 100, alpha = 0.2, pred_int_maker = pred_int_rf_l)
-b <- rs_cov(data = wood, k = 100, alpha = 0.2, pred_int_maker = pred_int_rf_w)
+a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_rf_l)
+b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_rf_w)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)

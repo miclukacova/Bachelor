@@ -8,7 +8,6 @@ library(rpart)
 library(rpart.plot)
 library(xtable)
 
-set.seed(777)
 leafs <- read.csv('Data/leafs.csv')
 wood<- read.csv('Data/wood.csv')
 roots <- read.csv('Data/roots.csv')
@@ -85,16 +84,16 @@ roots_pred <- loo_rf(roots, node_grid_r)
 
 
 #Til Michaelas computer:
-write.csv(leafs_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_leafs.csv", row.names=F)
-write.csv(wood_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_wood.csv", row.names=F)
-write.csv(roots_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_roots.csv", row.names=F)
-
-
-#Til Dinas computer
-write.csv(leafs_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_leafs.csv", row.names=F)
-write.csv(wood_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_wood.csv", row.names=F)
-write.csv(roots_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_roots.csv", row.names=F)
-
+#write.csv(leafs_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_leafs.csv", row.names=F)
+#write.csv(wood_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_wood.csv", row.names=F)
+#write.csv(roots_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_roots.csv", row.names=F)
+#
+#
+##Til Dinas computer
+#write.csv(leafs_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_leafs.csv", row.names=F)
+#write.csv(wood_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_wood.csv", row.names=F)
+#write.csv(roots_pred, "C:/Users/Bruger/OneDrive - University of Copenhagen/4. år/Bachelor/Bachelor1/Data/QRF_intervals_roots.csv", row.names=F)
+#
 
 #---------Indlæsning af predicted values and prediction intervals:--------
 #OBS man skal have CSV-filerne liggende før det giver mening:
@@ -292,7 +291,7 @@ centered_plot_roots(cv_intervals_roots)
 
 #----------------------------Distribution of coverage by resampling-----------------------------------------
 
-pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
+pred_int_making <- function(data, node_size, alpha) {
   #Formatting data
   train_x <- data.frame(Sc = data[,1])
   train_y <- data[,2]
@@ -321,17 +320,17 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
   return(list(f_hat, upper, lower))
 }
 
-pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
-pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
-pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 26)
+pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha)
+pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, node_size = 70, alpha)
+pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, node_size = 26, alpha)
 
 
 #Checking for correct coverage
 
 set.seed(4)
-a <- rs_cov(data = leafs, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
-b <- rs_cov(data = wood, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
-c <- rs_cov(data = roots, k = 100, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
+a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_l)
+b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_w)
+c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_qrf_r)
 
 #Mean coverage:
 mean_a <- mean(a$Coverage)
@@ -385,10 +384,24 @@ roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
 }
 
 
-
+set.seed(4)
 roll_cov(leafs_pred, alpha = 0.2, bin_size = 50, "Leafs")
 roll_cov(wood_pred, alpha = 0.2, bin_size = 50, "Wood")
 roll_cov(roots_pred, alpha = 0.2, bin_size = 5, "Roots")
+
+
+#Diff significance levels
+
+alphas <- c(0.05, 0.1, 0.2, 0.3)
+
+set.seed(4)
+cov_alpha_l <- diff_alohas(data = leafs, pred_int = pred_int_qrf_l, k = 5)
+cov_alpha_w <- diff_alohas(data = wood, pred_int = pred_int_qrf_w, k = 5)
+cov_alpha_r <- diff_alohas(data = roots, pred_int = pred_int_qrf_r, k = 5)
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
 
 
 

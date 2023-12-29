@@ -72,9 +72,9 @@ diff_alohas_boot(data = roots, model = model_logols)
 
 set.seed(4)
 
-starting_point_leafs <- c(0.61,0.81)
-starting_point_wood <- c(5.51,0.73)
-starting_point_roots <- c(3.66,0.1)
+starting_point_leafs <- c(0.2693082, 0.9441130)
+starting_point_wood <- c(3.944818, 1.106841)
+starting_point_roots <- c(0.8339087, 1.1730237)
 
 model_NLR_leafs <- function(data) model_NLR(data, starting_point_leafs)
 model_NLR_wood <- function(data) model_NLR(data, starting_point_wood)

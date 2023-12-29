@@ -84,8 +84,12 @@ pred_int_l[[1]] <-pred_int_l[[1]] %>% mutate("Fitted" = log_ols_alg(leafs)(leafs
 pred_int_w <- full_conformal_loo(wood, 0.2, log_ols_alg)
 pred_int_w[[1]] <-pred_int_w[[1]] %>% mutate("Fitted" = log_ols_alg(wood)(wood$Sc))
 
+pred_int_r <- full_conformal_loo(roots, 0.2, log_ols_alg)
+pred_int_r[[1]] <-pred_int_r[[1]] %>% mutate("Fitted" = log_ols_alg(roots)(roots$Sc))
+
 plot_maker(pred_int_l[[1]], "Leafs")
 plot_maker(pred_int_w[[1]], "Wood")
+plot_maker(pred_int_r[[1]], "Roots")
 
 #Rolling coverage
 

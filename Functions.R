@@ -167,9 +167,9 @@ plot_maker <- function(pred_int, title){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.8, alpha = 0.7) + 
-    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.8, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.7, alpha = 1) + 
+    geom_point(aes(x = Sc, y = High), color = "hotpink", size = 0.5, alpha = 0.7) + 
+    geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 0.5, alpha = 0.7) +
     #geom_point(aes(x = Sc, y = Fitted), color = "hotpink4", size = 1, alpha = 0.7) +
     theme_bw() +
     xlab('Sc') + 
@@ -182,7 +182,7 @@ plot_maker <- function(pred_int, title){
 
 #Distribution of coverage
 
-rs_cov <- function(data, k, alpha, pred_int_maker) {
+rs_cov <- function(data, k = 50, alpha, pred_int_maker) {
   cov <- c()
   n <- nrow(data)
   sample_size <- floor(0.8*n)
@@ -260,13 +260,23 @@ roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
 
 #Checking coverage for different alphas
 
-diff_alohas <- function(data, pred_int){
+diff_alohas <- function(data, pred_int, k){
   alphas <- c(0.05, 0.1, 0.2, 0.3)
   cov_alpha <- c()
   for (i in (1:4)){
-    alpha <- alphas[i]
-    pred <- loo_pred_int(data = data, pred_int = pred_int, alpha = alpha)
-    cov_alpha[i] <- pred[[2]]
+    print(i)
+    cov <- c(); group <- sample(rep(1:k, length.out = nrow(data))); alpha <- alphas[i]
+    
+    for (j in (1:k)){
+      # Test and train
+      train_data = data[group != j,]
+      test_data = data[group == j,]
+      pred_model <- pred_int(data = train_data, alpha = alpha)
+      cov[j] <- mean(pred_model[[3]](test_data$Sc) <= test_data$Kgp 
+                  & pred_model[[2]](test_data$Sc) >= test_data$Kgp)
+    }
+    
+    cov_alpha[i] <- mean(cov)
   }
   return(cov_alpha)
 }
