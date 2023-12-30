@@ -10,45 +10,6 @@ leafs_log <- read.csv('Data/leafs_log.csv')
 roots_log <- read.csv('Data/roots_log.csv')
 wood_log <- read.csv('Data/wood_log.csv')
 
-#Histogrammer over fordelingen af biomasse
-
-a <- ggplot(data = leafs)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Leafs")
-
-b <- ggplot(data = wood)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Wood")
-
-c <- ggplot(data = roots)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Roots")
-
-ggarrange(a,b,c, ncol = 3, nrow = 1)
-
-#Histogrammer over fordelingen af biomasse efter log transformationen
-
-a1 <- ggplot(data = leafs_log)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Leafs")
-
-b1 <- ggplot(data = wood_log)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Wood")
-
-c1 <- ggplot(data = roots_log)+
-  geom_histogram(aes(x=Kgp, y=..density..), color = 'darkolivegreen',fill = 'darkolivegreen3', bins = 15)+
-  theme_bw()+
-  labs(title = "Roots")
-
-ggarrange(a1,b1,c1, ncol = 3, nrow = 1)
-
-
 #Uden log-log transformationer
 
 leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Kgp)) + 
