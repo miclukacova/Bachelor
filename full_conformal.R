@@ -35,7 +35,6 @@ full_conformal <- function(data, alpha = 0.1, reg_alg, new_data){
   }
   return(tibble(Sc = new_data, Low = low, High = high))
 }
-
 full_conformal_loo <- function(data, alpha = 0.1, reg_alg){
   for (i in (1:nrow(data))){
     print(i)
@@ -129,3 +128,102 @@ a <- rs_cov(leafs, 30, 0.2, log_ols_alg)
 b <- rs_cov(wood, 30, 0.1, log_ols_alg)
 c <- rs_cov(roots, 30, 0.1, log_ols_alg)
 
+#----------------------------------------------------------------------------
+# Full conformal med score funktion 2
+#----------------------------------------------------------------------------
+
+#Regression algorithm
+
+log_ols_alg_2 <- function(data){
+  model <- lm(log(Kgp) ~ log(Sc), data)
+  f_hat <- function(x) exp(model$coef[[1]])*x^model$coef[[2]]*exp(var(model$residuals)/2)
+  var_hat <- sum(model$residuals^2)/(nrow(data)-1)
+  sd_hat <- function(x) sqrt(exp(2*(model$coefficients[[1]]+log(x)*model$coefficients[[2]])+var_hat)*(exp(var_hat)-1))
+  return(list(f_hat, sd_hat))
+}
+
+#Full conformal algorithm 
+
+full_conformal_2 <- function(data, alpha = 0.1, reg_alg, new_data){
+  
+  #Definering
+  n <- nrow(data) ; low <- c(); high <- c()
+  
+  #Grid of y-values to try
+  y_trial <- c(seq(from = 1e-50, to = 1, length.out = 100), seq(from = 1, to = max(data$Kgp)*3, length.out = 900))
+  for (x in new_data){
+    pi_y <- c()
+    for (y in y_trial){
+      #Creating model
+      data_conf <- data %>% add_row(Sc = x, Kgp = y)
+      funcs <- reg_alg(data_conf)
+      f_hat <-  funcs[[1]] ; sd_hat <- funcs[[2]]
+      
+      #Calculating scores
+      res_conf <- abs(data_conf$Kgp - f_hat(data_conf$Sc))/sd_hat(data_conf$Sc)
+      res_n1 <- res_conf[n+1] 
+      
+      #Finding pi_y
+      pi_y <- append(pi_y, (1 + sum((res_conf[1:n] <= res_n1)))/(n+1))
+    }
+    
+    #Prediction band
+    c_conf <-y_trial[(n+1)*pi_y <= ceiling((1-alpha)*(n+1))]
+    
+    #If prediction band is empty output error message
+    try(if(length(c_conf) < 1) print(pi_y))
+    
+    #Lower and upper bound
+    low <- append(low, min(c_conf))
+    high <- append(high, max(c_conf))
+  }
+  return(tibble(Sc = new_data, Low = low, High = high))
+}
+
+full_conformal_loo_2 <- function(data, alpha = 0.1, reg_alg){
+  for (i in (1:nrow(data))){
+    print(i)
+    if (i == 1){
+      pred_int <- full_conformal_2(data = data[-i,], alpha = alpha, reg_alg = reg_alg, new_data = data[i,]$Sc)
+    }
+    else{
+      new_pred_int <- full_conformal_2(data = data[-i,], alpha = alpha, reg_alg = reg_alg, new_data = data[i,]$Sc)
+      pred_int <- pred_int %>% add_row(new_pred_int)
+    }
+  }
+  pred_int <- pred_int %>% mutate("Kgp" = data$Kgp)
+  cov <- mean((pred_int$Low <= data$Kgp)&(data$Kgp <= pred_int$High))
+  return(list(pred_int,cov))
+}
+
+set.seed(4)
+
+pred_int_l <- full_conformal_loo_2(leafs, 0.2, log_ols_alg_2)
+pred_int_l[[1]] <-pred_int_l[[1]] %>% mutate("Fitted" = log_ols_alg_2(leafs)[[1]](leafs$Sc))
+#coverage 0.78
+
+pred_int_w <- full_conformal_loo_2(wood, 0.2, log_ols_alg_2)
+pred_int_w[[1]] <-pred_int_w[[1]] %>% mutate("Fitted" = log_ols_alg_2(wood)[[1]](wood$Sc))
+
+#Problematiske værdier: 198
+#Coverage: 0.76
+
+pred_int_r <- full_conformal_loo_2(roots, 0.2, log_ols_alg_2)
+pred_int_r[[1]] <-pred_int_r[[1]] %>% mutate("Fitted" = log_ols_alg_2(roots)[[1]](roots$Sc))
+
+#Coverage: 0.6923077
+
+roots[c(19,22),]
+
+plot_maker(pred_int_l[[1]], "Leafs")
+plot_maker(pred_int_w[[1]], "Wood")
+plot_maker(pred_int_r[[1]], "Roots")
+
+
+write.csv(pred_int_l[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_leafs_s2.csv", row.names=F)
+write.csv(pred_int_w[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_wood_s2.csv", row.names=F)
+write.csv(pred_int_r[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_roots_s2.csv", row.names=F)
+
+boot_leafs <- read.csv('Data/boot_leafs_NLR.csv')
+boot_wood <- read.csv('Data/boot_wood_NLR.csv')
+boot_roots <- read.csv('Data/boot_roots_NLR.csv')
