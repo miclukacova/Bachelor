@@ -167,7 +167,7 @@ plot_maker <- function(pred_int, title, fun){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.8, alpha = 1) + 
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 1) + 
     geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
     geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
@@ -264,7 +264,7 @@ roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
 #Checking coverage for different alphas
 
 diff_alohas <- function(data, pred_int, k){
-  alphas <- c(0.05, 0.1, 0.3, 0.4)
+  alphas <- c(0.05, 0.1, 0.2, 0.3)
   cov_alpha <- c()
   for (i in (1:4)){
     print(i)
