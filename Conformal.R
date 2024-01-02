@@ -68,7 +68,6 @@ pred_int_log_ols_conf <- function(data, alpha = 0.2) {
 
 #Score funktion Absolute error / sd hat(Y) (VIRKER IKKE SÅ GODT)
 pred_int_log_ols_conf_2_adj <- function(data, alpha = 0.2) {
-  set.seed(1)
   #Test and calibration
   picked <- sample(seq(1, nrow(data)), 0.6*nrow(data))
   train <- data[picked,]
@@ -107,7 +106,7 @@ plot_maker(loo_adj[[1]], "Leafs")
 plot_maker(loo[[1]], "Leafs")
 
 #Abs error /sd
-
+set.seed(4)
 loo2_adj <- loo_pred_int(leafs, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
 plot_maker(loo2_adj[[1]], "Leafs")
 
@@ -120,13 +119,13 @@ set.seed(4)
 loo_adj_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf)
 
-plot_maker(loo_adj_w[[1]], "Wood")
-plot_maker(loo_w[[1]], "Wood")
+plot_maker(loo_adj_w[[1]], "Wood", ols_log_adj_w)
+plot_maker(loo_w[[1]], "Wood", ols_log_w)
 
 #Abs error /sd
-
+set.seed(4)
 loo2_adj_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
-plot_maker(loo2_adj_w[[1]], "Wood")
+plot_maker(loo2_adj_w[[1]], "Wood", ols_log_adj_w)
 
 
 #Roots
@@ -138,13 +137,17 @@ set.seed(4)
 loo_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf)
 
-plot_maker(loo_adj_r[[1]], "Roots")
-plot_maker(loo_r[[1]], "Roots")
-
+plot_maker(loo_adj_r[[1]], "Roots", ols_log_adj_r) +   
+  geom_segment(aes(x = Sc, y = Low, xend = Sc, yend = High),
+               color = "hotpink", alpha = 0.4, lwd = 0.6)
+plot_maker(loo_r[[1]], "Roots", ols_log_r) 
+head(loo_r)
 #Abs error /sd
 
+set.seed(4)
 loo2_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
-plot_maker(loo2_adj_r[[1]], "Roots")
+plot_maker(loo2_adj_r[[1]], "Roots") + geom_segment(aes(x = Sc, y = Low, xend = Sc, yend = High),
+                                                   color = "hotpink", alpha = 0.4, lwd = 0.6)
 
 
 #----------------------------Checking coverage for different alphas-----------------------------------------
@@ -196,6 +199,65 @@ roll_cov(pred_int = wood_pred_int, title = "Wood")
 roll_cov(pred_int = roots_pred_int, title = "Roots", bin_size = 5)
 
 ####################################################################
+#Diagnostics for logOLSB WITH SD-score:
+###############################################################3####
+
+#Checking coverage:
+loo2_adj[[2]]
+loo2_adj_r[[2]]
+loo2_adj_w[[2]]
+
+
+#----------------------------Checking coverage for different alphas-----------------------------------------
+alphas <- c(0.05, 0.1, 0.3, 0.4)
+
+set.seed(4)
+cov_alpha_l <- diff_alohas(leafs, pred_int_log_ols_conf_2_adj, k = 5)
+cov_alpha_w <- diff_alohas(wood, pred_int_log_ols_conf_2_adj, k = 5)
+cov_alpha_r <- diff_alohas(roots, pred_int_log_ols_conf_2_adj, k = 5)
+
+xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
+              "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
+
+#----------------------------Distribution of coverage by resampling-----------------------------------------
+
+#Checking for correct coverage
+
+set.seed(4)
+a <- rs_cov(data = leafs, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_2_adj)
+b <- rs_cov(data = wood, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_2_adj)
+c <- rs_cov(data = roots, k = 50, alpha = 0.2, pred_int_maker = pred_int_log_ols_conf_2_adj)
+
+#Mean coverage:
+mean_a <- mean(a$Coverage)
+mean_b <- mean(b$Coverage)
+mean_c <- mean(c$Coverage)
+
+median(b$Coverage)
+
+xtable(tibble(Data = c("Leafs", "Wood", "Roots"), 
+              "Mean coverage" =c(mean_a, mean_b, mean_c)), type = latex)
+
+rs_plot_maker(a, "Leafs", 0.2, conformal = TRUE, n = nrow(leafs))
+rs_plot_maker(b, "Wood", 0.2, conformal = TRUE, n = nrow(wood))
+rs_plot_maker(c, "Roots", 0.2, conformal = TRUE, n = nrow(roots))
+
+
+#----------------------------Rolling coverage---------------------------------------------
+
+set.seed(4)
+
+leafs_pred_int <- loo_pred_int(leafs, alpha = 0.2, pred_int_log_ols_conf_2_adj)
+wood_pred_int <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf_2_adj)
+roots_pred_int <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_2_adj)
+
+roll_cov(pred_int = leafs_pred_int, title = "Leafs")
+roll_cov(pred_int = wood_pred_int, title = "Wood")
+roll_cov(pred_int = roots_pred_int, title = "Roots", bin_size = 5)
+
+
+
 
 #NLR----------------------------------------------------------------------------
 
