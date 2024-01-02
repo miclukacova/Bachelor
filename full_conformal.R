@@ -213,8 +213,6 @@ pred_int_r[[1]] <-pred_int_r[[1]] %>% mutate("Fitted" = log_ols_alg_2(roots)[[1]
 
 #Coverage: 0.6923077
 
-roots[c(19,22),]
-
 plot_maker(pred_int_l[[1]], "Leafs")
 plot_maker(pred_int_w[[1]], "Wood")
 plot_maker(pred_int_r[[1]], "Roots")
@@ -224,6 +222,3 @@ write.csv(pred_int_l[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_lea
 write.csv(pred_int_w[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_wood_s2.csv", row.names=F)
 write.csv(pred_int_r[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_roots_s2.csv", row.names=F)
 
-boot_leafs <- read.csv('Data/boot_leafs_NLR.csv')
-boot_wood <- read.csv('Data/boot_wood_NLR.csv')
-boot_roots <- read.csv('Data/boot_roots_NLR.csv')
