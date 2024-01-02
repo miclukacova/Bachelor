@@ -150,7 +150,7 @@ full_conformal_2 <- function(data, alpha = 0.1, reg_alg, new_data){
   n <- nrow(data) ; low <- c(); high <- c()
   
   #Grid of y-values to try
-  y_trial <- c(seq(from = 1e-50, to = 1, length.out = 100), seq(from = 1, to = max(data$Kgp)*3, length.out = 900))
+  y_trial <- c(seq(from = 1e-50, to = 1, length.out = 100), seq(from = 1, to = max(data$Kgp)*2, length.out = 1000))
   for (x in new_data){
     pi_y <- c()
     for (y in y_trial){
@@ -200,13 +200,13 @@ set.seed(4)
 
 pred_int_l <- full_conformal_loo_2(leafs, 0.2, log_ols_alg_2)
 pred_int_l[[1]] <-pred_int_l[[1]] %>% mutate("Fitted" = log_ols_alg_2(leafs)[[1]](leafs$Sc))
-#coverage 0.78
+
+#Coverage 0.78
 
 pred_int_w <- full_conformal_loo_2(wood, 0.2, log_ols_alg_2)
 pred_int_w[[1]] <-pred_int_w[[1]] %>% mutate("Fitted" = log_ols_alg_2(wood)[[1]](wood$Sc))
 
-#Problematiske værdier: 198
-#Coverage: 0.76
+#Coverage: 0.786533
 
 pred_int_r <- full_conformal_loo_2(roots, 0.2, log_ols_alg_2)
 pred_int_r[[1]] <-pred_int_r[[1]] %>% mutate("Fitted" = log_ols_alg_2(roots)[[1]](roots$Sc))
