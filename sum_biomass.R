@@ -13,50 +13,168 @@ library(stargazer)
 
 
 ################################################################################
-## ----------------------- Skabelse af sum data ----------------------------- ##
+## ------------------------- Creating sum data ------------------------------ ##
 ################################################################################
 
-
-part_func <- function(data) {
+#Labelling data: 
+label_func <- function(data){
   group <- sample(rep(1:150, length.out = nrow(data)))
-  for (i in (1:49)){
-    if (i == 1){
-      new_data <- tibble(Group = 1, Sc = sum(data[group == 1, 1]), Kgp = sum(data[group == 1, 2]))
-    }
-    else {
-      new_data <- new_data %>% add_row(Group = i,Sc = sum(data[group == i, 1]), 
-                                       Kgp = sum(data[group == i, 2]))
-    }
-  }
-  for (i in (50:69)){
-    if (i %% 2 == 0){
-      new_data <- new_data %>% add_row(Group = i,Sc = sum(data[(group == i | group == i+1), 1]), 
-                                       Kgp = sum(data[(group == i | group == i+1), 2]))
-    }
-  }
-  for (i in (70:100)){
-    if (i %% 3 == 0){
-      new_data <- new_data %>% add_row(Group = i,Sc = sum(data[(group == i | group == i-1 | group == i-2), 1]), 
-                                       Kgp = sum(data[(group == i | group == i-1 | group == i-2), 2]))
-    }
-  }
+  labbeled_data <- data %>% add_column(Group = group)
+  return(labbeled_data)
 }
 
-leafs 
+set.seed(4)
+leafs_labeled <- label_func(leafs)
+wood_labeled <- label_func(wood)
+
+#Summing data: 
+sum_func <- function(data) {
+  for (i in c((1:59),150)){
+    if (i == 1){
+      group_data <- data %>% filter(Group == 1)
+      new_data <- tibble(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                         Kgp = sum(group_data$Kgp))
+    }
+    else {
+      group_data <- data %>% filter(Group == i)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp))
+    }
+  }
+  for (i in (60:99)){
+    if (i %% 2 == 0){
+      group_data <- data %>% filter(Group == i | Group == i+1)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp))
+    }
+  }
+  for (i in (100:129)){
+    if (i %% 3 == 0){
+      group_data <- data %>% filter(Group == i | Group == i-1 | Group == i-2)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp))
+    }
+  }
+  for (i in (130:149)){
+    if (i %% 4 == 0){
+      group_data <- data %>% filter(Group == i-2 | Group == i-1 | Group == i | Group == i+1)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp))
+    }
+  }
+  return(new_data)
+}
+
+sum_leafs <- sum_func(leafs_labeled)
+sum_wood <- sum_func(wood_labeled)
+
+#Plots of summed data
+
+ggplot(sum_data1, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
+  labs(title = "Foliage")
+
+ggplot(sum_data2, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
+  labs(title = "Wood")
+
+################################################################################
+## ----------------------- Summing prediction intervals --------------------- ##
+################################################################################
+
+#Summing prediction intervals: 
+sum_pred_int_func <- function(data) {
+  for (i in c((1:59),150)){
+    if (i == 1){
+      group_data <- data %>% filter(Group == 1)
+      new_data <- tibble(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                         Kgp = sum(group_data$Kgp), Low = sum(group_data$Low),
+                         High = sum(group_data$High), Fitted = sum(group_data$Fitted))
+    }
+    else {
+      group_data <- data %>% filter(Group == i)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp), Low = sum(group_data$Low),
+                                       High = sum(group_data$High), Fitted = sum(group_data$Fitted))
+    }
+  }
+  for (i in (60:99)){
+    if (i %% 2 == 0){
+      group_data <- data %>% filter(Group == i | Group == i+1)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp), Low = sum(group_data$Low),
+                                       High = sum(group_data$High), Fitted = sum(group_data$Fitted))
+    }
+  }
+  for (i in (100:129)){
+    if (i %% 3 == 0){
+      group_data <- data %>% filter(Group == i | Group == i-1 | Group == i-2)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp), Low = sum(group_data$Low),
+                                       High = sum(group_data$High), Fitted = sum(group_data$Fitted))
+    }
+  }
+  for (i in (130:149)){
+    if (i %% 4 == 0){
+      group_data <- data %>% filter(Group == i-2 | Group == i-1 | Group == i | Group == i+1)
+      new_data <- new_data %>% add_row(n = nrow(group_data), Sc = sum(group_data$Sc), 
+                                       Kgp = sum(group_data$Kgp), Low = sum(group_data$Low),
+                                       High = sum(group_data$High), Fitted = sum(group_data$Fitted))
+    }
+  }
+  return(new_data)
+}
 
 
+#Split conformal score 2 logolsB on leafs and wood loo
+set.seed(4)
+loo_adj_l <- loo_pred_int(leafs, alpha = 0.2, s2_logolsb_conf) 
+loo_adj_w <- loo_pred_int(wood, alpha = 0.2, s2_logolsb_conf) 
 
-#Ide
+loo_adj_l[[1]] <- loo_adj_l[[1]] %>% add_column(Group = leafs_labeled$Group)
+loo_adj_w[[1]] <- loo_adj_w[[1]] %>% add_column(Group = wood_labeled$Group)
 
-#Sæt tal på alle obs, fra 1 til 150. Læg Alle 1'ere sammen, alle 2'ere osv.
-# 50+51, 52+54, ...
-#Læg derefter 70, 71 og 72 sammen, 73, 74, og 75, osv...
-# Læg 100-104 sammen, 105-109 sammen, 110-114, 115-124, 125-134,135-150.  
+sum_leafs_conf <- sum_pred_int_func(loo_adj_l[[1]])
+sum_wood_conf <- sum_pred_int_func(loo_adj_w[[1]])
+
+ggplot(sum_leafs_conf, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, shape = 3) + 
+  geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, shape = 3) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Foliage")
+
+ggplot(sum_wood_conf, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, shape = 3) + 
+  geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, shape = 3) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")
+
+mean(sum_leafs_conf$Low <= sum_leafs_conf$Kgp & sum_leafs_conf$Kgp <= sum_leafs_conf$High)
+mean(sum_wood_conf$Low <= sum_wood_conf$Kgp & sum_wood_conf$Kgp <= sum_wood_conf$High)
+
+#qrf
 
 
 ################################################################################
 ## ------------------------------ sum model OLS ----------------------------- ##
 ################################################################################
+
+
+
 
 lm_leafs <- lm(Kgp ~ Sc, data = leafs)
 lm_wood <- lm(Kgp ~ Sc, data = wood)
@@ -74,13 +192,36 @@ var_hat <- c(var(lm_leafs$residuals),
                var(lm_wood$residuals),
                var(lm_roots$residuals))
 
+lower_l <- function(n,sc) qnorm(0.1, mean = hat_beta[1]*n + hat_alpha[1]*sc, sd = sqrt(n*var_hat[1]))
+upper_l <- function(n,sc) qnorm(0.9, mean = hat_beta[1]*n + hat_alpha[1]*sc, sd = sqrt(n*var_hat[1]))
+lower_w <- function(n,sc) qnorm(0.1, mean = hat_beta[2]*n + hat_alpha[2]*sc, sd = sqrt(n*var_hat[2]))
+upper_w <- function(n,sc) qnorm(0.9, mean = hat_beta[2]*n + hat_alpha[2]*sc, sd = sqrt(n*var_hat[2]))
 
+plot_data1 <- sum_data1 %>% mutate(Lower = lower_l(n,Sc), Upper = upper_l(n,Sc))
+plot_data2 <- sum_data2 %>% mutate(Lower = lower_w(n,Sc), Upper = upper_w(n,Sc))
 
-sum_leafs <- function(x) hat_alpha[1] * sum(x) + length(x)*hat_beta[1]
-sum_wood <- function(x) hat_alpha[2] * sum(x) + length(x)*hat_beta[2]
-sum_roots <- function(x) hat_alpha[3] * sum(x) + length(x)*hat_beta[3]
+mean(plot_data1$Lower <= plot_data1$Kgp & plot_data1$Kgp <= plot_data1$Upper)
+mean(plot_data2$Lower <= plot_data2$Kgp & plot_data2$Kgp <= plot_data2$Upper)
 
-sum_biomass <- function(x,y,z) sum_leafs(x) + sum_wood(y) + sum_roots(z)
+lower_l(sum_data1$n,sum_data1$Sc)
+
+ggplot(sum_data1, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(x = Sc, y = lower_l(n,Sc)), color = "hotpink", size = 1, alpha = 0.7) + 
+  geom_point(aes(x = Sc, y = upper_l(n,Sc)), color = "hotpink", size = 1, alpha = 0.7) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Foliage")
+
+ggplot(sum_data2, aes(x = Sc, y = Kgp)) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(x = Sc, y = lower_w(n,Sc)), color = "hotpink", size = 1, alpha = 0.7) + 
+  geom_point(aes(x = Sc, y = upper_w(n,Sc)), color = "hotpink", size = 1, alpha = 0.7) +
+  theme_bw() +
+  xlab('Sc') + 
+  ylab('Kgp')+
+  labs(title = "Wood")
 
 #Plot predikteret ifht. faktisk
 
@@ -88,4 +229,5 @@ sum_biomass <- function(x,y,z) sum_leafs(x) + sum_wood(y) + sum_roots(z)
 # Tag evt. kvantiler af fordelingen ???
 
 
-#
+# LOO
+# Summe pred intervaller
