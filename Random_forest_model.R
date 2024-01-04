@@ -82,7 +82,6 @@ roots_pred <- loo_rf(roots, node_grid_r)
 
 #Skriver det til en CSV så det er nemmere at arbejde med
 
-
 #Til Michaelas computer:
 #write.csv(leafs_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_leafs.csv", row.names=F)
 #write.csv(wood_pred, "/Users/michaelalukacova/Bachelor1/Data/QRF_intervals_wood.csv", row.names=F)
