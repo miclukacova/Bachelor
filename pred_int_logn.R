@@ -1,6 +1,22 @@
 
 #Comparison of lognormal quantile and the Gaussian prediction interval
+ #Defining the lognormal-quantile prediction interval:
+pred_int_quant <- function(alpha = 0.2, data){
+  
+  #model fit
+  model <- lm(log(Kgp) ~ log(Sc), data)
+  f_hat <- function(x) exp(model$coef[[1]])*x^model$coef[[2]]*exp(var(model$residuals)/2)
+  f_hat_log <- function(x) model$coef[[1]] + log(x)*model$coef[[2]]
+  
+  #creation of prediction interval
+  
+  upper <- function(x) qlnorm(1-alpha/2, meanlog = f_hat_log(x), sdlog = sqrt(var(model$residuals))) 
+  lower <- function(x)  qlnorm(alpha/2, meanlog = f_hat_log(x), sdlog = sqrt(var(model$residuals)))
+  
+  return(list(f_hat, upper, lower))
+}
 
+#Creating a function to plot them alongside eachother:
 
 logn_gauss <- function(data, title) {
   pred_int_gauss <- loo_pred_int(data = data, pred_int = pred_int_log_ols, alpha = 0.2)
@@ -20,22 +36,25 @@ logn_gauss <- function(data, title) {
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
   ggplot(plot_tibble, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 0.8, alpha = 0.7) + 
-    geom_line(aes(x = Sc, y = Logn_high), color = "green4", size = 0.7, alpha = 1) + 
-    geom_line(aes(x = Sc, y = Logn_low), color = "green4", size = 0.7, alpha = 1) +
-    geom_line(aes(x = Sc, y = Gauss_high), color = "hotpink", size = 0.7, alpha = 1) + 
-    geom_line(aes(x = Sc, y = Gauss_low), color = "hotpink", size = 0.7, alpha = 1) +
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.7, alpha = 0.7) + 
+    geom_line(aes(x = Sc, y = Logn_high), color = "green4", size = 1, alpha = 1) + 
+    geom_line(aes(x = Sc, y = Logn_low), color = "green4", size = 1, alpha = 1) +
+    geom_line(aes(x = Sc, y = Gauss_high), color = "hotpink", size = 1, alpha = 1) + 
+    geom_line(aes(x = Sc, y = Gauss_low), color = "hotpink", size = 1, alpha = 1) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
     labs(title = title)+
     
     scale_color_manual(values = color)+ 
-    theme(legend.position = "none")
+    theme(legend.position = "none", plot.title = element_text(size = 17),
+          axis.title = element_text(size = 13))
 }
 
+set.seed(4)
 logn_gauss(leafs, "Leafs")
 logn_gauss(wood, "Wood")
+set.seed(4)
 logn_gauss(roots, "Roots")
 
 

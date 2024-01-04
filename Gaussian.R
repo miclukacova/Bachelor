@@ -69,7 +69,7 @@ wood_pred_int_B <- loo_pred_int(data = wood, pred_int = pred_int_log_ols_B, alph
 roots_pred_int_B <- loo_pred_int(data = roots, pred_int = pred_int_log_ols_B, alpha = 0.2)
 
 
-plot_maker <- function(pred_int, pred_int_bias, title){
+plot_maker <- function(pred_int, pred_int_bias, title, ols, olsB){
   
   pred_plot <- pred_int %>%
    mutate(Kgp_in = if_else((Low <= Kgp)&(Kgp <= High),Kgp, NA),
@@ -78,12 +78,12 @@ plot_maker <- function(pred_int, pred_int_bias, title){
   Model <- c("logOLS" = "hotpink4", "logOLSB" = "black")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp_out), color = "darkolivegreen3", size = 0.8, alpha = 0.7) +
-    geom_point(aes(x = Sc, y = Kgp_in), color = "darkolivegreen", size = 0.8, alpha = 0.7) +
-    geom_line(aes(x = Sc, y = High), color = "hotpink", lwd = 0.8) + 
-    geom_line(aes(x = Sc, y = Low), color = "hotpink", lwd = 0.8) +
-    geom_line(aes(x = Sc, y = Fitted, col = "logOLS"), lwd = 1) +
-    geom_line(aes(x = Sc, y = Fitted_B, col = "logOLSB"), lwd = 1) +
+    geom_point(aes(x = Sc, y = Kgp_out), color = "darkolivegreen3", size = 1.7, alpha = 0.7) +
+    geom_point(aes(x = Sc, y = Kgp_in), color = "darkolivegreen", size = 1.7, alpha = 0.7) +
+    geom_line(aes(x = Sc, y = High), color = "hotpink", lwd = 1) + 
+    geom_line(aes(x = Sc, y = Low), color = "hotpink", lwd = 1) +
+    geom_function(fun = ols,  aes( col = "logOLS"), lwd = 1) +
+    geom_function(fun = olsB, aes(col = "logOLSB"), lwd = 1) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -97,9 +97,9 @@ plot_maker <- function(pred_int, pred_int_bias, title){
 }
 
 
-plot_maker(leafs_pred_int[[1]], leafs_pred_int_B[[1]], "Leafs")
-plot_maker(wood_pred_int[[1]], wood_pred_int_B[[1]], "Wood")
-plot_maker(roots_pred_int[[1]], roots_pred_int_B[[1]], "Roots")
+plot_maker(leafs_pred_int[[1]], leafs_pred_int_B[[1]], "Leafs", ols_log_l, ols_log_adj_l)
+plot_maker(wood_pred_int[[1]], wood_pred_int_B[[1]], "Wood", ols_log_w, ols_log_adj_w)
+plot_maker(roots_pred_int[[1]], roots_pred_int_B[[1]], "Roots", ols_log_r, ols_log_adj_r)
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), 
               "Coverage" = c(leafs_pred_int[[2]],wood_pred_int[[2]],
@@ -176,9 +176,9 @@ leafs_pred_int <- loo_pred_int(data = leafs, pred_int = pred_int_ols, alpha = 0.
 wood_pred_int <- loo_pred_int(data = wood, pred_int = pred_int_ols, alpha = 0.2)  
 roots_pred_int <- loo_pred_int(data = roots, pred_int = pred_int_ols, alpha = 0.2)
 
-plot_maker(leafs_pred_int[[1]], "Leafs")
-plot_maker(wood_pred_int[[1]], "Wood")
-plot_maker(roots_pred_int[[1]], "Roots")
+plot_maker(leafs_pred_int[[1]], "Leafs", ols_l)
+plot_maker(wood_pred_int[[1]], "Wood", ols_w)
+plot_maker(roots_pred_int[[1]], "Roots", ols_r)
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), 
               "Coverage" = c(leafs_pred_int[[2]],wood_pred_int[[2]],

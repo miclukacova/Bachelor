@@ -108,7 +108,7 @@ plot_maker(loo[[1]], "Leafs")
 #Abs error /sd
 set.seed(4)
 loo2_adj <- loo_pred_int(leafs, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
-plot_maker(loo2_adj[[1]], "Leafs")
+plot_maker(loo2_adj[[1]], "Leafs", ols_log_adj_l)
 
 #Wood
 
@@ -137,17 +137,14 @@ set.seed(4)
 loo_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_adj) 
 loo_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf)
 
-plot_maker(loo_adj_r[[1]], "Roots", ols_log_adj_r) +   
-  geom_segment(aes(x = Sc, y = Low, xend = Sc, yend = High),
-               color = "hotpink", alpha = 0.4, lwd = 0.6)
+plot_maker(loo_adj_r[[1]], "Roots", ols_log_adj_r)
 plot_maker(loo_r[[1]], "Roots", ols_log_r) 
 head(loo_r)
 #Abs error /sd
 
 set.seed(4)
 loo2_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
-plot_maker(loo2_adj_r[[1]], "Roots") + geom_segment(aes(x = Sc, y = Low, xend = Sc, yend = High),
-                                                   color = "hotpink", alpha = 0.4, lwd = 0.6)
+plot_maker(loo2_adj_r[[1]], "Roots", ols_log_adj_r)
 
 
 #----------------------------Checking coverage for different alphas-----------------------------------------

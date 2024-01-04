@@ -222,3 +222,19 @@ write.csv(pred_int_l[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_lea
 write.csv(pred_int_w[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_wood_s2.csv", row.names=F)
 write.csv(pred_int_r[[1]], "/Users/michaelalukacova/Bachelor1/Data/full_conf_roots_s2.csv", row.names=F)
 
+#Reading CSV-files:
+pred_full_l <- read.csv('Data/full_conf_leafs_s2.csv')
+pred_full_w <- read.csv('Data/full_conf_wood_s2.csv')
+pred_full_r <- read.csv('Data/full_conf_roots_s2.csv')
+
+
+plot_maker(pred_full_l, "Leafs", ols_log_adj_l)
+plot_maker(pred_full_w, "Wood", ols_log_adj_w)
+plot_maker(pred_full_r, "Roots", ols_log_adj_r, roots = T)
+
+coverage(pred_full_l)
+coverage(pred_full_w)
+coverage(pred_full_r)
+
+
+

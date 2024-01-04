@@ -160,17 +160,20 @@ loo_pred_int <- function(data, alpha = 0.2, pred_int) {
   return(list(pred, cov))
 }
 
-plot_maker <- function(pred_int, title, fun){
+plot_maker <- function(pred_int, title, fun, roots = F){
   
   pred_plot <- pred_int %>%
     mutate(Indicator = if_else((Low <= Kgp)&(Kgp <= High),"in", "out"))
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
   
+  if(roots == T){
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 1) + 
+    geom_segment(aes(x = Sc, y = Low, xend = Sc, yend = High),
+                color = "hotpink", alpha = 0.4, lwd = 0.6) +
     geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
     geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.7, alpha = 1) +
     theme_bw() +
     xlab('Sc') + 
     ylab('Kgp')+
@@ -178,6 +181,21 @@ plot_maker <- function(pred_int, title, fun){
     scale_color_manual(values = color)+ 
     theme(legend.position = "none", plot.title = element_text(size = 17),
                                         axis.title = element_text(size = 13))
+  }
+  else{
+    ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
+      geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 1) + 
+      geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 0.7) + 
+      geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
+      geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
+      theme_bw() +
+      xlab('Sc') + 
+      ylab('Kgp')+
+      labs(title = title)+
+      scale_color_manual(values = color)+ 
+      theme(legend.position = "none", plot.title = element_text(size = 17),
+            axis.title = element_text(size = 13))
+  }
   
 }
 

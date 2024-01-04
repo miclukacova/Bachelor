@@ -58,6 +58,8 @@ bias_cor_beta <- bias_cor*exp(hat_beta)
 
 exp(var_hat)
 
+sum(lm_leafs_log$residuals^2)/(nrow(leafs)-1)
+
 
 xtable(tibble("Data" = c("Leafs", "Wood", "Roots"), "alpha" = hat_alpha, "var" = var_hat, "log(beta)" = hat_beta,
        "beta" =exp(hat_beta)) , type = "latex")

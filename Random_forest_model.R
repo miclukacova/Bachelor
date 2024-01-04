@@ -168,9 +168,9 @@ plot_maker <- function(pred_int, title){
   color <- c("in" = "darkolivegreen", "out" = "darkolivegreen2")
   
   ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
-    #geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
-                 #color = "hotpink3", alpha = 0.2, lwd = 0.1)+
-    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.5, alpha = 0.7, fill) + 
+    geom_segment(aes(x = Sc, y = quantile..0.1, xend = Sc, yend = quantile..0.9),
+                 color = "hotpink3", alpha = 0.2, lwd = 0.6)+
+    geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.7, alpha = 0.7, fill) + 
     geom_point(aes(x = Sc, y = quantile..0.9), color = "hotpink", size = 1, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 1,, alpha = 0.7) +
     theme_bw() +
