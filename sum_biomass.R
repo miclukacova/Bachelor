@@ -729,7 +729,8 @@ node_size_choose <- function(data, k = 3, node_grid) {
     for (i in (1:k)){
       #Fit model
       train_x <- data.frame(Sc = data[group != i,1])
-      train_y<- data[group != i,]$Kgp
+      train_y<- data[group != i,2]
+      #print(train_x)
       qrf_ns <- quantregForest(x = train_x, y = train_y, nodesize = j)
       
       #MSE
@@ -751,7 +752,7 @@ loo_rf <- function(data, node_grid) {
     print(i)
     #choose nodesize
     nodesize <- node_size_choose(data = data, node_grid = node_grid)
-    
+    #nodesize <- 10
     
     #Fit model
     train_x <- data.frame(Sc = data[-i,1])
@@ -791,7 +792,7 @@ roots_labeled <- label_func(roots, num_groups = 10)
 #Summing data: 
 sum_func <- function(data, num_groups) {
   group_data <- data %>% filter(Group == 1)
-  new_data <- tibble(Sc = sum(group_data$Sc), 
+  new_data <- data.frame(Sc = sum(group_data$Sc), 
                      Kgp = sum(group_data$Kgp))
   for (i in (2:num_groups)){
     group_data <- data %>% filter(Group == i)
@@ -808,3 +809,46 @@ roots_qrf <- sum_func(roots_labeled, num_groups = 10)
 leafs_pred <- loo_rf(leafs_qrf, node_grid_l)
 wood_pred <- loo_rf(wood_qrf, node_grid_w)
 roots_pred <- loo_rf(roots_qrf, node_grid_r)
+
+colnames(leafs_pred) <- c("Sum_Kgp", "Down", "Up", "Sum_Sc", "Fitted", "nodesize")
+colnames(wood_pred) <- c("Sum_Kgp", "Down", "Up", "Sum_Sc", "Fitted", "nodesize")
+colnames(roots_pred) <- c("Sum_Kgp", "Down", "Up", "Sum_Sc", "Fitted", "nodesize")
+
+
+mean(leafs_pred$Down <= leafs_pred$Sum_Kgp & leafs_pred$Sum_Kgp <= leafs_pred$Up)
+mean(wood_pred$Down <= wood_pred$Sum_Kgp & wood_pred$Sum_Kgp <= wood_pred$Up)
+mean(roots_pred$Down <= roots_pred$Sum_Kgp & roots_pred$Sum_Kgp <= roots_pred$Up)
+
+
+ggplot(leafs_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
+  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
+               color = "hotpink", alpha = 0.4, lwd = 0.6) +
+  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
+  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab('Sum of Sc') + 
+  ylab('Sum og Kgp')+
+  labs(title = "Leafs")
+
+ggplot(wood_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
+  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
+               color = "hotpink", alpha = 0.4, lwd = 0.6) +
+  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
+  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab('Sum of Sc') + 
+  ylab('Sum og Kgp')+
+  labs(title = "Wood")
+
+ggplot(roots_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
+  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
+               color = "hotpink", alpha = 0.4, lwd = 0.6) +
+  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
+  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  theme_bw() +
+  xlab('Sum of Sc') + 
+  ylab('Sum og Kgp')+
+  labs(title = "Roots")
