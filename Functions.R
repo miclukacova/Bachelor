@@ -565,3 +565,4 @@ pred_int_making <- function(data, node_size = 70, alpha = 0.2) {
 pred_int_qrf_l <- function(data, alpha = 0.2) pred_int_making(data, node_size = 100, alpha = 0.2)
 pred_int_qrf_w <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2)
 pred_int_qrf_r <- function(data, alpha = 0.2) pred_int_making(data, alpha = 0.2, node_size = 26)
+
