@@ -43,6 +43,7 @@ coverage(boot_leafs)
 coverage(boot_wood)
 coverage(boot_roots)
 
+
 #Distribution of coverage
 
 set.seed(4)

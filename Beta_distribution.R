@@ -20,7 +20,9 @@ func_list[[4]] <- function(x) dbeta(x, n[4]+1-l[4],l[4])
 func_list[[5]] <- function(x) dbeta(x, n[5]+1-l[5],l[5]) 
 func_list[[6]] <- function(x) dbeta(x, n[6]+1-l[6],l[6]) 
 
-ggplot(test_roots_plot) +
+plot_tibble <- tibble(x=1, y=2)
+
+ggplot(plot_tibble) +
   geom_function(fun = func_list[[1]], aes(color = "n =  10"), linewidth = 1.1)+
   geom_function(fun = func_list[[2]], aes(color = "n =  308"), linewidth = 1.1)+
   geom_function(fun = func_list[[3]], aes(color = "n =  606"), linewidth = 1.1)+
@@ -29,7 +31,10 @@ ggplot(test_roots_plot) +
   geom_function(fun = func_list[[6]], aes(color = "n =  1500"), linewidth = 1.1)+
   xlim(c(0.8,1.01))+
   theme_bw()+
-  scale_color_manual(values = colors, breaks=c("n =  10", "n =  308", "n =  606", "n =  904", "n =  1202", "n =  1500"))
+  scale_color_manual(values = colors, breaks=c("n =  10", "n =  308", "n =  606", "n =  904", "n =  1202", "n =  1500"))+
+  ylab("density")+
+  theme(text = element_text(family = "serif"), axis.title = element_text(size = 13), legend.title = element_text(size =13)
+        ,legend.text = element_text(size = 12), aspect.ratio = 1)
 
 ?scale_
 colors = c("n =  10" = "darkolivegreen1",
