@@ -12,57 +12,67 @@ wood_log <- read.csv('Data/wood_log.csv')
 
 #Uden log-log transformationer
 
-leafs_sc_plot <- ggplot(leafs, aes(x = Sc, y = Kgp)) + 
+ggplot(leafs, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('Crown Size')+
+  ylab('Biomass')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Foliage")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
-roots_sc_plot <- ggplot(roots, aes(x = Sc, y = Kgp)) + 
+ggplot(roots, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen4', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('Crown Size')+
+  ylab('Biomass')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
-wood_sc_plot <- ggplot(wood, aes(x = Sc, y = Kgp)) + 
+ggplot(wood, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('Crown Size')+
+  ylab('Biomass')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Wood")
-
-ggarrange(leafs_sc_plot, roots_sc_plot, wood_sc_plot, ncol = 3, nrow = 1)
+  labs(title = "Wood")+ 
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+                              axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 #Med log-log transformation
 
 ggplot(leafs_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('log(Crown Size)')+
+  ylab('log(Biomass)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Foliage")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(roots_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen4', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('log(Crown Size)')+
+  ylab('log(Biomass)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(wood_log, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('log(Crown Size)')+
+  ylab('log(Biomass)')+
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = 'hotpink')+
-  labs(title = "Wood")
+  labs(title = "Wood")+  
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+                               axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 
 #Residual plots
@@ -176,8 +186,17 @@ ggplot(roots_log, aes(x = Sc, y = rstandard(lm_roots_log))) +
   labs(title = "Roots")
 
 # Residuals against order
+#First we get the unpermuted data:
+leafs_unperm <- read.csv('Data/leafs_unperm.csv')
+roots_unperm <- read.csv('Data/roots_unperm.csv')
+wood_unperm <- read.csv('Data/wood_unperm.csv')
 
-leafs_log_plot <- leafs_log %>% mutate(order = seq(1,nrow(leafs_log)))
+lm_leafs_log <- lm(log(Kgp) ~ log(Sc), leafs_unperm)
+lm_wood_log<- lm(log(Kgp) ~ log(Sc), wood_unperm)
+lm_roots_log <- lm(log(Kgp) ~ log(Sc), roots_unperm)
+
+
+leafs_log_plot <- log(leafs_unperm) %>% mutate(order = seq(1,nrow(leafs_log)))
 
 ggplot(leafs_log_plot, aes(x = order, y = rstandard(lm_leafs_log))) + 
   geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
@@ -185,7 +204,9 @@ ggplot(leafs_log_plot, aes(x = order, y = rstandard(lm_leafs_log))) +
   xlab('Order') + 
   ylab('Residuals')+
   geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Leafs")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+      axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 wood_log_plot <- wood_log %>% mutate(order = seq(1,nrow(wood_log)))
 
@@ -195,7 +216,9 @@ ggplot(wood_log_plot, aes(x = order, y = rstandard(lm_wood_log))) +
   xlab('Order') + 
   ylab('Residuals')+
   geom_smooth(se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 roots_log_plot <- roots_log %>% mutate(order = seq(1,nrow(roots_log)))
 
@@ -205,7 +228,9 @@ ggplot(roots_log_plot, aes(x = order, y = rstandard(lm_roots_log))) +
   xlab('Order') + 
   ylab('Residuals')+
   geom_smooth( se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Roots")
+  labs(title = "Roots")+  
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+                                axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 
 
@@ -217,8 +242,7 @@ ggplot(roots_log_plot, aes(x = order, y = rstandard(lm_roots_log))) +
 #Creating a dataframe
 #Log vs ikke log, giver kun en forskel i skala. Hvorfor mon?
 
-leafs <- read.csv('Data/leafs.csv')
-leafs_lag <- tibble("y_t" = leafs$Kgp[2:nrow(leafs)], "y_t_1" = leafs$Kgp[1:nrow(leafs)-1])
+leafs_lag <- tibble("y_t" = leafs_unperm$Kgp[2:nrow(leafs)], "y_t_1" = leafs_unperm$Kgp[1:nrow(leafs)-1])
 
 #Plotting
 
@@ -227,32 +251,15 @@ ggplot(leafs_lag, aes(x = y_t_1, y = y_t)) +
   theme_bw() +
   xlab('y_t-1') + 
   ylab('y_t')+
-  labs(title = "Leafs")
-
-#Fitting model
-
-lm_leafs_lag <- lm(y_t ~ y_t_1, data = leafs_lag)
-lm_func_leafs <- function(x) lm_leafs_lag$coefficients[1] + lm_leafs_lag$coefficients[2]*x
-
-#Plotting
-
-ggplot(leafs_lag, aes(x = y_t_1, y = y_t)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
-  theme_bw() +
-  xlab('y_t') + 
-  ylab('y_t-1')+
-  geom_function(fun = lm_func_leafs, color = "hotpink")+
-  labs(title = "Leafs")
-
-#Summary
-
-summary(lm_leafs_lag)
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 #############################-----------Wood-----------########################
 
 #Creating a dataframe
 
-wood_lag <- tibble("y_t" = wood$Kgp[2:nrow(wood)], "y_t_1" = wood$Kgp[1:nrow(wood)-1])
+wood_lag <- tibble("y_t" = wood_unperm$Kgp[2:nrow(wood)], "y_t_1" = wood_unperm$Kgp[1:nrow(wood)-1])
 
 #Plotting
 
@@ -261,33 +268,17 @@ ggplot(wood_lag, aes(x = y_t_1, y = y_t)) +
   theme_bw() +
   xlab('y_t-1') + 
   ylab('y_t')+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
-#Fitting model
-
-lm_wood_lag <- lm(y_t ~ y_t_1, data = wood_lag)
-lm_func_wood <- function(x) lm_wood_lag$coefficients[1] + lm_wood_lag$coefficients[2]*x
-
-#Plotting
-
-ggplot(wood_lag, aes(x = y_t_1, y = y_t)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
-  theme_bw() +
-  xlab('y_t') + 
-  ylab('y_t-1')+
-  geom_function(fun = lm_func_wood, color = "hotpink")+
-  labs(title = "wood")
-
-#Summary
-
-summary(lm_wood_lag)
 
 
 #############################-----------Roots-----------########################
 
 #Creating a dataframe
 
-roots_lag <- tibble("y_t" = roots$Kgp[2:nrow(roots)], "y_t_1" = roots$Kgp[1:nrow(roots)-1])
+roots_lag <- tibble("y_t" = roots_unperm$Kgp[2:nrow(roots)], "y_t_1" = roots_unperm$Kgp[1:nrow(roots)-1])
 
 #Plotting
 
@@ -296,26 +287,11 @@ ggplot(roots_lag, aes(x = y_t_1, y = y_t)) +
   theme_bw() +
   xlab('y_t-1') + 
   ylab('y_t')+
-  labs(title = "roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
-#Fitting model
 
-lm_roots_lag <- lm(y_t ~ y_t_1, data = roots_lag)
-lm_func_roots <- function(x) lm_roots_lag$coefficients[1] + lm_roots_lag$coefficients[2]*x
-
-#Plotting
-
-ggplot(roots_lag, aes(x = y_t_1, y = y_t)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
-  theme_bw() +
-  xlab('y_t') + 
-  ylab('y_t-1')+
-  geom_function(fun = lm_func_roots, color = "hotpink")+
-  labs(title = "roots")
-
-#Summary
-
-summary(lm_roots_lag)
 
 
 #Permuteret
@@ -346,7 +322,7 @@ residuals_leafs %>%
   stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
   labs(title = "Foliage")
-?geom_vline
+
 
 residuals_wood %>%
   ggplot() +
