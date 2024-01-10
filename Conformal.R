@@ -127,15 +127,6 @@ set.seed(4)
 loo2_adj_w <- loo_pred_int(wood, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
 plot_maker(loo2_adj_w[[1]], "Wood", ols_log_adj_w)
 
-sum(loo_adj_w[[1]]$High)
-sum(loo_adj_w[[1]]$Low[loo_adj_w[[1]]$Low>0&loo2_adj_w[[1]]$Sc<10])
-sum(wood$Kgp)
-
-head(loo_adj_w)
-
-sum(boot_wood$High)
-sum(boot_wood$Low)
-sum(wood$Kgp)
 
 #Roots
 
@@ -153,7 +144,7 @@ head(loo_r)
 
 set.seed(4)
 loo2_adj_r <- loo_pred_int(roots, alpha = 0.2, pred_int_log_ols_conf_2_adj) 
-plot_maker(loo2_adj_r[[1]], "Roots", ols_log_adj_r)
+plot_maker(loo2_adj_r[[1]], "Roots", ols_log_adj_r, roots = T)
 
 
 #----------------------------Checking coverage for different alphas-----------------------------------------

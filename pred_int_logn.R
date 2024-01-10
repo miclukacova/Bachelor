@@ -1,3 +1,8 @@
+#Getting data
+leafs <- read.csv('Data/leafs.csv')
+wood <- read.csv("Data/wood.csv")
+roots <- read.csv("Data/roots.csv")
+
 
 #Comparison of lognormal quantile and the Gaussian prediction interval
  #Defining the lognormal-quantile prediction interval:
@@ -46,15 +51,17 @@ logn_gauss <- function(data, title) {
     ylab('Kgp')+
     labs(title = title)+
     
-    scale_color_manual(values = color)+ 
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))
+    scale_color_manual(values = color)+
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
 }
 
 set.seed(4)
 logn_gauss(leafs, "Leafs")
 logn_gauss(wood, "Wood")
-set.seed(4)
 logn_gauss(roots, "Roots")
 
 

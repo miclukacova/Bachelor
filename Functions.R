@@ -175,12 +175,15 @@ plot_maker <- function(pred_int, title, fun, roots = F){
     geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
     geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1.7, alpha = 1) +
     theme_bw() +
-    xlab('Sc') + 
-    ylab('Kgp')+
+    xlab('Crown Size') + 
+    ylab('Biomass')+
     labs(title = title)+
-    scale_color_manual(values = color)+ 
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-                                        axis.title = element_text(size = 13))
+    scale_color_manual(values = color)+
+      theme( legend.title = element_blank(),
+             legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+             plot.title = element_text(size = 19),
+             axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+             text = element_text(family = "serif"), axis.text = element_text(size = 13))
   }
   else{
     ggplot(pred_plot, aes(x = Sc, y = Kgp)) +
@@ -189,12 +192,15 @@ plot_maker <- function(pred_int, title, fun, roots = F){
       geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
       geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
       theme_bw() +
-      xlab('Sc') + 
-      ylab('Kgp')+
+      xlab('Crown Size') + 
+      ylab('Biomass')+
       labs(title = title)+
-      scale_color_manual(values = color)+ 
-      theme(legend.position = "none", plot.title = element_text(size = 17),
-            axis.title = element_text(size = 13))
+      scale_color_manual(values = color)+
+      theme( legend.title = element_blank(),
+             legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+             plot.title = element_text(size = 19),
+             axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+             text = element_text(family = "serif"), axis.text = element_text(size = 13))
   }
   
 }
@@ -228,12 +234,15 @@ rs_plot_maker <- function(rs_cov, title, alpha, conformal = FALSE, n=0){
     ggplot() +
     geom_histogram(aes(x = Coverage, y = ..density..), color = "white", 
                    fill = "darkolivegreen3", bins = 40)+
-    geom_vline(xintercept = 1-alpha, color = "hotpink4") +
+    geom_vline(xintercept = 1-alpha, color = "hotpink2", lwd = 0.9) +
     xlim(0,1.1)+
     theme_bw()+
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))+
-    labs(title = title)
+    labs(title = title)   +
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+          axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+          text = element_text(family = "serif"), axis.text = element_text(size = 13))
   if (conformal == TRUE){
     n_b <- n*0.4
     beta <- function(x) dbeta(x, n_b+1-floor((n_b+1)*alpha),
@@ -275,8 +284,11 @@ roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
     labs(title = title)+
     scale_color_gradient2(low = 'blue', mid = 'purple', high = 'red', midpoint = 0.8, limits = c(0.6,1),
                           na.value = "blue")+
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
 }
 
 #Checking coverage for different alphas

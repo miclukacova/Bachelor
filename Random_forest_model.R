@@ -110,11 +110,15 @@ Sc_plot <- function(data,title){
     geom_point(color = 'darkolivegreen', fill = 'darkolivegreen2', alpha = 0.8, size = 1.5, shape = 21) +
     geom_point(aes(y=predicted_value), color = 'hotpink4', fill = 'hotpink' ,size = 1.5, shape = 23, alpha = 0.8) +
     ggtitle(title)+
-    xlab("Sc")+
-    ylab('Kgp')+
+    xlab('Crown Size') + 
+    ylab('Biomass')+
     theme_bw()+
-    theme(plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))
+    theme(legend.title = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(size = 19),
+          axis.title = element_text(size = 15)
+          ,text = element_text(family = "serif"), legend.text = element_text(size = 13), axis.text = element_text(size = 13))
+    
 }
 
 Sc_plot(leafs_pred, "Leafs")

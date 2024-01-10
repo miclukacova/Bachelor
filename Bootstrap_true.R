@@ -134,3 +134,37 @@ cov_alpha_r <- diff_alohas_boot(data = roots, model = model_NLR_roots, B = 300, 
 
 xtable(tibble("Signif. level" = alphas, "Leafs" = cov_alpha_l, 
               "Wood" = cov_alpha_w, "Roots" = cov_alpha_r))
+
+#Residualplots for the NLR:
+
+
+ggplot(boot_leafs, aes(x = log(Fitted), y = (log(Kgp)-log(Fitted)))) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  +
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
+
+ggplot(boot_wood, aes(x = log(Fitted), y = (log(Kgp)-log(Fitted)))) +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  +
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
+
+ggplot(boot_roots, aes(x = log(Fitted), y = (log(Kgp)-log(Fitted)))) + 
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  + 
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  theme_bw() +
+  xlab('Fitted values') + 
+  ylab('Residuals')+
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
+

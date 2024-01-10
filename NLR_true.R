@@ -69,7 +69,12 @@ heat_map <- function(data, par_ols, Title){
     geom_point(aes(x=par_ols[2], y = par_ols[1]), color = "red", size = 3)+
     stat_contour_filled(breaks = breaks_data) +
     theme_bw()+
-    labs(title = Title)
+    xlab(expression(alpha))+
+    ylab(expression(beta))+
+    labs(title = Title)+
+    theme(text = element_text(family = "serif"), plot.title = element_text(size = 19),
+          axis.title = element_text(size = 15), axis.text = element_text(size = 13), legend.title = element_text(size = 13)
+          ,aspect.ratio = 1)
   
   return(p)
 }

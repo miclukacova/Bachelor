@@ -85,20 +85,24 @@ lm_wood_log<- lm(Kgp ~ Sc, wood_log)
 lm_roots_log <- lm(Kgp ~ Sc, roots_log)
 
 ggplot(lm_leafs, aes(x = lm_leafs$fitted.values, y = lm_leafs$residuals)) + 
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.3, shape = 21)  +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Leafs")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(lm_wood, aes(x = lm_wood$fitted.values, y = lm_wood$residuals)) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.3, shape = 21)  +
+  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  +
   geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(lm_roots, aes(x = lm_roots$fitted.values, y = lm_roots$residuals)) + 
   geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.7, shape = 21)  + 
@@ -106,32 +110,42 @@ ggplot(lm_roots, aes(x = lm_roots$fitted.values, y = lm_roots$residuals)) +
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 
 #Residual plots
 
 ggplot(lm_leafs_log, aes(x = lm_leafs_log$fitted.values, y = lm_leafs_log$residuals)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) +  
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  geom_smooth(method = lm, se = FALSE, formula = y ~ x)+
-  labs(title = "Residual plot")
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
        
 ggplot(lm_roots_log, aes(x = lm_roots_log$fitted.values, y = lm_roots_log$residuals)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) + 
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Resdiual plot")
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = lm_wood_log$residuals)) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) + 
   theme_bw() +
   xlab('Fitted values') + 
   ylab('Residuals')+
-  labs(title = "Resdiual plot")
+  geom_smooth(method = lm, se = FALSE, formula = y ~ x, color = "hotpink")+
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
        
 #Standardized residual plots       
 
@@ -162,28 +176,34 @@ ggplot(lm_wood_log, aes(x = lm_wood_log$fitted.values, y = rstandard(lm_wood_log
 # Residuals against predictor 
 
 ggplot(leafs_log, aes(x = Sc, y = rstandard(lm_leafs_log))) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) +  
   theme_bw() +
-  xlab('Sc') + 
+  xlab('Crown Size') + 
   ylab('Residuals')+
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Leafs")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(wood_log, aes(x = Sc, y = rstandard(lm_wood_log))) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) +  
   theme_bw() +
-  xlab('Sc') + 
+  xlab('Crown Size') + 
   ylab('Residuals')+
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(roots_log, aes(x = Sc, y = rstandard(lm_roots_log))) + 
-  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.6, shape = 21) +  
+  geom_point(color = 'darkolivegreen', fill = 'darkolivegreen3', alpha = 0.7, shape = 21) +  
   theme_bw() +
-  xlab('Sc') + 
+  xlab('Crown Size') + 
   ylab('Residuals')+
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, color = "hotpink")+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 # Residuals against order
 #First we get the unpermuted data:
@@ -321,7 +341,9 @@ residuals_leafs %>%
   geom_vline(xintercept = 0, color = "hotpink", size = 1) +
   stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
-  labs(title = "Foliage")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 
 residuals_wood %>%
@@ -330,7 +352,9 @@ residuals_wood %>%
   geom_vline(xintercept = 0, color = "hotpink", size = 1) +
   stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 residuals_roots %>%
   ggplot() +
@@ -338,25 +362,33 @@ residuals_roots %>%
   geom_vline(xintercept = 0, color = "hotpink", size = 1) +
   stat_function(fun = dnorm, color = "darkolivegreen", size = 1)+
   theme_bw()+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(data = residuals_leafs, aes(sample = residual)) +
   stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Foliage")
+  labs(title = "Leafs")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(data = residuals_wood, aes(sample = residual)) +
   stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 ggplot(data = residuals_roots, aes(sample = residual)) +
   stat_qq() + stat_qq_line(color = "hotpink", size = 0.9) + 
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 13))
 
 
 

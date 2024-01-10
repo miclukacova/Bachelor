@@ -65,51 +65,54 @@ cols <- c("darkolivegreen","black", "hotpink2", "hotpink4")
 ggplot(leafs, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'black', fill = 'darkolivegreen2', alpha = 0.6, size = 1.5, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
+  xlab('Crown Size') + 
   geom_function(fun = ols_l, aes(col = "OLS"), size = 1)+
   geom_function(fun = nlr_l, aes(col = "NLR"), size = 1)+
   geom_function(fun = ols_log_l, aes(col = "OLS log"), size = 1)+
   geom_function(fun = ols_log_adj_l, aes(col = "OLS log Bias adj."), size = 1)+
-  ylab('Kgp')+
+  ylab('Biomass')+
   labs(title = "Leafs")+
   scale_colour_manual(values = cols)+
   theme(legend.title = element_blank(),
-               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
-               plot.title = element_text(size = 17),
-               axis.title = element_text(size = 13))+
+               legend.position = c(0.2, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+               plot.title = element_text(size = 19),
+               axis.title = element_text(size = 15)
+        ,text = element_text(family = "serif"), legend.text = element_text(size = 13), axis.text = element_text(size = 13))+
   ylim(c(0,35))
 
 
 ggplot(wood, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'black', fill = 'darkolivegreen2', alpha = 0.6, size = 1.5, shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('Crown Size') + 
+  ylab('Biomass')+
   geom_function(fun = ols_w, aes(col = "OLS"), size = 1)+
   geom_function(fun = nlr_w, aes(col = "NLR"), size = 0.7)+
   geom_function(fun = ols_log_w, aes(col = "OLS log"), size = 0.7)+
   geom_function(fun = ols_log_adj_w, aes(col = "OLS log Bias adj."), size = 1)+
   labs(title = "Wood")+
   scale_colour_manual(values = cols)+
-  theme( legend.title = element_blank(),
-               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
-               plot.title = element_text(size = 17),
-               axis.title = element_text(size = 13))+
-  ylim(c(0,1000))
+  theme(legend.title = element_blank(),
+        legend.position = c(0.21, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+        plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15)
+        ,text = element_text(family = "serif"), legend.text = element_text(size = 13), axis.text = element_text(size = 13))+
+  ylim(c(0,1020))
 
 ggplot(roots, aes(x = Sc, y = Kgp)) + 
   geom_point(color = 'black', fill = 'darkolivegreen', alpha = 0.6, size = 2., shape = 21) + 
   theme_bw() +
-  xlab('Sc') + 
-  ylab('Kgp')+
+  xlab('Crown Size') + 
+  ylab('Biomass')+
   geom_function(fun = ols_r, aes(col = "OLS"), size = 0.7)+
   geom_function(fun = nlr_r, aes(col = "NLR"), size = 0.7)+
   geom_function(fun = ols_log_r, aes(col = "OLS log"), size = 0.7)+
   geom_function(fun = ols_log_adj_r, aes(col = "OLS log Bias adj."), size = 0.7)+
   ggtitle( "Roots")+
   scale_colour_manual(values = cols)+
-  theme( legend.title = element_blank(),
-               legend.position = c(0.165, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
-               plot.title = element_text(size = 17),
-               axis.title = element_text(size = 13))
-
+  theme(legend.title = element_blank(),
+        legend.position = c(0.205, 0.82), legend.background = element_rect(linetype = 'solid', color = 'black'),
+        plot.title = element_text(size = 19),
+        axis.title = element_text(size = 15)
+        ,text = element_text(family = "serif"), legend.text = element_text(size = 13), axis.text = element_text(size = 13))
+  
