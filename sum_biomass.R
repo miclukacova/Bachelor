@@ -461,7 +461,7 @@ ggplot(ols_wood, aes(x = Sum_Sc, y = Sum_Kgp)) +
   ylab('Sum og Kgp')+
   labs(title = "Wood")
 
-ggplot(wilk_roots, aes(x = Sum_Sc, y = Sum_Kgp)) + 
+ggplot(ols_roots, aes(x = Sum_Sc, y = Sum_Kgp)) + 
   geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
                color = "hotpink", alpha = 0.4, lwd = 0.6) +
   geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
@@ -521,10 +521,10 @@ simul <- function(data, B = 3000, Title) {
   g <- tibble(Kgp = sum_kgp) %>%
     ggplot() +
     geom_histogram(aes(x = Kgp, y = ..density..), color = "white", fill = "darkolivegreen3", bins = 50) +
-    #xlim(c(0,2*10^8))+
     stat_function(fun = density_logn, color = "darkolivegreen", size = 1)+
     theme_bw()+
-    labs(title = Title)
+    labs(title = Title)+
+    xlab("Biomass")
   
   return(list(sum_kgp,g))
 }
@@ -542,17 +542,17 @@ roots_full_sum[[2]]
 
 set.seed(4)
 leafs_30 <- sample_n(leafs, size = 30)
-wood_25 <- sample_n(wood, 30, replace = TRUE)
-roots_5 <- sample_n(roots, 5, replace = TRUE)
+wood_30 <- sample_n(wood, size = 30)
+roots_5 <- sample_n(roots, size = 5)
 
 set.seed(4)
 leafs_30_sum <- simul(leafs_30, 3000, "Leafs")
-wood_25_sum <- simul(wood_25, 3000, "Wood")
-roots_10_sum <- simul(roots_5, 3000, "Roots")
+wood_30_sum <- simul(wood_30, 3000, "Wood")
+roots_5_sum <- simul(roots_5, 3000, "Roots")
 
 leafs_30_sum[[2]]
-wood_25_sum[[2]]
-roots_10_sum[[2]]
+wood_30_sum[[2]]
+roots_5_sum[[2]]
 
 
 #qqplots
