@@ -293,12 +293,14 @@ ggplot(plot_data_leafs_agg, aes(x = Sc, y = Kgp)) +
   geom_line(aes(x = Sc, y = Low_qrf, col = "QRF")) +
   scale_colour_manual(values = cols)+
   theme_bw() +
-  theme(plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13), 
-        legend.background = element_rect(linetype = 'solid', color = 'black'),
-        legend.position = c(0.15, 0.77))+
-  xlab('Sc') + 
-  ylab('Kgp')+
+  theme( legend.title = element_blank(),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13), 
+         legend.background = element_rect(linetype = 'solid', color = 'black'),
+         legend.position = c(0.18, 0.81))+
+  xlab('Crown Size') + 
+  ylab('Biomass')+
   labs(title = "Leafs")
 
 
@@ -312,12 +314,14 @@ ggplot(plot_data_wood_agg, aes(x = Sc, y = Kgp)) +
   geom_line(aes(x = Sc, y = Low_qrf, col = "QRF")) +
   scale_colour_manual(values = cols)+
   theme_bw() +
-  theme(plot.title = element_text(size = 17),
-        axis.title = element_text(size = 13), 
-        legend.background = element_rect(linetype = 'solid', color = 'black'),
-        legend.position = c(0.15, 0.77))+
-  xlab('Sc') + 
-  ylab('Kgp')+
+  theme( legend.title = element_blank(),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13), 
+         legend.background = element_rect(linetype = 'solid', color = 'black'),
+         legend.position = c(0.18, 0.81))+
+  xlab('Crown Size') + 
+  ylab('Biomass')+
   labs(title = "Wood")
 
 ggplot(plot_data_roots_agg, aes(x = Sc, y = Kgp)) + 
@@ -330,12 +334,14 @@ ggplot(plot_data_roots_agg, aes(x = Sc, y = Kgp)) +
   geom_line(aes(x = Sc, y = Low_qrf, col = "QRF")) +
   scale_colour_manual(values = cols)+
   theme_bw() +
-  theme(plot.title = element_text(size = 17),
-        axis.title = element_text(size = 13), 
+  theme( legend.title = element_blank(),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13), 
         legend.background = element_rect(linetype = 'solid', color = 'black'),
-        legend.position = c(0.15, 0.77))+
-  xlab('Sc') + 
-  ylab('Kgp')+
+        legend.position = c(0.18, 0.81))+
+  xlab('Crown Size') + 
+  ylab('Biomass')+
   labs(title = "Roots")
 
 ################################################################################
@@ -386,7 +392,7 @@ ggplot(sum_data2, aes(x = Sc, y = Kgp)) +
   geom_point(aes(x = Sc, y = upper_w(n,Sc)), color = "hotpink", size = 1, alpha = 0.7) +
   theme_bw() +
   xlab('Sc') + 
-  ylab('Kgp')+
+  ylab('Crown')+
   labs(title = "Wood")
 
 
@@ -438,39 +444,65 @@ mean(ols_leafs$Down <= ols_leafs$Sum_Kgp & ols_leafs$Sum_Kgp <= ols_leafs$Up)
 mean(ols_wood$Down <= ols_wood$Sum_Kgp & ols_wood$Sum_Kgp <= ols_wood$Up)
 mean(ols_roots$Down <= ols_roots$Sum_Kgp & ols_roots$Sum_Kgp <= ols_roots$Up)
 
+ols_leafs <- ols_leafs %>%
+  mutate(Indicator = if_else((Down <= Sum_Kgp)&(Sum_Kgp <= Up),"in", "out"))
+ols_wood <- ols_wood %>%
+  mutate(Indicator = if_else((Down <= Sum_Kgp)&(Sum_Kgp <= Up),"in", "out"))
+ols_roots <- ols_roots %>%
+  mutate(Indicator = if_else((Down <= Sum_Kgp)&(Sum_Kgp <= Up),"in", "out"))
+
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
 
 ggplot(ols_leafs, aes(x = Sum_Sc, y = Sum_Kgp)) + 
   geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
                color = "hotpink", alpha = 0.4, lwd = 0.6) +
   geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
   geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(color = Indicator), alpha = 0.6, size = 1) + 
   theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Leafs")
+  xlab('Sum of Crown Size') + 
+  ylab('Sum og Biomass')+
+  labs(title = "Leafs")+
+  scale_color_manual(values = color)+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 ggplot(ols_wood, aes(x = Sum_Sc, y = Sum_Kgp)) + 
   geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
                color = "hotpink", alpha = 0.4, lwd = 0.6) +
   geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
   geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(color = Indicator), alpha = 0.6, size = 1) + 
   theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Wood")
+  xlab('Sum of Crown Size') + 
+  ylab('Sum og Biomass')+
+  labs(title = "Wood")+
+  scale_color_manual(values = color)+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 ggplot(ols_roots, aes(x = Sum_Sc, y = Sum_Kgp)) + 
   geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
                color = "hotpink", alpha = 0.4, lwd = 0.6) +
   geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
   geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(color = Indicator), alpha = 0.6, size = 1) +
   theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Roots")
+  xlab('Sum of Crown Size') + 
+  ylab('Sum og Biomass')+
+  labs(title = "Roots")+
+  scale_color_manual(values = color)+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 
 
@@ -534,9 +566,24 @@ leafs_full_sum <- simul(leafs, 3000, "Leafs")
 wood_full_sum <- simul(wood, 3000, "Wood")
 roots_full_sum <- simul(roots, 3000, "Roots")
 
-leafs_full_sum[[2]]
-wood_full_sum[[2]]
-roots_full_sum[[2]]
+leafs_full_sum[[2]]+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
+wood_full_sum[[2]]+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
+roots_full_sum[[2]]+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 #For 30 trees
 
@@ -572,7 +619,12 @@ ggplot(tibble(Kgp = leafs_full_sum[[1]]), aes(sample=Kgp))+
   stat_qq_line(distribution = qlnorm, dparams = c(mu_s_n,sqrt(sigma_s_n)))+
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Leafs")
+  labs(title = "Leafs")+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 #Wood
 
@@ -589,7 +641,12 @@ ggplot(tibble(Kgp = wood_full_sum[[1]]), aes(sample=Kgp))+
   stat_qq_line(distribution = qlnorm, dparams = c(mu_s_n,sqrt(sigma_s_n)))+
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Wood")
+  labs(title = "Wood")+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 #Roots
 
@@ -606,7 +663,12 @@ ggplot(tibble(Kgp = roots_full_sum[[1]]), aes(sample=Kgp))+
   stat_qq_line(distribution = qlnorm, dparams = c(mu_s_n,sqrt(sigma_s_n)))+
   geom_abline(intercept = 0, slope = 1, color = "darkolivegreen", size = 0.9)+
   theme_bw()+
-  labs(title = "Roots")
+  labs(title = "Roots")+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
 
 
 #Testing method
@@ -663,39 +725,37 @@ mean(wilk_leafs$Down <= wilk_leafs$Sum_Kgp & wilk_leafs$Sum_Kgp <= wilk_leafs$Up
 mean(wilk_wood$Down <= wilk_wood$Sum_Kgp & wilk_wood$Sum_Kgp <= wilk_wood$Up)
 mean(wilk_roots$Down <= wilk_roots$Sum_Kgp & wilk_roots$Sum_Kgp <= wilk_roots$Up)
 
+#Functíon for plots:
+sum_plot_maker <- function (pred_int, title){
+  pred_int <- pred_int %>%
+  mutate(Indicator = if_else((Down <= Sum_Kgp)&(Sum_Kgp <= Up),"in", "out"))
 
-ggplot(wilk_leafs, aes(x = Sum_Sc, y = Sum_Kgp)) + 
+color <- c("in" = "darkolivegreen", "out" = "darkolivegreen3")
+
+ggplot(pred_int, aes(x = Sum_Sc, y = Sum_Kgp)) + 
   geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
                color = "hotpink", alpha = 0.4, lwd = 0.6) +
   geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
   geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
+  geom_point(aes(color = Indicator), alpha = 0.6, size = 1) + 
   theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Leafs")
+  xlab('Sum of Crown Size') + 
+  ylab('Sum of Biomass')+
+  labs(title = title)+
+  scale_color_manual(values = color)+
+  theme( legend.title = element_blank(),
+         legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+         plot.title = element_text(size = 19),
+         axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+         text = element_text(family = "serif"), axis.text = element_text(size = 13))
+}
 
-ggplot(wilk_wood, aes(x = Sum_Sc, y = Sum_Kgp)) + 
-  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
-               color = "hotpink", alpha = 0.4, lwd = 0.6) +
-  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
-  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Wood")
 
-ggplot(wilk_roots, aes(x = Sum_Sc, y = Sum_Kgp)) + 
-  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
-               color = "hotpink", alpha = 0.4, lwd = 0.6) +
-  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
-  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Roots")
+sum_plot_maker(wilk_leafs, "Leafs")
+sum_plot_maker(wilk_wood, "Wood")
+sum_plot_maker(wilk_roots, "Roots")
+
+
   
   
 # To spørgesmål
@@ -819,36 +879,8 @@ mean(leafs_pred$Down <= leafs_pred$Sum_Kgp & leafs_pred$Sum_Kgp <= leafs_pred$Up
 mean(wood_pred$Down <= wood_pred$Sum_Kgp & wood_pred$Sum_Kgp <= wood_pred$Up)
 mean(roots_pred$Down <= roots_pred$Sum_Kgp & roots_pred$Sum_Kgp <= roots_pred$Up)
 
+sum_plot_maker(leafs_pred, "Leafs")
+sum_plot_maker(wood_pred, "Wood")
+sum_plot_maker(roots_pred, "Roots")
 
-ggplot(leafs_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
-  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
-               color = "hotpink", alpha = 0.4, lwd = 0.6) +
-  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
-  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Leafs")
 
-ggplot(wood_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
-  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
-               color = "hotpink", alpha = 0.4, lwd = 0.6) +
-  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
-  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Wood")
-
-ggplot(roots_pred, aes(x = Sum_Sc, y = Sum_Kgp)) + 
-  geom_segment(aes(x = Sum_Sc, y = Down, xend = Sum_Sc, yend = Up),
-               color = "hotpink", alpha = 0.4, lwd = 0.6) +
-  geom_point(aes(x = Sum_Sc, y = Up), color = "hotpink", size = 1, alpha = 0.7) + 
-  geom_point(aes(x = Sum_Sc, y = Down), color = "hotpink", size = 1, alpha = 0.7) +
-  geom_point(color = 'darkolivegreen',fill = 'darkolivegreen3', alpha = 0.6, shape = 21) + 
-  theme_bw() +
-  xlab('Sum of Sc') + 
-  ylab('Sum og Kgp')+
-  labs(title = "Roots")

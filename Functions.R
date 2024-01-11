@@ -132,8 +132,11 @@ roll_cov_boot <- function(pred_int, alpha = 0.2, bin_size = 50, title){
     labs(title = title)+
     scale_color_gradient2(low = 'blue', mid = 'purple', high = 'red', midpoint = 0.8, limits = c(0.6,1),
                           na.value = "blue")+
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 17),
+           axis.title = element_text(size = 13), legend.text = element_text(size = 11),
+           text = element_text(family = "serif"), axis.text = element_text(size = 11))
 }
 
 ################################################################################
@@ -160,7 +163,7 @@ loo_pred_int <- function(data, alpha = 0.2, pred_int) {
   return(list(pred, cov))
 }
 
-plot_maker <- function(pred_int, title, fun, roots = F){
+plot_maker <- function(pred_int, title, roots = F){
   
   pred_plot <- pred_int %>%
     mutate(Indicator = if_else((Low <= Kgp)&(Kgp <= High),"in", "out"))
@@ -190,7 +193,7 @@ plot_maker <- function(pred_int, title, fun, roots = F){
       geom_point(aes(x = Sc, y = Kgp, color = Indicator), size = 1, alpha = 1) + 
       geom_point(aes(x = Sc, y = High), color = "hotpink", size = 1, alpha = 0.7) + 
       geom_point(aes(x = Sc, y = Low), color = "hotpink", size = 1, alpha = 0.7) +
-      geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
+      #geom_function(fun = fun, color = 'hotpink4', size = 0.8)+
       theme_bw() +
       xlab('Crown Size') + 
       ylab('Biomass')+
@@ -198,9 +201,9 @@ plot_maker <- function(pred_int, title, fun, roots = F){
       scale_color_manual(values = color)+
       theme( legend.title = element_blank(),
              legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
-             plot.title = element_text(size = 19),
-             axis.title = element_text(size = 15), legend.text = element_text(size = 13),
-             text = element_text(family = "serif"), axis.text = element_text(size = 13))
+             plot.title = element_text(size = 17),
+             axis.title = element_text(size = 13), legend.text = element_text(size = 11),
+             text = element_text(family = "serif"), axis.text = element_text(size = 11))
   }
   
 }

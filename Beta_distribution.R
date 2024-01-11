@@ -9,7 +9,7 @@ for (i in 1:6){
 
 
 n <- seq(10, 1500, length.out = 6)
-l <- floor((n+1)*0.1)
+l <- floor((n+1)*0.2)
 
 func_list <- list()
 
@@ -22,6 +22,13 @@ func_list[[6]] <- function(x) dbeta(x, n[6]+1-l[6],l[6])
 
 plot_tibble <- tibble(x=1, y=2)
 
+colors = c("n =  10" = "darkolivegreen1",
+           "n =  308" ="darkolivegreen2",
+           "n =  606" = "darkolivegreen3",
+           "n =  904" = "darkolivegreen4",
+           "n =  1202" = "green4", 
+           "n =  1500" = "darkgreen")
+
 ggplot(plot_tibble) +
   geom_function(fun = func_list[[1]], aes(color = "n =  10"), linewidth = 1.1)+
   geom_function(fun = func_list[[2]], aes(color = "n =  308"), linewidth = 1.1)+
@@ -29,7 +36,7 @@ ggplot(plot_tibble) +
   geom_function(fun = func_list[[4]], aes(color = "n =  904"), linewidth = 1.1)+
   geom_function(fun = func_list[[5]], aes(color = "n =  1202"), linewidth = 1.1)+
   geom_function(fun = func_list[[6]], aes(color = "n =  1500"), linewidth = 1.1)+
-  xlim(c(0.8,1.01))+
+  xlim(c(0.6,1.01))+
   theme_bw()+
   scale_color_manual(values = colors, breaks=c("n =  10", "n =  308", "n =  606", "n =  904", "n =  1202", "n =  1500"))+
   ylab("density")+
@@ -37,12 +44,7 @@ ggplot(plot_tibble) +
         ,legend.text = element_text(size = 12), aspect.ratio = 1)
 
 ?scale_
-colors = c("n =  10" = "darkolivegreen1",
-           "n =  308" ="darkolivegreen2",
-           "n =  606" = "darkolivegreen3",
-           "n =  904" = "darkolivegreen4",
-           "n =  1202" = "green4", 
-           "n =  1500" = "darkgreen")
+
 
 
 levels(colors)

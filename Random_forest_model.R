@@ -177,12 +177,15 @@ plot_maker <- function(pred_int, title){
     geom_point(aes(x = Sc, y = quantile..0.9), color = "hotpink", size = 1, alpha = 0.7) + 
     geom_point(aes(x = Sc, y = quantile..0.1), color = "hotpink", size = 1,, alpha = 0.7) +
     theme_bw() +
-    xlab('Sc') + 
-    ylab('Kgp')+
+    xlab('Crown Size') + 
+    ylab('Biomass')+
     labs(title = title)+
-    scale_color_manual(values = color)+ 
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-                  axis.title = element_text(size = 13))
+    scale_color_manual(values = color)+
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
 }
 
 plot_maker(leafs_pred, "Leafs")
@@ -215,9 +218,15 @@ centered_plot <- function(data, title){
                fill = 'hotpink', size = 0.8, shape = 25, alpha = 0.4)+
     geom_point(aes(y=Kgp, color = indicator), size = 0.7)+
     scale_color_manual(values = colors)+
-    ylab('Kgp')+ ggtitle(title)+
+    ylab('Biomass')+ ggtitle(title)+
     xlab('Ordered Samples')+
-    theme_bw()
+    theme_bw()+
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
+
 }
 
 cv_int <- function(x){
@@ -252,7 +261,11 @@ centered_plot <- function(data, title){
     ylab("Kgp")+ ggtitle(title)+
     xlab('Ordered Samples')+
     theme_bw()+
-    theme(legend.position = "none")
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
 }
 
 centered_plot(cv_intervals_leafs, "Leafs")
@@ -278,7 +291,11 @@ centered_plot_roots <- function(data){
     ylab('Kgp')+ ggtitle('Roots')+
     xlab('Ordered Samples')+
     theme_bw()+
-    theme(legend.position = "none")
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
 }
 
 centered_plot_roots(cv_intervals_roots)
@@ -381,8 +398,11 @@ roll_cov <- function(pred_int, alpha = 0.2, bin_size = 50, title){
     labs(title = title)+
     scale_color_gradient2(low = 'blue', mid = 'purple', high = 'red', midpoint = 0.8, limits = c(0.6,1),
                           na.value = "blue")+
-    theme(legend.position = "none", plot.title = element_text(size = 17),
-          axis.title = element_text(size = 13))
+    theme( legend.title = element_blank(),
+           legend.position = "none", legend.background = element_rect(linetype = 'solid', color = 'black'),
+           plot.title = element_text(size = 19),
+           axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+           text = element_text(family = "serif"), axis.text = element_text(size = 13))
   
 }
 

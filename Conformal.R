@@ -514,17 +514,17 @@ set.seed(4)
 #write.csv(loo_w, "/Users/michaelalukacova/Bachelor1/Data/loo_w_conf_qr.csv", row.names=F)
 #write.csv(loo_r, "/Users/michaelalukacova/Bachelor1/Data/loo_r_conf_qr.csv", row.names=F)
 
-loo_l <- read.csv('Data//loo_l_conf.csv')
-loo_w <- read.csv('Data/loo_w_conf.csv')
+loo_l <- data.frame(read.csv('Data//loo_l_conf_qr.csv'))
+loo_w <- data.frame(read.csv('Data/loo_w_conf_qr.csv'))
 #loo_r <- read.csv('Data/loo_r_conf.csv')
 
 
 xtable(tibble(" " = c("Leafs", "Wood"), 
               "Covergae" = c(loo_l[[2]], loo_w[[1]])), type = latex)
 
+tibble(loo_l)
 plot_maker(loo_l,"Leafs")
-mean(loo_l$Low <= loo_l$Kgp & loo_l$High >= loo_l$Kgp)
-plot_maker(loo_w[[1]], "Wood")
+plot_maker(loo_w, "Wood")
 
 #----------------------------Checking coverage for different alphas-----------------------------------------
 alphas <- c(0.05, 0.1, 0.2, 0.3)
@@ -560,6 +560,6 @@ rs_plot_maker(c, "Roots", 0.2)
 
 #----------------------------Rolling coverage---------------------------------------------
 
-roll_cov(pred_int = loo_l, title = "Leafs")
-roll_cov(pred_int = loo_w, title = "Wood")
+roll_cov_boot(pred_int = loo_l, title = "Leafs")
+roll_cov_boot(pred_int = loo_w, title = "Wood")
 
