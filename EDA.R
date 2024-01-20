@@ -262,7 +262,7 @@ ggplot(roots_log_plot, aes(x = order, y = rstandard(lm_roots_log))) +
 #Creating a dataframe
 #Log vs ikke log, giver kun en forskel i skala. Hvorfor mon?
 
-leafs_lag <- tibble("y_t" = leafs_unperm$Kgp[2:nrow(leafs)], "y_t_1" = leafs_unperm$Kgp[1:nrow(leafs)-1])
+leafs_lag <- tibble("y_t" = leafs$Kgp[2:nrow(leafs)], "y_t_1" = leafs$Kgp[1:nrow(leafs)-1])
 
 #Plotting
 
@@ -279,7 +279,8 @@ ggplot(leafs_lag, aes(x = y_t_1, y = y_t)) +
 
 #Creating a dataframe
 
-wood_lag <- tibble("y_t" = wood_unperm$Kgp[2:nrow(wood)], "y_t_1" = wood_unperm$Kgp[1:nrow(wood)-1])
+wood <-wood[sample(nrow(wood), replace = FALSE),]
+wood_lag <- tibble("y_t" = wood$Kgp[2:nrow(wood)], "y_t_1" = wood$Kgp[1:nrow(wood)-1])
 
 #Plotting
 
@@ -310,7 +311,6 @@ ggplot(roots_lag, aes(x = y_t_1, y = y_t)) +
   labs(title = "Roots")+
   theme(text = element_text(family = "serif"),legend.position = "none", plot.title = element_text(size = 19),
         axis.title = element_text(size = 15), axis.text = element_text(size = 13))
-
 
 
 

@@ -34,7 +34,7 @@ library(stargazer)
 #roots_labeled <- label_func(roots, num_groups = 10)
 #
 ##Summing data: 
-#sum_func <- function(data) {
+sum_func <- function(data) {
   for (i in c((1:59),150)){
     if (i == 1){
       group_data <- data %>% filter(Group == 1)
@@ -226,9 +226,9 @@ roots_pred <- read.csv("Data/QRF_intervals_roots.csv")
 #wood_pred<- wood_pred %>% add_column(Group = wood_labeled$Group)
 #roots_pred<- roots_pred %>% add_column(Group = roots_labeled$Group)
 #
-#colnames(leafs_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize", "Group")
-#colnames(wood_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize", "Group")
-#colnames(roots_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize", "Group")
+colnames(leafs_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize")
+colnames(wood_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize")
+colnames(roots_pred) <- c("Kgp", "Low", "High", "Sc", "Fitted", "nodesize")
 #
 #sum_leafs_qrf <- sum_pred_int_func(leafs_pred)
 #sum_wood_qrf <- sum_pred_int_func(wood_pred)
